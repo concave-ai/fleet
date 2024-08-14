@@ -11,6 +11,7 @@ fastparquet = "*"
 pyarrow = "*"
 huggingface-hub = "*"
 datasets = "*"
+concave = "*"
 
 [dev-packages]
 
