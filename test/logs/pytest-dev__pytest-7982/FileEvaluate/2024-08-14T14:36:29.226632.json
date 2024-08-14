@@ -1,0 +1,67 @@
+{
+  "name": "FileEvaluate",
+  "model": "gpt-4o-mini",
+  "issue": "<description>:Symlinked directories not collected since pytest 6.1.0\nWhen there is a symlink to a directory in a test directory, is is just skipped over, but it should be followed and collected as usual.\r\n\r\nThis regressed in b473e515bc57ff1133fe650f1e7e6d7e22e5d841 (included in 6.1.0). For some reason I added a `follow_symlinks=False` in there, I don't remember why, but it does not match the previous behavior and should be removed.\r\n\r\nPR for this is coming up.\n</description>",
+  "request": null,
+  "response": {
+    "scratch_pad": "The file provided is related to the pytest framework's module collection system. It doesn't directly deal with the handling of symlinks, which is referenced in the issue. The main focus of the issue is on the change in behavior around following symlinks in the collection of test directories since pytest version 6.1.0. The regression noted is a specific change to the symlink handling policy in the collection process.",
+    "relevant": false,
+    "root_cause": false,
+    "relevant_files": [
+      "src/pytest/collect.py",
+      "src/pytest/config.py",
+      "src/pytest/runner.py"
+    ],
+    "relavant_symbols": [],
+    "root_cause_symbol": []
+  },
+  "messages": [
+    {
+      "role": "system",
+      "content": "\n"
+    },
+    {
+      "role": "user",
+      "content": "<issue><description>:Symlinked directories not collected since pytest 6.1.0\nWhen there is a symlink to a directory in a test directory, is is just skipped over, but it should be followed and collected as usual.\r\n\r\nThis regressed in b473e515bc57ff1133fe650f1e7e6d7e22e5d841 (included in 6.1.0). For some reason I added a `follow_symlinks=False` in there, I don't remember why, but it does not match the previous behavior and should be removed.\r\n\r\nPR for this is coming up.\n</description></issue>\n             <file>source: src/pytest/collect.py\n             import sys\nimport warnings\nfrom types import ModuleType\nfrom typing import Any\nfrom typing import List\n\nimport pytest\nfrom _pytest.deprecated import PYTEST_COLLECT_MODULE\n\nCOLLECT_FAKEMODULE_ATTRIBUTES = [\n    \"Collector\",\n    \"Module\",\n    \"Function\",\n    \"Instance\",\n    \"Session\",\n    \"Item\",\n    \"Class\",\n    \"File\",\n    \"_fillfuncargs\",\n]\n\n\nclass FakeCollectModule(ModuleType):\n    def __init__(self) -> None:\n        super().__init__(\"pytest.collect\")\n        self.__all__ = list(COLLECT_FAKEMODULE_ATTRIBUTES)\n        self.__pytest = pytest\n\n    def __dir__(self) -> List[str]:\n        return dir(super()) + self.__all__\n\n    def __getattr__(self, name: str) -> Any:\n        if name not in self.__all__:\n            raise AttributeError(name)\n        warnings.warn(PYTEST_COLLECT_MODULE.format(name=name), stacklevel=2)\n        return getattr(pytest, name)\n\n\nsys.modules[\"pytest.collect\"] = FakeCollectModule()\n\n             </file>\n             "
+    }
+  ],
+  "completion": {
+    "id": "chatcmpl-9wFxL1ki1gQaE6Yf9Qaw2P9qIiO4D",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\"scratch_pad\":\"The file provided is related to the pytest framework's module collection system. It doesn't directly deal with the handling of symlinks, which is referenced in the issue. The main focus of the issue is on the change in behavior around following symlinks in the collection of test directories since pytest version 6.1.0. The regression noted is a specific change to the symlink handling policy in the collection process.\",\"relevant\":false,\"root_cause\":false,\"relevant_files\":[\"src/pytest/collect.py\",\"src/pytest/config.py\",\"src/pytest/runner.py\"],\"relavant_symbols\":[],\"root_cause_symbol\":[]}",
+          "refusal": null,
+          "role": "assistant",
+          "function_call": null,
+          "tool_calls": [],
+          "parsed": {
+            "scratch_pad": "The file provided is related to the pytest framework's module collection system. It doesn't directly deal with the handling of symlinks, which is referenced in the issue. The main focus of the issue is on the change in behavior around following symlinks in the collection of test directories since pytest version 6.1.0. The regression noted is a specific change to the symlink handling policy in the collection process.",
+            "relevant": false,
+            "root_cause": false,
+            "relevant_files": [
+              "src/pytest/collect.py",
+              "src/pytest/config.py",
+              "src/pytest/runner.py"
+            ],
+            "relavant_symbols": [],
+            "root_cause_symbol": []
+          }
+        }
+      }
+    ],
+    "created": 1723671387,
+    "model": "gpt-4o-mini-2024-07-18",
+    "object": "chat.completion",
+    "service_tier": null,
+    "system_fingerprint": "fp_48196bc67a",
+    "usage": {
+      "completion_tokens": 135,
+      "prompt_tokens": 393,
+      "total_tokens": 528
+    }
+  }
+}

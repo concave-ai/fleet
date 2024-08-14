@@ -1,7 +1,9 @@
+from concave.internal.workspace.workspace import Workspace
 from openai.types import ChatModel
 
 
 class Context:
+    workspace: Workspace
     def __init__(self,
                  model: ChatModel = "gpt-4o-mini",
                  issue: str = "",

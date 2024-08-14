@@ -1,0 +1,83 @@
+{
+  "name": "FileEvaluate",
+  "model": "gpt-4o-mini",
+  "issue": "<description>:Pytest crashes the interpreter on debug build for 3.8+\nShort reproducer\r\n```py\r\n>>> Expression.compile(\"False\")\r\npython: Python/compile.c:3559: compiler_nameop: Assertion `!_PyUnicode_EqualToASCIIString(name, \"None\") && !_PyUnicode_EqualToASCIIString(name, \"True\") && !_PyUnicode_EqualToASCIIString(name, \"False\")' failed.\r\n[1]    29440 abort (core dumped)  python\r\n```\r\n\r\nRelated issue for improvement of this behavior: [bpo-40870](https://bugs.python.org/issue40870)\n\n<hints>:didn't test but maybe something like this help?\r\n```diff\r\n--- a/src/_pytest/compat.py\r\n+++ b/src/_pytest/compat.py\r\n@@@ -1,6 -1,7 +1,8 @@@\r\n  \"\"\"\r\n  python version compatibility code\r\n  \"\"\"\r\n++import ast\r\n+ import enum\r\n  import functools\r\n  import inspect\r\n  import os\r\n@@@ -393,3 -401,3 +402,13 @@@ else\r\n      from collections import OrderedDict\r\n  \r\n      order_preserving_dict = OrderedDict\r\n++\r\n++def _ident_to_name(name: str) -> ast.expr:\r\n++    if name in (\"True\", \"False\", \"None\") and sys.version_info >= (3, 4):\r\n++        name = ast.literal_eval(name)\r\n++        if sys.version_info >= (3, 8):\r\n++            return ast.Constant(name)\r\n++        else:\r\n++            return ast.NameConstant(name)\r\n++    else:\r\n++        return ast.Name(name, ast.Load())\r\n+++ b/src/_pytest/mark/expression.py\r\n@@@ -27,7 -27,7 +27,7 @@@ from typing import Sequenc\r\n  \r\n  import attr\r\n  \r\n--from _pytest.compat import TYPE_CHECKING\r\n++from _pytest.compat import TYPE_CHECKING, _ident_to_name\r\n  \r\n  if TYPE_CHECKING:\r\n      from typing import NoReturn\r\n@@@ -129,7 -129,7 +129,7 @@@ class Scanner\r\n  \r\n  def expression(s: Scanner) -> ast.Expression:\r\n      if s.accept(TokenType.EOF):\r\n--        ret = ast.NameConstant(False)  # type: ast.expr\r\n++        ret = _ident_to_name(\"False\")  # type: ast.expr\r\n      else:\r\n          ret = expr(s)\r\n          s.accept(TokenType.EOF, reject=True)\r\n@@@ -161,7 -161,7 +161,7 @@@ def not_expr(s: Scanner) -> ast.expr\r\n          return ret\r\n      ident = s.accept(TokenType.IDENT)\r\n      if ident:\r\n--        return ast.Name(ident.value, ast.Load())\r\n++        return _ident_to_name(ident.value)\r\n      s.reject((TokenType.NOT, TokenType.LPAREN, TokenType.IDENT))\r\n```</hints></description>",
+  "request": null,
+  "response": {
+    "scratch_pad": "The issue described indicates that there is a crash in the interpreter due to an assertion failure related to handling the constants 'None', 'True', and 'False'. The proposed code changes seem to be aimed at addressing this by ensuring the proper handling of these names in a Python AST context. The modifications introduce a function called `_ident_to_name` that takes a string and returns the appropriate AST node depending on the string's value, specifically ensuring 'False', 'True', and 'None' are correctly represented. Since the file contains logic that deals with expression evaluation, which is directly implicated in the reported crash, it is relevant to the issue.",
+    "relevant": true,
+    "root_cause": true,
+    "relevant_files": [],
+    "relavant_symbols": [
+      "expression",
+      "_ident_to_name",
+      "not_expr",
+      "and_expr",
+      "or_expr",
+      "Scanner",
+      "Token",
+      "ParseError"
+    ],
+    "root_cause_symbol": [
+      "expression",
+      "_ident_to_name"
+    ]
+  },
+  "messages": [
+    {
+      "role": "system",
+      "content": "\n"
+    },
+    {
+      "role": "user",
+      "content": "<issue><description>:Pytest crashes the interpreter on debug build for 3.8+\nShort reproducer\r\n```py\r\n>>> Expression.compile(\"False\")\r\npython: Python/compile.c:3559: compiler_nameop: Assertion `!_PyUnicode_EqualToASCIIString(name, \"None\") && !_PyUnicode_EqualToASCIIString(name, \"True\") && !_PyUnicode_EqualToASCIIString(name, \"False\")' failed.\r\n[1]    29440 abort (core dumped)  python\r\n```\r\n\r\nRelated issue for improvement of this behavior: [bpo-40870](https://bugs.python.org/issue40870)\n\n<hints>:didn't test but maybe something like this help?\r\n```diff\r\n--- a/src/_pytest/compat.py\r\n+++ b/src/_pytest/compat.py\r\n@@@ -1,6 -1,7 +1,8 @@@\r\n  \"\"\"\r\n  python version compatibility code\r\n  \"\"\"\r\n++import ast\r\n+ import enum\r\n  import functools\r\n  import inspect\r\n  import os\r\n@@@ -393,3 -401,3 +402,13 @@@ else\r\n      from collections import OrderedDict\r\n  \r\n      order_preserving_dict = OrderedDict\r\n++\r\n++def _ident_to_name(name: str) -> ast.expr:\r\n++    if name in (\"True\", \"False\", \"None\") and sys.version_info >= (3, 4):\r\n++        name = ast.literal_eval(name)\r\n++        if sys.version_info >= (3, 8):\r\n++            return ast.Constant(name)\r\n++        else:\r\n++            return ast.NameConstant(name)\r\n++    else:\r\n++        return ast.Name(name, ast.Load())\r\n+++ b/src/_pytest/mark/expression.py\r\n@@@ -27,7 -27,7 +27,7 @@@ from typing import Sequenc\r\n  \r\n  import attr\r\n  \r\n--from _pytest.compat import TYPE_CHECKING\r\n++from _pytest.compat import TYPE_CHECKING, _ident_to_name\r\n  \r\n  if TYPE_CHECKING:\r\n      from typing import NoReturn\r\n@@@ -129,7 -129,7 +129,7 @@@ class Scanner\r\n  \r\n  def expression(s: Scanner) -> ast.Expression:\r\n      if s.accept(TokenType.EOF):\r\n--        ret = ast.NameConstant(False)  # type: ast.expr\r\n++        ret = _ident_to_name(\"False\")  # type: ast.expr\r\n      else:\r\n          ret = expr(s)\r\n          s.accept(TokenType.EOF, reject=True)\r\n@@@ -161,7 -161,7 +161,7 @@@ def not_expr(s: Scanner) -> ast.expr\r\n          return ret\r\n      ident = s.accept(TokenType.IDENT)\r\n      if ident:\r\n--        return ast.Name(ident.value, ast.Load())\r\n++        return _ident_to_name(ident.value)\r\n      s.reject((TokenType.NOT, TokenType.LPAREN, TokenType.IDENT))\r\n```</hints></description></issue>\n             <file>source: src/_pytest/mark/expression.py\n             r\"\"\"\nEvaluate match expressions, as used by `-k` and `-m`.\n\nThe grammar is:\n\nexpression: expr? EOF\nexpr:       and_expr ('or' and_expr)*\nand_expr:   not_expr ('and' not_expr)*\nnot_expr:   'not' not_expr | '(' expr ')' | ident\nident:      (\\w|:|\\+|-|\\.|\\[|\\])+\n\nThe semantics are:\n\n- Empty expression evaluates to False.\n- ident evaluates to True of False according to a provided matcher function.\n- or/and/not evaluate according to the usual boolean semantics.\n\"\"\"\nimport ast\nimport enum\nimport re\nimport types\nfrom typing import Callable\nfrom typing import Iterator\nfrom typing import Mapping\nfrom typing import Optional\nfrom typing import Sequence\n\nimport attr\n\nfrom _pytest.compat import TYPE_CHECKING\n\nif TYPE_CHECKING:\n    from typing import NoReturn\n\n\n__all__ = [\n    \"Expression\",\n    \"ParseError\",\n]\n\n\nclass TokenType(enum.Enum):\n    LPAREN = \"left parenthesis\"\n    RPAREN = \"right parenthesis\"\n    OR = \"or\"\n    AND = \"and\"\n    NOT = \"not\"\n    IDENT = \"identifier\"\n    EOF = \"end of input\"\n\n\n@attr.s(frozen=True, slots=True)\nclass Token:\n    type = attr.ib(type=TokenType)\n    value = attr.ib(type=str)\n    pos = attr.ib(type=int)\n\n\nclass ParseError(Exception):\n    \"\"\"The expression contains invalid syntax.\n\n    :param column: The column in the line where the error occurred (1-based).\n    :param message: A description of the error.\n    \"\"\"\n\n    def __init__(self, column: int, message: str) -> None:\n        self.column = column\n        self.message = message\n\n    def __str__(self) -> str:\n        return \"at column {}: {}\".format(self.column, self.message)\n\n\nclass Scanner:\n    __slots__ = (\"tokens\", \"current\")\n\n    def __init__(self, input: str) -> None:\n        self.tokens = self.lex(input)\n        self.current = next(self.tokens)\n\n    def lex(self, input: str) -> Iterator[Token]:\n        pos = 0\n        while pos < len(input):\n            if input[pos] in (\" \", \"\\t\"):\n                pos += 1\n            elif input[pos] == \"(\":\n                yield Token(TokenType.LPAREN, \"(\", pos)\n                pos += 1\n            elif input[pos] == \")\":\n                yield Token(TokenType.RPAREN, \")\", pos)\n                pos += 1\n            else:\n                match = re.match(r\"(:?\\w|:|\\+|-|\\.|\\[|\\])+\", input[pos:])\n                if match:\n                    value = match.group(0)\n                    if value == \"or\":\n                        yield Token(TokenType.OR, value, pos)\n                    elif value == \"and\":\n                        yield Token(TokenType.AND, value, pos)\n                    elif value == \"not\":\n                        yield Token(TokenType.NOT, value, pos)\n                    else:\n                        yield Token(TokenType.IDENT, value, pos)\n                    pos += len(value)\n                else:\n                    raise ParseError(\n                        pos + 1, 'unexpected character \"{}\"'.format(input[pos]),\n                    )\n        yield Token(TokenType.EOF, \"\", pos)\n\n    def accept(self, type: TokenType, *, reject: bool = False) -> Optional[Token]:\n        if self.current.type is type:\n            token = self.current\n            if token.type is not TokenType.EOF:\n                self.current = next(self.tokens)\n            return token\n        if reject:\n            self.reject((type,))\n        return None\n\n    def reject(self, expected: Sequence[TokenType]) -> \"NoReturn\":\n        raise ParseError(\n            self.current.pos + 1,\n            \"expected {}; got {}\".format(\n                \" OR \".join(type.value for type in expected), self.current.type.value,\n            ),\n        )\n\n\ndef expression(s: Scanner) -> ast.Expression:\n    if s.accept(TokenType.EOF):\n        ret = ast.NameConstant(False)  # type: ast.expr\n    else:\n        ret = expr(s)\n        s.accept(TokenType.EOF, reject=True)\n    return ast.fix_missing_locations(ast.Expression(ret))\n\n\ndef expr(s: Scanner) -> ast.expr:\n    ret = and_expr(s)\n    while s.accept(TokenType.OR):\n        rhs = and_expr(s)\n        ret = ast.BoolOp(ast.Or(), [ret, rhs])\n    return ret\n\n\ndef and_expr(s: Scanner) -> ast.expr:\n    ret = not_expr(s)\n    while s.accept(TokenType.AND):\n        rhs = not_expr(s)\n        ret = ast.BoolOp(ast.And(), [ret, rhs])\n    return ret\n\n\ndef not_expr(s: Scanner) -> ast.expr:\n    if s.accept(TokenType.NOT):\n        return ast.UnaryOp(ast.Not(), not_expr(s))\n    if s.accept(TokenType.LPAREN):\n        ret = expr(s)\n        s.accept(TokenType.RPAREN, reject=True)\n        return ret\n    ident = s.accept(TokenType.IDENT)\n    if ident:\n        return ast.Name(ident.value, ast.Load())\n    s.reject((TokenType.NOT, TokenType.LPAREN, TokenType.IDENT))\n\n\nclass MatcherAdapter(Mapping[str, bool]):\n    \"\"\"Adapts a matcher function to a locals mapping as required by eval().\"\"\"\n\n    def __init__(self, matcher: Callable[[str], bool]) -> None:\n        self.matcher = matcher\n\n    def __getitem__(self, key: str) -> bool:\n        return self.matcher(key)\n\n    def __iter__(self) -> Iterator[str]:\n        raise NotImplementedError()\n\n    def __len__(self) -> int:\n        raise NotImplementedError()\n\n\nclass Expression:\n    \"\"\"A compiled match expression as used by -k and -m.\n\n    The expression can be evaulated against different matchers.\n    \"\"\"\n\n    __slots__ = (\"code\",)\n\n    def __init__(self, code: types.CodeType) -> None:\n        self.code = code\n\n    @classmethod\n    def compile(self, input: str) -> \"Expression\":\n        \"\"\"Compile a match expression.\n\n        :param input: The input expression - one line.\n        \"\"\"\n        astexpr = expression(Scanner(input))\n        code = compile(\n            astexpr, filename=\"<pytest match expression>\", mode=\"eval\",\n        )  # type: types.CodeType\n        return Expression(code)\n\n    def evaluate(self, matcher: Callable[[str], bool]) -> bool:\n        \"\"\"Evaluate the match expression.\n\n        :param matcher: Given an identifier, should return whether it matches or not.\n                        Should be prepared to handle arbitrary strings as input.\n\n        Returns whether the expression matches or not.\n        \"\"\"\n        ret = eval(\n            self.code, {\"__builtins__\": {}}, MatcherAdapter(matcher)\n        )  # type: bool\n        return ret\n\n             </file>\n             "
+    }
+  ],
+  "completion": {
+    "id": "chatcmpl-9wFSwAFXUxe1Ed7jSxe8oKOmkG7Hr",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\"scratch_pad\":\"The issue described indicates that there is a crash in the interpreter due to an assertion failure related to handling the constants 'None', 'True', and 'False'. The proposed code changes seem to be aimed at addressing this by ensuring the proper handling of these names in a Python AST context. The modifications introduce a function called `_ident_to_name` that takes a string and returns the appropriate AST node depending on the string's value, specifically ensuring 'False', 'True', and 'None' are correctly represented. Since the file contains logic that deals with expression evaluation, which is directly implicated in the reported crash, it is relevant to the issue.\",\"relevant\":true,\"root_cause\":true,\"relevant_files\":[],\"relavant_symbols\":[\"expression\",\"_ident_to_name\",\"not_expr\",\"and_expr\",\"or_expr\",\"Scanner\",\"Token\",\"ParseError\"] ,\"root_cause_symbol\":[\"expression\",\"_ident_to_name\"]}",
+          "refusal": null,
+          "role": "assistant",
+          "function_call": null,
+          "tool_calls": [],
+          "parsed": {
+            "scratch_pad": "The issue described indicates that there is a crash in the interpreter due to an assertion failure related to handling the constants 'None', 'True', and 'False'. The proposed code changes seem to be aimed at addressing this by ensuring the proper handling of these names in a Python AST context. The modifications introduce a function called `_ident_to_name` that takes a string and returns the appropriate AST node depending on the string's value, specifically ensuring 'False', 'True', and 'None' are correctly represented. Since the file contains logic that deals with expression evaluation, which is directly implicated in the reported crash, it is relevant to the issue.",
+            "relevant": true,
+            "root_cause": true,
+            "relevant_files": [],
+            "relavant_symbols": [
+              "expression",
+              "_ident_to_name",
+              "not_expr",
+              "and_expr",
+              "or_expr",
+              "Scanner",
+              "Token",
+              "ParseError"
+            ],
+            "root_cause_symbol": [
+              "expression",
+              "_ident_to_name"
+            ]
+          }
+        }
+      }
+    ],
+    "created": 1723669502,
+    "model": "gpt-4o-mini-2024-07-18",
+    "object": "chat.completion",
+    "service_tier": null,
+    "system_fingerprint": "fp_48196bc67a",
+    "usage": {
+      "completion_tokens": 189,
+      "prompt_tokens": 2093,
+      "total_tokens": 2282
+    }
+  }
+}
