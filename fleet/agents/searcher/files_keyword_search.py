@@ -11,18 +11,26 @@ class FilesKeywordSearchRes(BaseModel):
         description="key is the keyword, value is the list of paths where the keyword is found.")
 
 
+class FilesKeywordSearchReq(BaseModel):
+    tokens: list[str]
+
+
+def str_to_jsonl(raw):
+    return [json.loads(l) for l in raw.split('\n') if l]
+
+
 class FilesKeywordSearch(Agent):
     name = "FilesKeywordSearch"
     responseType = FilesKeywordSearchRes
     response = Optional[FilesKeywordSearchRes]
 
-    def __init__(self, ctx, tokens):
+    def __init__(self, ctx, req: FilesKeywordSearchReq):
         super().__init__(ctx)
-        self.tokens = tokens
         self.response = None
+        self.request = req
 
     def get_cmd(self):
-        args = [f"-e '{t}'" for t in self.tokens]
+        args = [f"-e '{t}'" for t in self.request.tokens]
         return f"rg --json -n -w {' '.join(args)} --glob '*.py' src/"
 
     def run_from_jsonl(self, path):
@@ -32,17 +40,15 @@ class FilesKeywordSearch(Agent):
         if self.ctx.trace:
             self.save_log()
 
-    def str_to_jsonl(self, raw):
-        return [json.loads(l) for l in raw.split('\n') if l]
-
     def run(self):
         cmd = self.get_cmd()
         code, out = self.ctx.workspace.exec(["sh", "-c", cmd])
-        rows = self.str_to_jsonl(out)
+        rows = str_to_jsonl(out)
 
         self.response = FilesKeywordSearchRes(results=self.parse(rows))
         if self.ctx.trace:
             self.save_log()
+        return self.response
 
     def parse(self, rows):
         results = {

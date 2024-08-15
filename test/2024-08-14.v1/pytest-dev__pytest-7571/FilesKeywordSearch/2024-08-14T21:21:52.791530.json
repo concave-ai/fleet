@@ -1,0 +1,90 @@
+{
+  "name": "FilesKeywordSearch",
+  "model": "gpt-4o-2024-08-06",
+  "issue": "<description>:caplog fixture doesn't restore log level after test\nFrom the documentation at https://docs.pytest.org/en/6.0.0/logging.html#caplog-fixture, \"The log levels set are restored automatically at the end of the test\".\r\nIt used to work, but looks broken in new 6.0 release. Minimal example to reproduce:\r\n\r\n```\r\ndef test_foo(caplog):\r\n    caplog.set_level(42)\r\n\r\ndef test_bar(caplog):\r\n    print(caplog.handler.level)\r\n```\r\n\r\nIt prints \"0\" for pytest<6, \"42\" after.\n\n<hints>:This probably regressed in fcbaab8b0b89abc622dbfb7982cf9bd8c91ef301. I will take a look.</hints></description>",
+  "request": {
+    "tokens": [
+      "caplog",
+      "set_level",
+      "handler",
+      "Fixture",
+      "log",
+      "logging",
+      "level",
+      "restore",
+      "Capture",
+      "LiveLoggingStreamHandler"
+    ]
+  },
+  "response": {
+    "results": {
+      "level": [
+        "src/_pytest/logging.py",
+        "src/_pytest/fixtures.py",
+        "src/_pytest/nodes.py",
+        "src/_pytest/outcomes.py",
+        "src/_pytest/capture.py",
+        "src/_pytest/assertion/rewrite.py",
+        "src/_pytest/hookspec.py",
+        "src/_pytest/pathlib.py",
+        "src/_pytest/store.py",
+        "src/_pytest/_code/code.py",
+        "src/_pytest/config/__init__.py",
+        "src/_pytest/nose.py",
+        "src/_pytest/doctest.py",
+        "src/_pytest/_io/saferepr.py"
+      ],
+      "log": [
+        "src/_pytest/runner.py",
+        "src/_pytest/logging.py",
+        "src/_pytest/deprecated.py",
+        "src/_pytest/debugging.py",
+        "src/_pytest/resultlog.py",
+        "src/_pytest/helpconfig.py",
+        "src/_pytest/terminal.py",
+        "src/_pytest/reports.py",
+        "src/_pytest/warnings.py",
+        "src/_pytest/junitxml.py",
+        "src/_pytest/pastebin.py"
+      ],
+      "Fixture": [
+        "src/_pytest/capture.py",
+        "src/_pytest/hookspec.py",
+        "src/_pytest/timing.py",
+        "src/_pytest/doctest.py",
+        "src/_pytest/fixtures.py"
+      ],
+      "caplog": [
+        "src/_pytest/logging.py",
+        "src/_pytest/debugging.py",
+        "src/_pytest/junitxml.py",
+        "src/_pytest/reports.py"
+      ],
+      "handler": [
+        "src/_pytest/tmpdir.py",
+        "src/_pytest/logging.py",
+        "src/_pytest/faulthandler.py"
+      ],
+      "restore": [
+        "src/_pytest/logging.py",
+        "src/_pytest/junitxml.py",
+        "src/_pytest/capture.py",
+        "src/_pytest/pytester.py"
+      ],
+      "logging": [
+        "src/_pytest/logging.py",
+        "src/_pytest/hookspec.py",
+        "src/_pytest/config/__init__.py",
+        "src/_pytest/junitxml.py",
+        "src/_pytest/compat.py"
+      ],
+      "Capture": [
+        "src/_pytest/junitxml.py",
+        "src/_pytest/capture.py"
+      ],
+      "set_level": [
+        "src/_pytest/logging.py"
+      ]
+    }
+  }
+}

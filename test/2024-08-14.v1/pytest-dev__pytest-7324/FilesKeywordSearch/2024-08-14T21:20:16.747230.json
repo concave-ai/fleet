@@ -1,0 +1,133 @@
+{
+  "name": "FilesKeywordSearch",
+  "model": "gpt-4o-2024-08-06",
+  "issue": "<description>:Pytest crashes the interpreter on debug build for 3.8+\nShort reproducer\r\n```py\r\n>>> Expression.compile(\"False\")\r\npython: Python/compile.c:3559: compiler_nameop: Assertion `!_PyUnicode_EqualToASCIIString(name, \"None\") && !_PyUnicode_EqualToASCIIString(name, \"True\") && !_PyUnicode_EqualToASCIIString(name, \"False\")' failed.\r\n[1]    29440 abort (core dumped)  python\r\n```\r\n\r\nRelated issue for improvement of this behavior: [bpo-40870](https://bugs.python.org/issue40870)\n\n<hints>:didn't test but maybe something like this help?\r\n```diff\r\n--- a/src/_pytest/compat.py\r\n+++ b/src/_pytest/compat.py\r\n@@@ -1,6 -1,7 +1,8 @@@\r\n  \"\"\"\r\n  python version compatibility code\r\n  \"\"\"\r\n++import ast\r\n+ import enum\r\n  import functools\r\n  import inspect\r\n  import os\r\n@@@ -393,3 -401,3 +402,13 @@@ else\r\n      from collections import OrderedDict\r\n  \r\n      order_preserving_dict = OrderedDict\r\n++\r\n++def _ident_to_name(name: str) -> ast.expr:\r\n++    if name in (\"True\", \"False\", \"None\") and sys.version_info >= (3, 4):\r\n++        name = ast.literal_eval(name)\r\n++        if sys.version_info >= (3, 8):\r\n++            return ast.Constant(name)\r\n++        else:\r\n++            return ast.NameConstant(name)\r\n++    else:\r\n++        return ast.Name(name, ast.Load())\r\n+++ b/src/_pytest/mark/expression.py\r\n@@@ -27,7 -27,7 +27,7 @@@ from typing import Sequenc\r\n  \r\n  import attr\r\n  \r\n--from _pytest.compat import TYPE_CHECKING\r\n++from _pytest.compat import TYPE_CHECKING, _ident_to_name\r\n  \r\n  if TYPE_CHECKING:\r\n      from typing import NoReturn\r\n@@@ -129,7 -129,7 +129,7 @@@ class Scanner\r\n  \r\n  def expression(s: Scanner) -> ast.Expression:\r\n      if s.accept(TokenType.EOF):\r\n--        ret = ast.NameConstant(False)  # type: ast.expr\r\n++        ret = _ident_to_name(\"False\")  # type: ast.expr\r\n      else:\r\n          ret = expr(s)\r\n          s.accept(TokenType.EOF, reject=True)\r\n@@@ -161,7 -161,7 +161,7 @@@ def not_expr(s: Scanner) -> ast.expr\r\n          return ret\r\n      ident = s.accept(TokenType.IDENT)\r\n      if ident:\r\n--        return ast.Name(ident.value, ast.Load())\r\n++        return _ident_to_name(ident.value)\r\n      s.reject((TokenType.NOT, TokenType.LPAREN, TokenType.IDENT))\r\n```</hints></description>",
+  "request": {
+    "tokens": [
+      "Expression",
+      "ast",
+      "compat",
+      "Scanner",
+      "expression",
+      "compile",
+      "nameop",
+      "assertion",
+      "Python",
+      "expr"
+    ]
+  },
+  "response": {
+    "results": {
+      "Python": [
+        "src/_pytest/logging.py",
+        "src/_pytest/python_api.py",
+        "src/_pytest/debugging.py",
+        "src/_pytest/outcomes.py",
+        "src/_pytest/capture.py",
+        "src/pytest/__init__.py",
+        "src/_pytest/assertion/rewrite.py",
+        "src/_pytest/hookspec.py",
+        "src/_pytest/python.py",
+        "src/_pytest/terminal.py",
+        "src/_pytest/config/__init__.py",
+        "src/_pytest/_code/code.py",
+        "src/_pytest/reports.py",
+        "src/_pytest/doctest.py",
+        "src/_pytest/nodes.py",
+        "src/_pytest/_code/__init__.py",
+        "src/_pytest/compat.py"
+      ],
+      "assertion": [
+        "src/_pytest/assertion/util.py",
+        "src/_pytest/logging.py",
+        "src/_pytest/_code/source.py",
+        "src/pytest/__init__.py",
+        "src/_pytest/assertion/rewrite.py",
+        "src/_pytest/hookspec.py",
+        "src/_pytest/config/__init__.py",
+        "src/_pytest/assertion/truncate.py",
+        "src/_pytest/assertion/__init__.py"
+      ],
+      "compat": [
+        "src/_pytest/assertion/rewrite.py",
+        "src/_pytest/config/argparsing.py",
+        "src/_pytest/doctest.py",
+        "src/_pytest/junitxml.py",
+        "src/_pytest/warning_types.py",
+        "src/_pytest/fixtures.py",
+        "src/_pytest/mark/__init__.py",
+        "src/_pytest/runner.py",
+        "src/_pytest/assertion/util.py",
+        "src/_pytest/config/findpaths.py",
+        "src/_pytest/cacheprovider.py",
+        "src/_pytest/_code/code.py",
+        "src/_pytest/mark/expression.py",
+        "src/_pytest/tmpdir.py",
+        "src/_pytest/assertion/__init__.py",
+        "src/_pytest/logging.py",
+        "src/_pytest/_code/source.py",
+        "src/_pytest/unittest.py",
+        "src/_pytest/debugging.py",
+        "src/_pytest/hookspec.py",
+        "src/_pytest/recwarn.py",
+        "src/_pytest/python.py",
+        "src/_pytest/config/__init__.py",
+        "src/_pytest/reports.py",
+        "src/_pytest/mark/structures.py",
+        "src/_pytest/nodes.py",
+        "src/_pytest/main.py",
+        "src/_pytest/python_api.py",
+        "src/_pytest/outcomes.py",
+        "src/_pytest/capture.py",
+        "src/_pytest/pytester.py",
+        "src/_pytest/terminal.py",
+        "src/_pytest/warnings.py"
+      ],
+      "compile": [
+        "src/_pytest/logging.py",
+        "src/_pytest/monkeypatch.py",
+        "src/_pytest/_code/source.py",
+        "src/_pytest/outcomes.py",
+        "src/_pytest/mark/evaluate.py",
+        "src/_pytest/pytester.py",
+        "src/_pytest/assertion/rewrite.py",
+        "src/_pytest/recwarn.py",
+        "src/_pytest/_code/code.py",
+        "src/_pytest/mark/expression.py",
+        "src/_pytest/doctest.py",
+        "src/_pytest/_code/__init__.py",
+        "src/_pytest/junitxml.py",
+        "src/_pytest/compat.py",
+        "src/_pytest/mark/__init__.py"
+      ],
+      "expression": [
+        "src/_pytest/python_api.py",
+        "src/_pytest/mark/evaluate.py",
+        "src/_pytest/pytester.py",
+        "src/_pytest/assertion/rewrite.py",
+        "src/_pytest/_code/code.py",
+        "src/_pytest/mark/expression.py",
+        "src/_pytest/assertion/__init__.py",
+        "src/_pytest/mark/__init__.py"
+      ],
+      "expr": [
+        "src/_pytest/deprecated.py",
+        "src/_pytest/mark/evaluate.py",
+        "src/_pytest/mark/expression.py",
+        "src/_pytest/assertion/rewrite.py"
+      ],
+      "Expression": [
+        "src/_pytest/mark/expression.py",
+        "src/_pytest/mark/__init__.py"
+      ],
+      "ast": [
+        "src/_pytest/assertion/rewrite.py",
+        "src/_pytest/mark/expression.py",
+        "src/_pytest/_code/source.py"
+      ],
+      "Scanner": [
+        "src/_pytest/mark/expression.py"
+      ]
+    }
+  }
+}

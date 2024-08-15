@@ -1,6 +1,8 @@
+logs: 2024-08-14.v1
+
 ```
-root_casue_found: 10
-relative_found: 6 
+root_casue_found: 12
+might: 4
 can't fix: 3 
 ```
 
@@ -15,12 +17,11 @@ note
     - src/_pytest/compat.py
     - def num_mock_patch_args
     
-- pytest-5785 ⚠️ 
+- pytest-5785 ✅? 
     - src/_pytest/reports.py
     - class BaseReport
     - def BaseReport.to_json
-⚠️ fleet give me to_json, not give BaseReport.to_json. not put to root_cause
-put to to relavant_symbols
+RCA found, btw relavant_symbols give a lot(11)
     
 - pytest-5809  ✅
     - src/_pytest/pastebin.py
@@ -32,8 +33,8 @@ put to to relavant_symbols
         - def _set_initial_conftests
         - def _importconftest
         
-found _importconftest,
-not found _set_initial_conftests
+found _importconftest, not found _set_initial_conftests
+not sure _set_initial_conftests need or not. 
 
 - pytest-6197 🙅🙅🙅
     - src/_pytest/python.py
@@ -55,7 +56,7 @@ this hard, change a lot
     - src/_pytest/setuponly.py
     - _show_fixture_action
 
-- pytest-7236 ⚠️ 
+- pytest-7236 🙅 
     - src/_pytest/unittest.py
     - class UnitTestCase
         - def collect
@@ -63,7 +64,8 @@ this hard, change a lot
         - def fixture
     - class TestCaseFunction
         - def runtest
-this hard， create a new skip check def,  change three files。
+        
+this hard，create a new skip check def,  change three files。
 almost give me all info, btw some in relavant_symbols, not root_cause
 
     
@@ -85,6 +87,7 @@ in relavant_symbols, not root_cause
     - def pytest_runtest_setup
     - def pytest_runtest_call
 
+gard
 wrong file choosed. 
 
 - pytest-7521   ⚠️
@@ -94,7 +97,7 @@ wrong file choosed.
  found FDCapture, not found FDCaptureBinary(is FDCaptureBinary a subclass of FDCapture)   
     
 - pytest-7571  ✅
-    - src/_pytest/xdist.py
+    - src/_pytest/logging.py
     - class LogCaptureFixture
         - def __init__
         - def _finalize
@@ -103,9 +106,10 @@ wrong file choosed.
 - pytest-7982  ✅
     - src/_pytest/pathlib.py
     - visit
+可能产生了幻觉，在两个文件中都认为是根源问题。
 
     
-- pytest-8399 🙅🙅🙅
+- pytest-8399 ⚠️
     - src/_pytest/python.py
     - class Module
         - def xunit_setup_module_fixture
@@ -115,7 +119,7 @@ wrong file choosed.
     - src/_pytest/unittest.py
     - def _make_xunit_fixture
         - def fixture
-too hard
+几乎做出来了
 
 - pytest-10051  ✅
     - src/_pytest/logging.py

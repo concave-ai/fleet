@@ -2,6 +2,7 @@ import json
 import datetime
 import os.path
 
+from loguru import logger
 from openai import OpenAI
 from openai.types.chat import ParsedChatCompletion
 
@@ -27,14 +28,14 @@ class Agent:
         path = f"{logs_path}/{d.isoformat()}.json"
         with open(path, "w") as f:
             json.dump(self.dump(), f, indent=2)
-        print(f"Log saved to {path}")
+        logger.info(f"Log saved to {path}")
 
     def dump(self):
         return {
             "name": self.name,
             "model": self.ctx.model,
             "issue": self.ctx.issue,
-            "request": self.request,
+            "request": self.request.model_dump(),
             "response": self.response.model_dump()
         }
 
@@ -44,7 +45,7 @@ class Agent:
             self.name = data["name"]
             self.ctx.model = data["model"]
             self.ctx.issue = data["issue"]
-            self.request = data["request"]
+            self.request = self.responseType(**data["request"])
             self.response = self.responseType(**data["response"])
         return data
 
@@ -69,6 +70,7 @@ class OpenAIAgent(Agent):
     def set_response(self, completion):
         self.completion = completion
         self.response = completion.choices[0].message.parsed
+        return self.response
 
     def _call_openai(self, messages):
         self.messages = messages
@@ -78,10 +80,15 @@ class OpenAIAgent(Agent):
             messages=messages,
             response_format=self.responseType,
         )
-        self.set_response(completion)
+        res = self.set_response(completion)
         if self.ctx.trace:
             self.save_log()
-        return completion
+        return res
+
+    # input {a: b, c: d}
+    # output "<a>b</a>\n<c>d</c>"
+    def content_template(self, **kwargs):
+        return "\n".join([f"<{k}>{v}</{k}>" for k, v in kwargs.items()])
 
     def dump(self):
         if self.responseType is None:

@@ -5,26 +5,27 @@ from pydantic import BaseModel, Field
 
 from fleet.agents.base.base import Agent, OpenAIAgent
 
-SYSTEM_PROMPT = """You are an AI helper with the job of finding important code in a big program based on a problem report. 
-Your task is to find the right pieces of files name in the search results.
+SYSTEM_PROMPT = """You are an autonomous AI assistant tasked with finding relevant code in an existing codebase based on a reported issue. 
+Your task is to find the relative files in the keyword_search_results.
 
 # What You Get:
 
 * <issue>: Has the problem report.
-* <keysearch_results>: Has search results for keywords and their matching files.
+* <keyword_search_results>: search results for keywords, and their matching files.
 
 # What You Do:
 
 1. Read the Problem:
-Look carefully at the problem report in the <issue> tag.
+Carefully read the reported issue within the <issue> tag.
 
 2. Look at Keyword Search Results:
 2.1. Think about each keyword and its matching files in the <keyword_search_results> tag.
 2.2. Consider if these files are related to the reported problem.
 2.3. Be aware that some unrelated files and keywords may also be in the keyword_search_results. Carefully check each one.
+2.4. The issues will not be complex, meaning the related files and content will not be extensive.  
 
 3. Answer Using the Function:
-give some files that you think are related to the problem report. Sort them by how relevant you think they are.
+give some file paths that you think are related to the problem report. Sort them by how relevant you think they are.
 limit the number of files to 6 or less.
 
 
@@ -34,23 +35,31 @@ Think step by step and write down your thoughts in the scratch_pad field.
 
 class FilesFilterRes(BaseModel):
     scratch_pad: str = Field(description="Your thoughts on how to identify the relevant code and why.")
-    files: List[str] = Field(description="List of files to relate to the issue. sorted by relevance. max: 6 files.")
+    file_paths: List[str] = Field(description="List of file paths to relate to the issue. sorted by relevance. max: 6 paths.")
+
+
+class FilesFilterReq(BaseModel):
+    keyword_search_results: dict
 
 
 class FilesFilter(OpenAIAgent):
     name = "FilesFilter"
     response: Optional[FilesFilterRes]
+    requestType = FilesFilterReq
     responseType = FilesFilterRes
 
-    def __init__(self, ctx, search_results):
+    def __init__(self, ctx, req: FilesFilterReq):
         super().__init__(ctx=ctx)
-        self.search_results = search_results
+        self.request = req
 
     def create_messages(self):
         return [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user",
-             "content": f"<issue>{self.ctx.issue}</issue>\n<keyword_search_results>\n{json.dumps(self.search_results)}</keyword_search_results>"},
+             "content": self.content_template(
+                 issue=self.ctx.issue,
+                 keyword_search_results=self.request.keyword_search_results
+             )},
         ]
 
     def run(self):
