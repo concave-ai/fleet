@@ -12,6 +12,7 @@ pyarrow = "*"
 huggingface-hub = "*"
 datasets = "*"
 concave = "*"
+litellm = "*"
 
 [dev-packages]
 

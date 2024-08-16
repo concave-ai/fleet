@@ -46,8 +46,7 @@ class FilesKeywordSearch(Agent):
         rows = str_to_jsonl(out)
 
         self.response = FilesKeywordSearchRes(results=self.parse(rows))
-        if self.ctx.trace:
-            self.save_log()
+        self.after_run()
         return self.response
 
     def parse(self, rows):

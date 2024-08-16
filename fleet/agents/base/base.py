@@ -9,6 +9,11 @@ from openai.types.chat import ParsedChatCompletion
 from fleet.agents.base.state import State
 from fleet.context import Context
 
+# gpt-4o-2024-08-06  $2.50 / 1M input tokens
+MODAL_PRICE_PER_TOKEN = {
+    "gpt-4o-2024-08-06": 2.5/1e6,
+    "gpt-4o-mini": 0.15/1e6
+}
 
 class Agent:
     request = None
@@ -19,10 +24,12 @@ class Agent:
     def __init__(self, ctx: Context):
         self._response = None
         self.ctx = ctx
+        self.metadata = {
+        }
 
     def save_log(self):
         d = datetime.datetime.now()
-        logs_path = os.path.abspath(f"{self.ctx.work_dir}/logs/{self.ctx.task_id}/{self.name}")
+        logs_path = os.path.abspath(f"{self.ctx.work_dir}/logs/{self.ctx.task_id}/agents/{self.name}")
         if not os.path.exists(logs_path):
             os.makedirs(logs_path)
         path = f"{logs_path}/{d.isoformat()}.json"
@@ -34,15 +41,21 @@ class Agent:
         return {
             "name": self.name,
             "model": self.ctx.model,
+            "metadata": self.metadata,
             "issue": self.ctx.issue,
             "request": self.request.model_dump(),
             "response": self.response.model_dump()
         }
 
+    def after_run(self):
+        if self.ctx.trace:
+            self.save_log()
+
     def load(self, path):
         with open(path, "r") as f:
             data = json.load(f)
             self.name = data["name"]
+            self.metadata = data["metadata"]
             self.ctx.model = data["model"]
             self.ctx.issue = data["issue"]
             self.request = self.responseType(**data["request"])
@@ -57,6 +70,7 @@ class Agent:
 
 class OpenAIAgent(Agent):
     responseType = None
+
     def __init__(self, ctx: Context):
         super().__init__(ctx)
         self.messages = []
@@ -81,8 +95,9 @@ class OpenAIAgent(Agent):
             response_format=self.responseType,
         )
         res = self.set_response(completion)
-        if self.ctx.trace:
-            self.save_log()
+        self.after_run()
+        self.metadata["token_count"] = completion.usage.total_tokens
+        self.metadata["cost"] =completion.usage.total_tokens * MODAL_PRICE_PER_TOKEN[self.ctx.model]
         return res
 
     # input {a: b, c: d}
@@ -98,4 +113,6 @@ class OpenAIAgent(Agent):
         base["messages"] = self.messages
         base["completion"] = self.completion.model_dump()
         base["response"] = self.response.model_dump()
+        base["metadata"]["token_count"] = self.metadata.get("token_count", 0)
+        base["metadata"]["cost"] = self.metadata.get("price", 0)
         return base

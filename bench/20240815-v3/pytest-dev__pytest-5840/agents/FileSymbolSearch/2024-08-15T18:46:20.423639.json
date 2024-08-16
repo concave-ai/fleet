@@ -1,0 +1,150 @@
+{
+  "name": "FileSymbolSearch",
+  "model": "gpt-4o-mini",
+  "metadata": {},
+  "issue": "<description>:5.1.2 ImportError while loading conftest (windows import folder casing issues)\n5.1.1 works fine. after upgrade to 5.1.2, the path was converted to lower case\r\n```\r\nInstalling collected packages: pytest\r\n  Found existing installation: pytest 5.1.1\r\n    Uninstalling pytest-5.1.1:\r\n      Successfully uninstalled pytest-5.1.1\r\nSuccessfully installed pytest-5.1.2\r\nPS C:\\Azure\\KMS\\ComponentTest\\Python> pytest --collect-only .\\PIsys -m smoke\r\nImportError while loading conftest 'c:\\azure\\kms\\componenttest\\python\\pisys\\conftest.py'.\r\nModuleNotFoundError: No module named 'python'\r\nPS C:\\Azure\\KMS\\ComponentTest\\Python>\r\n```\r\n\r\n\n</description>",
+  "request": {
+    "files": [
+      {
+        "file_path": "src/_pytest/outcomes.py",
+        "relevant_symbol_keys": [
+          "OutcomeException#",
+          "Skipped#",
+          "importorskip()",
+          "fail()",
+          "exit()",
+          "xfailed()"
+        ],
+        "root_cause_symbol_keys": []
+      },
+      {
+        "file_path": "src/_pytest/hookspec.py",
+        "relevant_symbol_keys": [
+          "pytest_load_initial_conftests()",
+          "pytest_addoption()",
+          "pytest_configure()",
+          "pytest_plugin_registered()"
+        ],
+        "root_cause_symbol_keys": []
+      },
+      {
+        "file_path": "src/_pytest/python.py",
+        "relevant_symbol_keys": [
+          "pytest_collect_file()",
+          "pytest_pycollect_makeitem()",
+          "pytest_pycollect_makemodule()",
+          "path_matches_patterns()",
+          "pytest_configure()",
+          "pytest_addoption()"
+        ],
+        "root_cause_symbol_keys": []
+      },
+      {
+        "file_path": "src/_pytest/pytester.py",
+        "relevant_symbol_keys": [],
+        "root_cause_symbol_keys": []
+      }
+    ],
+    "with_content": true
+  },
+  "response": {
+    "related_symbols": [
+      {
+        "name": "OutcomeException#",
+        "file_path": "src/_pytest/outcomes.py",
+        "file_content": "class OutcomeException(BaseException):\n    \"\"\" OutcomeException and its subclass instances indicate and\n        contain info about test and collection outcomes.\n    \"\"\"\n\n    def __init__(self, msg: Optional[str] = None, pytrace: bool = True) -> None:\n        if msg is not None and not isinstance(msg, str):\n            error_msg = (\n                \"{} expected string as 'msg' parameter, got '{}' instead.\\n\"\n                \"Perhaps you meant to use a mark?\"\n            )\n            raise TypeError(error_msg.format(type(self).__name__, type(msg).__name__))\n        BaseException.__init__(self, msg)\n        self.msg = msg\n        self.pytrace = pytrace\n\n    def __repr__(self) -> str:\n        if self.msg:\n            return self.msg\n        return \"<{} instance>\".format(self.__class__.__name__)\n"
+      },
+      {
+        "name": "OutcomeException#__init__().",
+        "file_path": "src/_pytest/outcomes.py",
+        "file_content": "    def __init__(self, msg: Optional[str] = None, pytrace: bool = True) -> None:\n        if msg is not None and not isinstance(msg, str):\n            error_msg = (\n                \"{} expected string as 'msg' parameter, got '{}' instead.\\n\"\n                \"Perhaps you meant to use a mark?\"\n            )\n            raise TypeError(error_msg.format(type(self).__name__, type(msg).__name__))\n        BaseException.__init__(self, msg)\n        self.msg = msg"
+      },
+      {
+        "name": "OutcomeException#__repr__().",
+        "file_path": "src/_pytest/outcomes.py",
+        "file_content": "    def __repr__(self) -> str:\n        if self.msg:\n            return self.msg"
+      },
+      {
+        "name": "Skipped#",
+        "file_path": "src/_pytest/outcomes.py",
+        "file_content": "class Skipped(OutcomeException):\n    # XXX hackish: on 3k we fake to live in the builtins\n    # in order to have Skipped exception printing shorter/nicer\n    __module__ = \"builtins\"\n\n    def __init__(\n        self,\n        msg: Optional[str] = None,\n        pytrace: bool = True,\n        allow_module_level: bool = False,\n    ) -> None:\n        OutcomeException.__init__(self, msg=msg, pytrace=pytrace)"
+      },
+      {
+        "name": "Skipped#__init__().",
+        "file_path": "src/_pytest/outcomes.py",
+        "file_content": "    def __init__(\n        self,\n        msg: Optional[str] = None,\n        pytrace: bool = True,\n        allow_module_level: bool = False,\n    ) -> None:\n        OutcomeException.__init__(self, msg=msg, pytrace=pytrace)"
+      },
+      {
+        "name": "exit().",
+        "file_path": "src/_pytest/outcomes.py",
+        "file_content": "def exit(msg: str, returncode: Optional[int] = None) -> \"NoReturn\":\n    \"\"\"\n    Exit testing process.\n\n    :param str msg: message to display upon exit.\n    :param int returncode: return code to be used when exiting pytest.\n    \"\"\"\n    __tracebackhide__ = True"
+      },
+      {
+        "name": "fail().",
+        "file_path": "src/_pytest/outcomes.py",
+        "file_content": "def fail(msg: str = \"\", pytrace: bool = True) -> \"NoReturn\":\n    \"\"\"\n    Explicitly fail an executing test with the given message.\n\n    :param str msg: the message to show the user as reason for the failure.\n    :param bool pytrace: if false the msg represents the full failure information and no\n        python traceback will be reported.\n    \"\"\"\n    __tracebackhide__ = True"
+      },
+      {
+        "name": "xfail().",
+        "file_path": "src/_pytest/outcomes.py",
+        "file_content": "def xfail(reason: str = \"\") -> \"NoReturn\":\n    \"\"\"\n    Imperatively xfail an executing test or setup functions with the given reason.\n\n    This function should be called only during testing (setup, call or teardown).\n\n    .. note::\n        It is better to use the :ref:`pytest.mark.xfail ref` marker when possible to declare a test to be\n        xfailed under certain conditions like known bugs or missing features.\n    \"\"\"\n    __tracebackhide__ = True"
+      },
+      {
+        "name": "importorskip().",
+        "file_path": "src/_pytest/outcomes.py",
+        "file_content": "def importorskip(\n    modname: str, minversion: Optional[str] = None, reason: Optional[str] = None\n) -> Any:\n    \"\"\"Imports and returns the requested module ``modname``, or skip the\n    current test if the module cannot be imported.\n\n    :param str modname: the name of the module to import\n    :param str minversion: if given, the imported module's ``__version__``\n        attribute must be at least this minimal version, otherwise the test is\n        still skipped.\n    :param str reason: if given, this reason is shown as the message when the\n        module cannot be imported.\n    :returns: The imported module. This should be assigned to its canonical\n        name.\n\n    Example::\n\n        docutils = pytest.importorskip(\"docutils\")\n    \"\"\"\n    import warnings\n\n    __tracebackhide__ = True\n    compile(modname, \"\", \"eval\")  # to catch syntaxerrors\n\n    with warnings.catch_warnings():\n        # make sure to ignore ImportWarnings that might happen because\n        # of existing directories with the same name we're trying to\n        # import but without a __init__.py file\n        warnings.simplefilter(\"ignore\")\n        try:\n            __import__(modname)\n        except ImportError as exc:\n            if reason is None:\n                reason = \"could not import {!r}: {}\".format(modname, exc)\n            raise Skipped(reason, allow_module_level=True) from None\n    mod = sys.modules[modname]\n    if minversion is None:\n        return mod\n    verattr = getattr(mod, \"__version__\", None)\n    if minversion is not None:\n        if verattr is None or Version(verattr) < Version(minversion):\n            raise Skipped(\n                \"module %r has __version__ %r, required is: %r\"\n                % (modname, verattr, minversion),\n                allow_module_level=True,\n            )"
+      },
+      {
+        "name": "pytest_plugin_registered().",
+        "file_path": "src/_pytest/hookspec.py",
+        "file_content": "@hookspec(historic=True)\ndef pytest_plugin_registered(plugin, manager):\n    \"\"\" a new pytest plugin got registered.\n\n    :param plugin: the plugin module or instance\n    :param _pytest.config.PytestPluginManager manager: pytest plugin manager\n\n    .. note::\n        This hook is incompatible with ``hookwrapper=True``."
+      },
+      {
+        "name": "pytest_addoption().",
+        "file_path": "src/_pytest/hookspec.py",
+        "file_content": "@hookspec(historic=True)\ndef pytest_addoption(parser):\n    \"\"\"register argparse-style options and ini-style config values,\n    called once at the beginning of a test run.\n\n    .. note::\n\n        This function should be implemented only in plugins or ``conftest.py``\n        files situated at the tests root directory due to how pytest\n        :ref:`discovers plugins during startup <pluginorder>`.\n\n    :arg _pytest.config.Parser parser: To add command line options, call\n        :py:func:`parser.addoption(...) <_pytest.config.Parser.addoption>`.\n        To add ini-file values call :py:func:`parser.addini(...)\n        <_pytest.config.Parser.addini>`.\n\n    Options can later be accessed through the\n    :py:class:`config <_pytest.config.Config>` object, respectively:\n\n    - :py:func:`config.getoption(name) <_pytest.config.Config.getoption>` to\n      retrieve the value of a command line option.\n\n    - :py:func:`config.getini(name) <_pytest.config.Config.getini>` to retrieve\n      a value read from an ini-style file.\n\n    The config object is passed around on many internal objects via the ``.config``\n    attribute or can be retrieved as the ``pytestconfig`` fixture.\n\n    .. note::\n        This hook is incompatible with ``hookwrapper=True``."
+      },
+      {
+        "name": "pytest_configure().",
+        "file_path": "src/_pytest/hookspec.py",
+        "file_content": "@hookspec(historic=True)\ndef pytest_configure(config):\n    \"\"\"\n    Allows plugins and conftest files to perform initial configuration.\n\n    This hook is called for every plugin and initial conftest file\n    after command line options have been parsed.\n\n    After that, the hook is called for other conftest files as they are\n    imported.\n\n    .. note::\n        This hook is incompatible with ``hookwrapper=True``.\n\n    :arg _pytest.config.Config config: pytest config object"
+      },
+      {
+        "name": "pytest_load_initial_conftests().",
+        "file_path": "src/_pytest/hookspec.py",
+        "file_content": "def pytest_load_initial_conftests(early_config, parser, args):\n    \"\"\" implements the loading of initial conftest files ahead\n    of command line option parsing.\n\n    .. note::\n        This hook will not be called for ``conftest.py`` files, only for setuptools plugins.\n\n    :param _pytest.config.Config early_config: pytest config object\n    :param list[str] args: list of arguments passed on the command line\n    :param _pytest.config.Parser parser: to add command line options"
+      },
+      {
+        "name": "pytest_addoption().",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "def pytest_addoption(parser):\n    group = parser.getgroup(\"general\")\n    group.addoption(\n        \"--fixtures\",\n        \"--funcargs\",\n        action=\"store_true\",\n        dest=\"showfixtures\",\n        default=False,\n        help=\"show available fixtures, sorted by plugin appearance \"\n        \"(fixtures with leading '_' are only shown with '-v')\",\n    )\n    group.addoption(\n        \"--fixtures-per-test\",\n        action=\"store_true\",\n        dest=\"show_fixtures_per_test\",\n        default=False,\n        help=\"show fixtures per test\",\n    )\n    parser.addini(\n        \"python_files\",\n        type=\"args\",\n        # NOTE: default is also used in AssertionRewritingHook.\n        default=[\"test_*.py\", \"*_test.py\"],\n        help=\"glob-style file patterns for Python test module discovery\",\n    )\n    parser.addini(\n        \"python_classes\",\n        type=\"args\",\n        default=[\"Test\"],\n        help=\"prefixes or glob names for Python test class discovery\",\n    )\n    parser.addini(\n        \"python_functions\",\n        type=\"args\",\n        default=[\"test\"],\n        help=\"prefixes or glob names for Python test function and method discovery\",\n    )\n    parser.addini(\n        \"disable_test_id_escaping_and_forfeit_all_rights_to_community_support\",\n        type=\"bool\",\n        default=False,\n        help=\"disable string escape non-ascii characters, might cause unwanted \"\n        \"side effects(use at your own risk)\",\n    )\n\n    group.addoption(\n        \"--import-mode\",\n        default=\"prepend\",\n        choices=[\"prepend\", \"append\"],\n        dest=\"importmode\",\n        help=\"prepend/append to sys.path when importing test modules, \"\n        \"default is to prepend.\","
+      },
+      {
+        "name": "pytest_configure().",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "def pytest_configure(config):\n    config.addinivalue_line(\n        \"markers\",\n        \"parametrize(argnames, argvalues): call a test function multiple \"\n        \"times passing in different arguments in turn. argvalues generally \"\n        \"needs to be a list of values if argnames specifies only one name \"\n        \"or a list of tuples of values if argnames specifies multiple names. \"\n        \"Example: @parametrize('arg1', [1,2]) would lead to two calls of the \"\n        \"decorated test function, one with arg1=1 and another with arg1=2.\"\n        \"see https://docs.pytest.org/en/latest/parametrize.html for more info \"\n        \"and examples.\",\n    )\n    config.addinivalue_line(\n        \"markers\",\n        \"usefixtures(fixturename1, fixturename2, ...): mark tests as needing \"\n        \"all of the specified fixtures. see \"\n        \"https://docs.pytest.org/en/latest/fixture.html#usefixtures \","
+      },
+      {
+        "name": "pytest_collect_file().",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "def pytest_collect_file(path, parent):\n    ext = path.ext\n    if ext == \".py\":\n        if not parent.session.isinitpath(path):\n            if not path_matches_patterns(\n                path, parent.config.getini(\"python_files\") + [\"__init__.py\"]\n            ):\n                return\n        ihook = parent.session.gethookproxy(path)"
+      },
+      {
+        "name": "path_matches_patterns().",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "def path_matches_patterns(path, patterns):\n    \"\"\"Returns True if the given py.path.local matches one of the patterns in the list of globs given\"\"\""
+      },
+      {
+        "name": "pytest_pycollect_makemodule().",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "def pytest_pycollect_makemodule(path, parent):\n    if path.basename == \"__init__.py\":\n        return Package(path, parent)"
+      },
+      {
+        "name": "pytest_pycollect_makeitem().",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "@hookimpl(hookwrapper=True)\ndef pytest_pycollect_makeitem(collector, name, obj):\n    outcome = yield\n    res = outcome.get_result()\n    if res is not None:\n        return\n    # nothing was collected elsewhere, let's do it here\n    if safe_isclass(obj):\n        if collector.istestclass(obj, name):\n            outcome.force_result(Class(name, parent=collector))\n    elif collector.istestfunction(obj, name):\n        # mock seems to store unbound methods (issue473), normalize it\n        obj = getattr(obj, \"__func__\", obj)\n        # We need to try and unwrap the function if it's a functools.partial\n        # or a funtools.wrapped.\n        # We musn't if it's been wrapped with mock.patch (python 2 only)\n        if not (inspect.isfunction(obj) or inspect.isfunction(get_real_func(obj))):\n            filename, lineno = getfslineno(obj)\n            warnings.warn_explicit(\n                message=PytestCollectionWarning(\n                    \"cannot collect %r because it is not a function.\" % name\n                ),\n                category=None,\n                filename=str(filename),\n                lineno=lineno + 1,\n            )\n        elif getattr(obj, \"__test__\", True):\n            if is_generator(obj):\n                res = Function(name, parent=collector)\n                reason = \"yield tests were removed in pytest 4.0 - {name} will be ignored\".format(\n                    name=name\n                )\n                res.add_marker(MARK_GEN.xfail(run=False, reason=reason))\n                res.warn(PytestCollectionWarning(reason))\n            else:\n                res = list(collector._genfunctions(name, obj))"
+      }
+    ],
+    "root_caused_symbols": []
+  }
+}

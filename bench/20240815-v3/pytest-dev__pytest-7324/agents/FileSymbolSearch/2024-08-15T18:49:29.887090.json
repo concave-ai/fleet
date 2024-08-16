@@ -1,0 +1,141 @@
+{
+  "name": "FileSymbolSearch",
+  "model": "gpt-4o-mini",
+  "metadata": {},
+  "issue": "<description>:Pytest crashes the interpreter on debug build for 3.8+\nShort reproducer\r\n```py\r\n>>> Expression.compile(\"False\")\r\npython: Python/compile.c:3559: compiler_nameop: Assertion `!_PyUnicode_EqualToASCIIString(name, \"None\") && !_PyUnicode_EqualToASCIIString(name, \"True\") && !_PyUnicode_EqualToASCIIString(name, \"False\")' failed.\r\n[1]    29440 abort (core dumped)  python\r\n```\r\n\r\nRelated issue for improvement of this behavior: [bpo-40870](https://bugs.python.org/issue40870)\n</description>",
+  "request": {
+    "files": [
+      {
+        "file_path": "src/_pytest/mark/expression.py",
+        "relevant_symbol_keys": [
+          "Expression#compile()",
+          "expression()",
+          "evaluate()",
+          "Tokenizer#lex()",
+          "ParseError#",
+          "Scanner#accept()"
+        ],
+        "root_cause_symbol_keys": [
+          "Expression#compile()",
+          "expression()",
+          "evaluate()",
+          "Scanner#lex()",
+          "ParseError#"
+        ]
+      },
+      {
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "relevant_symbol_keys": [
+          "AssertionRewriter#visit_Assert()",
+          "rewrite_asserts()",
+          "_rewrite_test()"
+        ],
+        "root_cause_symbol_keys": [
+          "_write_pyc()",
+          "_read_pyc()",
+          "_format_explanation()",
+          "_call_reprcompare()",
+          "try_makedirs()",
+          "get_cache_dir()"
+        ]
+      },
+      {
+        "file_path": "src/_pytest/python.py",
+        "relevant_symbol_keys": [],
+        "root_cause_symbol_keys": []
+      },
+      {
+        "file_path": "src/_pytest/debugging.py",
+        "relevant_symbol_keys": [],
+        "root_cause_symbol_keys": []
+      }
+    ],
+    "with_content": true
+  },
+  "response": {
+    "related_symbols": [
+      {
+        "name": "Scanner#accept().",
+        "file_path": "src/_pytest/mark/expression.py",
+        "file_content": "    def accept(self, type: TokenType, *, reject: bool = False) -> Optional[Token]:\n        if self.current.type is type:\n            token = self.current\n            if token.type is not TokenType.EOF:\n                self.current = next(self.tokens)\n            return token\n        if reject:\n            self.reject((type,))"
+      },
+      {
+        "name": "_rewrite_test().",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def _rewrite_test(fn: Path, config: Config) -> Tuple[os.stat_result, types.CodeType]:\n    \"\"\"read and rewrite *fn* and return the code object.\"\"\"\n    fn_ = fspath(fn)\n    stat = os.stat(fn_)\n    with open(fn_, \"rb\") as f:\n        source = f.read()\n    tree = ast.parse(source, filename=fn_)\n    rewrite_asserts(tree, source, fn_, config)\n    co = compile(tree, fn_, \"exec\", dont_inherit=True)"
+      },
+      {
+        "name": "rewrite_asserts().",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def rewrite_asserts(\n    mod: ast.Module,\n    source: bytes,\n    module_path: Optional[str] = None,\n    config: Optional[Config] = None,\n) -> None:\n    \"\"\"Rewrite the assert statements in mod.\"\"\""
+      },
+      {
+        "name": "AssertionRewriter#visit_Assert().",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "    def visit_Assert(self, assert_: ast.Assert) -> List[ast.stmt]:\n        \"\"\"Return the AST statements to replace the ast.Assert instance.\n\n        This rewrites the test of an assertion to provide\n        intermediate values and replace it with an if statement which\n        raises an assertion error with a detailed explanation in case\n        the expression is false.\n\n        \"\"\"\n        if isinstance(assert_.test, ast.Tuple) and len(assert_.test.elts) >= 1:\n            from _pytest.warning_types import PytestAssertRewriteWarning\n            import warnings\n\n            # TODO: This assert should not be needed.\n            assert self.module_path is not None\n            warnings.warn_explicit(\n                PytestAssertRewriteWarning(\n                    \"assertion is always true, perhaps remove parentheses?\"\n                ),\n                category=None,\n                filename=fspath(self.module_path),\n                lineno=assert_.lineno,\n            )\n\n        self.statements = []  # type: List[ast.stmt]\n        self.variables = []  # type: List[str]\n        self.variable_counter = itertools.count()\n\n        if self.enable_assertion_pass_hook:\n            self.format_variables = []  # type: List[str]\n\n        self.stack = []  # type: List[Dict[str, ast.expr]]\n        self.expl_stmts = []  # type: List[ast.stmt]\n        self.push_format_context()\n        # Rewrite assert into a bunch of statements.\n        top_condition, explanation = self.visit(assert_.test)\n\n        negation = ast.UnaryOp(ast.Not(), top_condition)\n\n        if self.enable_assertion_pass_hook:  # Experimental pytest_assertion_pass hook\n            msg = self.pop_format_context(ast.Str(explanation))\n\n            # Failed\n            if assert_.msg:\n                assertmsg = self.helper(\"_format_assertmsg\", assert_.msg)\n                gluestr = \"\\n>assert \"\n            else:\n                assertmsg = ast.Str(\"\")\n                gluestr = \"assert \"\n            err_explanation = ast.BinOp(ast.Str(gluestr), ast.Add(), msg)\n            err_msg = ast.BinOp(assertmsg, ast.Add(), err_explanation)\n            err_name = ast.Name(\"AssertionError\", ast.Load())\n            fmt = self.helper(\"_format_explanation\", err_msg)\n            exc = ast.Call(err_name, [fmt], [])\n            raise_ = ast.Raise(exc, None)\n            statements_fail = []\n            statements_fail.extend(self.expl_stmts)\n            statements_fail.append(raise_)\n\n            # Passed\n            fmt_pass = self.helper(\"_format_explanation\", msg)\n            orig = self._assert_expr_to_lineno()[assert_.lineno]\n            hook_call_pass = ast.Expr(\n                self.helper(\n                    \"_call_assertion_pass\",\n                    ast.Num(assert_.lineno),\n                    ast.Str(orig),\n                    fmt_pass,\n                )\n            )\n            # If any hooks implement assert_pass hook\n            hook_impl_test = ast.If(\n                self.helper(\"_check_if_assertion_pass_impl\"),\n                self.expl_stmts + [hook_call_pass],\n                [],\n            )\n            statements_pass = [hook_impl_test]\n\n            # Test for assertion condition\n            main_test = ast.If(negation, statements_fail, statements_pass)\n            self.statements.append(main_test)\n            if self.format_variables:\n                variables = [\n                    ast.Name(name, ast.Store()) for name in self.format_variables\n                ]\n                clear_format = ast.Assign(variables, ast.NameConstant(None))\n                self.statements.append(clear_format)\n\n        else:  # Original assertion rewriting\n            # Create failure message.\n            body = self.expl_stmts\n            self.statements.append(ast.If(negation, body, []))\n            if assert_.msg:\n                assertmsg = self.helper(\"_format_assertmsg\", assert_.msg)\n                explanation = \"\\n>assert \" + explanation\n            else:\n                assertmsg = ast.Str(\"\")\n                explanation = \"assert \" + explanation\n            template = ast.BinOp(assertmsg, ast.Add(), ast.Str(explanation))\n            msg = self.pop_format_context(template)\n            fmt = self.helper(\"_format_explanation\", msg)\n            err_name = ast.Name(\"AssertionError\", ast.Load())\n            exc = ast.Call(err_name, [fmt], [])\n            raise_ = ast.Raise(exc, None)\n\n            body.append(raise_)\n\n        # Clear temporary variables by setting them to None.\n        if self.variables:\n            variables = [ast.Name(name, ast.Store()) for name in self.variables]\n            clear = ast.Assign(variables, ast.NameConstant(None))\n            self.statements.append(clear)\n        # Fix line numbers.\n        for stmt in self.statements:\n            set_location(stmt, assert_.lineno, assert_.col_offset)"
+      }
+    ],
+    "root_caused_symbols": [
+      {
+        "name": "ParseError#",
+        "file_path": "src/_pytest/mark/expression.py",
+        "file_content": "class ParseError(Exception):\n    \"\"\"The expression contains invalid syntax.\n\n    :param column: The column in the line where the error occurred (1-based).\n    :param message: A description of the error.\n    \"\"\"\n\n    def __init__(self, column: int, message: str) -> None:\n        self.column = column\n        self.message = message\n\n    def __str__(self) -> str:"
+      },
+      {
+        "name": "ParseError#__init__().",
+        "file_path": "src/_pytest/mark/expression.py",
+        "file_content": "    def __init__(self, column: int, message: str) -> None:\n        self.column = column"
+      },
+      {
+        "name": "ParseError#__str__().",
+        "file_path": "src/_pytest/mark/expression.py",
+        "file_content": "    def __str__(self) -> str:"
+      },
+      {
+        "name": "Scanner#lex().",
+        "file_path": "src/_pytest/mark/expression.py",
+        "file_content": "    def lex(self, input: str) -> Iterator[Token]:\n        pos = 0\n        while pos < len(input):\n            if input[pos] in (\" \", \"\\t\"):\n                pos += 1\n            elif input[pos] == \"(\":\n                yield Token(TokenType.LPAREN, \"(\", pos)\n                pos += 1\n            elif input[pos] == \")\":\n                yield Token(TokenType.RPAREN, \")\", pos)\n                pos += 1\n            else:\n                match = re.match(r\"(:?\\w|:|\\+|-|\\.|\\[|\\])+\", input[pos:])\n                if match:\n                    value = match.group(0)\n                    if value == \"or\":\n                        yield Token(TokenType.OR, value, pos)\n                    elif value == \"and\":\n                        yield Token(TokenType.AND, value, pos)\n                    elif value == \"not\":\n                        yield Token(TokenType.NOT, value, pos)\n                    else:\n                        yield Token(TokenType.IDENT, value, pos)\n                    pos += len(value)\n                else:\n                    raise ParseError(\n                        pos + 1, 'unexpected character \"{}\"'.format(input[pos]),\n                    )"
+      },
+      {
+        "name": "expression().",
+        "file_path": "src/_pytest/mark/expression.py",
+        "file_content": "def expression(s: Scanner) -> ast.Expression:\n    if s.accept(TokenType.EOF):\n        ret = ast.NameConstant(False)  # type: ast.expr\n    else:\n        ret = expr(s)\n        s.accept(TokenType.EOF, reject=True)"
+      },
+      {
+        "name": "Expression#compile().",
+        "file_path": "src/_pytest/mark/expression.py",
+        "file_content": "    @classmethod\n    def compile(self, input: str) -> \"Expression\":\n        \"\"\"Compile a match expression.\n\n        :param input: The input expression - one line.\n        \"\"\"\n        astexpr = expression(Scanner(input))\n        code = compile(\n            astexpr, filename=\"<pytest match expression>\", mode=\"eval\",\n        )  # type: types.CodeType"
+      },
+      {
+        "name": "Expression#evaluate().",
+        "file_path": "src/_pytest/mark/expression.py",
+        "file_content": "    def evaluate(self, matcher: Callable[[str], bool]) -> bool:\n        \"\"\"Evaluate the match expression.\n\n        :param matcher: Given an identifier, should return whether it matches or not.\n                        Should be prepared to handle arbitrary strings as input.\n\n        Returns whether the expression matches or not.\n        \"\"\"\n        ret = eval(\n            self.code, {\"__builtins__\": {}}, MatcherAdapter(matcher)\n        )  # type: bool"
+      },
+      {
+        "name": "_write_pyc().",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "    def _write_pyc(\n        state: \"AssertionState\",\n        co: types.CodeType,\n        source_stat: os.stat_result,\n        pyc: Path,\n    ) -> bool:\n        try:\n            with atomic_write(fspath(pyc), mode=\"wb\", overwrite=True) as fp:\n                _write_pyc_fp(fp, source_stat, co)\n        except OSError as e:\n            state.trace(\"error writing pyc file at {}: {}\".format(pyc, e))\n            # we ignore any failure to write the cache file\n            # there are many reasons, permission-denied, pycache dir being a\n            # file etc.\n            return False"
+      },
+      {
+        "name": "_read_pyc().",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def _read_pyc(\n    source: Path, pyc: Path, trace: Callable[[str], None] = lambda x: None\n) -> Optional[types.CodeType]:\n    \"\"\"Possibly read a pytest pyc containing rewritten code.\n\n    Return rewritten code if successful or None if not.\n    \"\"\"\n    try:\n        fp = open(fspath(pyc), \"rb\")\n    except OSError:\n        return None\n    with fp:\n        try:\n            stat_result = os.stat(fspath(source))\n            mtime = int(stat_result.st_mtime)\n            size = stat_result.st_size\n            data = fp.read(12)\n        except OSError as e:\n            trace(\"_read_pyc({}): OSError {}\".format(source, e))\n            return None\n        # Check for invalid or out of date pyc file.\n        if (\n            len(data) != 12\n            or data[:4] != importlib.util.MAGIC_NUMBER\n            or struct.unpack(\"<LL\", data[4:]) != (mtime & 0xFFFFFFFF, size & 0xFFFFFFFF)\n        ):\n            trace(\"_read_pyc(%s): invalid or out of date pyc\" % source)\n            return None\n        try:\n            co = marshal.load(fp)\n        except Exception as e:\n            trace(\"_read_pyc({}): marshal.load error {}\".format(source, e))\n            return None\n        if not isinstance(co, types.CodeType):\n            trace(\"_read_pyc(%s): not a code object\" % source)\n            return None"
+      },
+      {
+        "name": "_call_reprcompare().",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def _call_reprcompare(\n    ops: Sequence[str],\n    results: Sequence[bool],\n    expls: Sequence[str],\n    each_obj: Sequence[object],\n) -> str:\n    for i, res, expl in zip(range(len(ops)), results, expls):\n        try:\n            done = not res\n        except Exception:\n            done = True\n        if done:\n            break\n    if util._reprcompare is not None:\n        custom = util._reprcompare(ops[i], each_obj[i], each_obj[i + 1])\n        if custom is not None:\n            return custom"
+      },
+      {
+        "name": "try_makedirs().",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def try_makedirs(cache_dir: Path) -> bool:\n    \"\"\"Attempts to create the given directory and sub-directories exist, returns True if\n    successful or it already exists\"\"\"\n    try:\n        os.makedirs(fspath(cache_dir), exist_ok=True)\n    except (FileNotFoundError, NotADirectoryError, FileExistsError):\n        # One of the path components was not a directory:\n        # - we're in a zip file\n        # - it is a file\n        return False\n    except PermissionError:\n        return False\n    except OSError as e:\n        # as of now, EROFS doesn't have an equivalent OSError-subclass\n        if e.errno == errno.EROFS:\n            return False\n        raise"
+      },
+      {
+        "name": "get_cache_dir().",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def get_cache_dir(file_path: Path) -> Path:\n    \"\"\"Returns the cache directory to write .pyc files for the given .py file path\"\"\"\n    if sys.version_info >= (3, 8) and sys.pycache_prefix:\n        # given:\n        #   prefix = '/tmp/pycs'\n        #   path = '/home/user/proj/test_app.py'\n        # we want:\n        #   '/tmp/pycs/home/user/proj'\n        return Path(sys.pycache_prefix) / Path(*file_path.parts[1:-1])\n    else:\n        # classic pycache directory"
+      }
+    ]
+  }
+}

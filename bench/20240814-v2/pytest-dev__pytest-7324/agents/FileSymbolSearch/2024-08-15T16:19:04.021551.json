@@ -1,0 +1,105 @@
+{
+  "name": "FileSymbolSearch",
+  "model": "gpt-4o-2024-08-06",
+  "issue": "<description>:Pytest crashes the interpreter on debug build for 3.8+\nShort reproducer\r\n```py\r\n>>> Expression.compile(\"False\")\r\npython: Python/compile.c:3559: compiler_nameop: Assertion `!_PyUnicode_EqualToASCIIString(name, \"None\") && !_PyUnicode_EqualToASCIIString(name, \"True\") && !_PyUnicode_EqualToASCIIString(name, \"False\")' failed.\r\n[1]    29440 abort (core dumped)  python\r\n```\r\n\r\nRelated issue for improvement of this behavior: [bpo-40870](https://bugs.python.org/issue40870)\n</description>",
+  "request": {
+    "files": [
+      {
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "relevant_symbol_keys": [
+          "AssertionRewritingHook#",
+          "rewrite_asserts()",
+          "AssertionRewriter#",
+          "AssertionRewriter#run()",
+          "AssertionRewriter#visit_Assert()",
+          "AssertionRewriter#helper()",
+          "AssertionRewriter#is_rewrite_disabled()",
+          "AssertionRewriter#assign()",
+          "AssertionRewriter#display()",
+          "_write_pyc()"
+        ],
+        "root_cause_symbol_keys": []
+      },
+      {
+        "file_path": "src/_pytest/mark/expression.py",
+        "relevant_symbol_keys": [
+          "Expression#compile().",
+          "expression().",
+          "expr().",
+          "and_expr().",
+          "not_expr()."
+        ],
+        "root_cause_symbol_keys": [
+          "Expression#compile().",
+          "expression().",
+          "expr().",
+          "and_expr().",
+          "not_expr()."
+        ]
+      },
+      {
+        "file_path": "src/_pytest/_code/code.py",
+        "relevant_symbol_keys": [],
+        "root_cause_symbol_keys": []
+      },
+      {
+        "file_path": "src/_pytest/mark/__init__.py",
+        "relevant_symbol_keys": [
+          "deselect_by_keyword().",
+          "deselect_by_mark()."
+        ],
+        "root_cause_symbol_keys": []
+      }
+    ]
+  },
+  "response": {
+    "related_symbols": [
+      "AssertionRewritingHook#",
+      "AssertionRewritingHook#__init__().",
+      "AssertionRewritingHook#set_session().",
+      "AssertionRewritingHook#find_spec().",
+      "AssertionRewritingHook#create_module().",
+      "AssertionRewritingHook#exec_module().",
+      "AssertionRewritingHook#_early_rewrite_bailout().",
+      "AssertionRewritingHook#_should_rewrite().",
+      "AssertionRewritingHook#_is_marked_for_rewrite().",
+      "AssertionRewritingHook#mark_rewrite().",
+      "AssertionRewritingHook#_warn_already_imported().",
+      "AssertionRewritingHook#get_data().",
+      "_write_pyc().",
+      "rewrite_asserts().",
+      "AssertionRewriter#",
+      "AssertionRewriter#__init__().",
+      "AssertionRewriter#_assert_expr_to_lineno().",
+      "AssertionRewriter#run().",
+      "AssertionRewriter#is_rewrite_disabled().",
+      "AssertionRewriter#variable().",
+      "AssertionRewriter#assign().",
+      "AssertionRewriter#display().",
+      "AssertionRewriter#helper().",
+      "AssertionRewriter#builtin().",
+      "AssertionRewriter#explanation_param().",
+      "AssertionRewriter#push_format_context().",
+      "AssertionRewriter#pop_format_context().",
+      "AssertionRewriter#generic_visit().",
+      "AssertionRewriter#visit_Assert().",
+      "AssertionRewriter#visit_Name().",
+      "AssertionRewriter#visit_BoolOp().",
+      "AssertionRewriter#visit_UnaryOp().",
+      "AssertionRewriter#visit_BinOp().",
+      "AssertionRewriter#visit_Call().",
+      "AssertionRewriter#visit_Starred().",
+      "AssertionRewriter#visit_Attribute().",
+      "AssertionRewriter#visit_Compare().",
+      "deselect_by_keyword().",
+      "deselect_by_mark()."
+    ],
+    "root_caused_symbols": [
+      "expression().",
+      "expr().",
+      "and_expr().",
+      "not_expr().",
+      "Expression#compile()."
+    ]
+  }
+}

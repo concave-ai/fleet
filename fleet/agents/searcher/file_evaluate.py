@@ -29,6 +29,31 @@ Carefully read the reported issue within the <issue> tag.
 2.5. Verify if there are references to other parts of the codebase that might be relevant but not found in the search results. 
 2.6. Determine if the file is the root cause of the issue or if it's related to the root cause.
 
+3. Output Your Decision:
+symbol: symbol can be a function name or class name.
+
+class: python class, end with a hash "#"
+method: python method, end with three char "()."
+
+e.g. 
+# 1. bark() method of Dog class
+symbol: Dog#bark(). 
+# 2. Dog class
+symbol: Dog#
+# 3. def fly(item)
+symbol: fly().
+# 4. method eat(item, quantity):
+symbol: eat().
+# 5. method eat(item, quantity) in Cat class
+symbol: Cat#eat().
+# 6. method eat_fish(item, quantity) in method eat(item, quantity) in Cat class
+symbol: Cat#eat().eat_fish().
+# 6. method eat_fish(item, quantity) in method eat(item, quantity) in method action()
+symbol: action().eat().eat_fish().
+
+
+
+
 Think step by step and write out your thoughts in the scratch_pad field. 
 """
 
@@ -56,7 +81,7 @@ class FileEvaluateRes(BaseModel):
                     "limit 10 symbols."
     )
 
-    root_cause_symbol: list[str] = Field(
+    root_cause_symbols: list[str] = Field(
         description="If the file is root cause, suggest some symbol that caused the issue. "
                     "symbol can be a function name or class name. "
                     "this str list no size limit."
@@ -94,4 +119,4 @@ class FileEvaluate(OpenAIAgent):
         f = self.ctx.workspace.open(self.request.file_path)
         content = f.read()
         self.messages = self.create_messages(content)
-        self._call_openai(self.messages)
+        return self._call_openai(self.messages)

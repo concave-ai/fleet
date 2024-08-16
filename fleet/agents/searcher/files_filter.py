@@ -64,4 +64,4 @@ class FilesFilter(OpenAIAgent):
 
     def run(self):
         self.messages = self.create_messages()
-        self._call_openai(self.messages)
+        return self._call_openai(self.messages)

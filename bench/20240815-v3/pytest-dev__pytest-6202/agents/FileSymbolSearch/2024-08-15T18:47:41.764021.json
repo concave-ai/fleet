@@ -1,0 +1,106 @@
+{
+  "name": "FileSymbolSearch",
+  "model": "gpt-4o-mini",
+  "metadata": {},
+  "issue": "<description>:'.['  replaced with '[' in the headline shown of the test report\n```\r\nbug.py F                                                                 [100%]\r\n\r\n=================================== FAILURES ===================================\r\n_________________________________ test_boo[.[] _________________________________\r\n\r\na = '..['\r\n\r\n    @pytest.mark.parametrize(\"a\",[\"..[\"])\r\n    def test_boo(a):\r\n>       assert 0\r\nE       assert 0\r\n\r\nbug.py:6: AssertionError\r\n============================== 1 failed in 0.06s ===============================\r\n```\r\n\r\nThe `\"test_boo[..[]\"` replaced with `\"test_boo[.[]\"` in the headline shown with long report output.\r\n\r\n**The same problem also causing the vscode-python test discovery error.**\r\n\r\n## What causing the problem\r\n\r\nI trace back the source code.\r\n\r\n[https://github.com/pytest-dev/pytest/blob/92d6a0500b9f528a9adcd6bbcda46ebf9b6baf03/src/_pytest/reports.py#L129-L149](https://github.com/pytest-dev/pytest/blob/92d6a0500b9f528a9adcd6bbcda46ebf9b6baf03/src/_pytest/reports.py#L129-L149)\r\n\r\nThe headline comes from line 148.\r\n\r\n[https://github.com/pytest-dev/pytest/blob/92d6a0500b9f528a9adcd6bbcda46ebf9b6baf03/src/_pytest/nodes.py#L432-L441](https://github.com/pytest-dev/pytest/blob/92d6a0500b9f528a9adcd6bbcda46ebf9b6baf03/src/_pytest/nodes.py#L432-L441)\r\n\r\n`location` comes from line 437 `location = self.reportinfo()`\r\n\r\n[https://github.com/pytest-dev/pytest/blob/92d6a0500b9f528a9adcd6bbcda46ebf9b6baf03/src/_pytest/python.py#L294-L308](https://github.com/pytest-dev/pytest/blob/92d6a0500b9f528a9adcd6bbcda46ebf9b6baf03/src/_pytest/python.py#L294-L308)\r\n\r\nThe headline comes from line 306 `modpath = self.getmodpath() `\r\n\r\n[https://github.com/pytest-dev/pytest/blob/92d6a0500b9f528a9adcd6bbcda46ebf9b6baf03/src/_pytest/python.py#L274-L292](https://github.com/pytest-dev/pytest/blob/92d6a0500b9f528a9adcd6bbcda46ebf9b6baf03/src/_pytest/python.py#L274-L292)\r\n\r\nThis line of code `return s.replace(\".[\", \"[\")` causes the problem. We should replace it with `return s`. After changing this, run `tox -e linting,py37`, pass all the tests and resolve this issue. But I can't find this line of code for what purpose.\n</description>",
+  "request": {
+    "files": [
+      {
+        "file_path": "src/_pytest/python.py",
+        "relevant_symbol_keys": [
+          "PyobjMixin#getmodpath()"
+        ],
+        "root_cause_symbol_keys": [
+          "PyobjMixin#getmodpath()"
+        ]
+      },
+      {
+        "file_path": "src/_pytest/reports.py",
+        "relevant_symbol_keys": [
+          "BaseReport#head_line()",
+          "TestReport#location"
+        ],
+        "root_cause_symbol_keys": [
+          "BaseReport#head_line()",
+          "TestReport#location"
+        ]
+      },
+      {
+        "file_path": "src/_pytest/nodes.py",
+        "relevant_symbol_keys": [
+          "Node#reportinfo()",
+          "Item#reportinfo()",
+          "Node#listchain()",
+          "Item#add_report_section()",
+          "Node#__repr__()"
+        ],
+        "root_cause_symbol_keys": [
+          "Node#reportinfo()",
+          "Item#reportinfo()"
+        ]
+      },
+      {
+        "file_path": "src/_pytest/terminal.py",
+        "relevant_symbol_keys": [
+          "TerminalReporter#pytest_report_teststatus()",
+          "TerminalReporter#pytest_runtest_logreport()",
+          "TerminalReporter#_getfailureheadline()",
+          "TerminalReporter#_locationline()"
+        ],
+        "root_cause_symbol_keys": []
+      }
+    ],
+    "with_content": true
+  },
+  "response": {
+    "related_symbols": [
+      {
+        "name": "Node#__repr__().",
+        "file_path": "src/_pytest/nodes.py",
+        "file_content": "    def __repr__(self):"
+      },
+      {
+        "name": "Node#listchain().",
+        "file_path": "src/_pytest/nodes.py",
+        "file_content": "    def listchain(self):\n        \"\"\" return list of all parent collectors up to self,\n            starting from root of collection tree. \"\"\"\n        chain = []\n        item = self\n        while item is not None:\n            chain.append(item)\n            item = item.parent\n        chain.reverse()"
+      },
+      {
+        "name": "Item#add_report_section().",
+        "file_path": "src/_pytest/nodes.py",
+        "file_content": "    def add_report_section(self, when: str, key: str, content: str) -> None:\n        \"\"\"\n        Adds a new report section, similar to what's done internally to add stdout and\n        stderr captured output::\n\n            item.add_report_section(\"call\", \"stdout\", \"report section contents\")\n\n        :param str when:\n            One of the possible capture states, ``\"setup\"``, ``\"call\"``, ``\"teardown\"``.\n        :param str key:\n            Name of the section, can be customized at will. Pytest uses ``\"stdout\"`` and\n            ``\"stderr\"`` internally.\n\n        :param str content:\n            The full contents as a string.\n        \"\"\"\n        if content:"
+      },
+      {
+        "name": "TerminalReporter#pytest_runtest_logreport().",
+        "file_path": "src/_pytest/terminal.py",
+        "file_content": "    def pytest_runtest_logreport(self, report):\n        self._tests_ran = True\n        rep = report\n        res = self.config.hook.pytest_report_teststatus(report=rep, config=self.config)\n        category, letter, word = res\n        if isinstance(word, tuple):\n            word, markup = word\n        else:\n            markup = None\n        self.stats.setdefault(category, []).append(rep)\n        if not letter and not word:\n            # probably passed setup/teardown\n            return\n        running_xdist = hasattr(rep, \"node\")\n        if markup is None:\n            was_xfail = hasattr(report, \"wasxfail\")\n            if rep.passed and not was_xfail:\n                markup = {\"green\": True}\n            elif rep.passed and was_xfail:\n                markup = {\"yellow\": True}\n            elif rep.failed:\n                markup = {\"red\": True}\n            elif rep.skipped:\n                markup = {\"yellow\": True}\n            else:\n                markup = {}\n        if self.verbosity <= 0:\n            if not running_xdist and self.showfspath:\n                self.write_fspath_result(rep.nodeid, letter, **markup)\n            else:\n                self._tw.write(letter, **markup)\n        else:\n            self._progress_nodeids_reported.add(rep.nodeid)\n            line = self._locationline(rep.nodeid, *rep.location)\n            if not running_xdist:\n                self.write_ensure_prefix(line, word, **markup)\n                if self._show_progress_info:\n                    self._write_progress_information_filling_space()\n            else:\n                self.ensure_newline()\n                self._tw.write(\"[%s]\" % rep.node.gateway.id)\n                if self._show_progress_info:\n                    self._tw.write(\n                        self._get_progress_information_message() + \" \", cyan=True\n                    )\n                else:\n                    self._tw.write(\" \")\n                self._tw.write(word, **markup)\n                self._tw.write(\" \" + line)"
+      },
+      {
+        "name": "TerminalReporter#_locationline().",
+        "file_path": "src/_pytest/terminal.py",
+        "file_content": "    def _locationline(self, nodeid, fspath, lineno, domain):\n        def mkrel(nodeid):\n            line = self.config.cwd_relative_nodeid(nodeid)\n            if domain and line.endswith(domain):\n                line = line[: -len(domain)]\n                values = domain.split(\"[\")\n                values[0] = values[0].replace(\".\", \"::\")  # don't replace '.' in params\n                line += \"[\".join(values)\n            return line\n\n        # collect_fspath comes from testid which has a \"/\"-normalized path\n\n        if fspath:\n            res = mkrel(nodeid)\n            if self.verbosity >= 2 and nodeid.split(\"::\")[0] != fspath.replace(\n                \"\\\\\", nodes.SEP\n            ):\n                res += \" <- \" + self.startdir.bestrelpath(fspath)\n        else:\n            res = \"[location]\""
+      },
+      {
+        "name": "TerminalReporter#_getfailureheadline().",
+        "file_path": "src/_pytest/terminal.py",
+        "file_content": "    def _getfailureheadline(self, rep):\n        head_line = rep.head_line\n        if head_line:\n            return head_line"
+      }
+    ],
+    "root_caused_symbols": [
+      {
+        "name": "PyobjMixin#getmodpath().",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "    def getmodpath(self, stopatmodule=True, includemodule=False):\n        \"\"\" return python path relative to the containing module. \"\"\"\n        chain = self.listchain()\n        chain.reverse()\n        parts = []\n        for node in chain:\n            if isinstance(node, Instance):\n                continue\n            name = node.name\n            if isinstance(node, Module):\n                name = os.path.splitext(name)[0]\n                if stopatmodule:\n                    if includemodule:\n                        parts.append(name)\n                    break\n            parts.append(name)\n        parts.reverse()\n        s = \".\".join(parts)"
+      },
+      {
+        "name": "BaseReport#head_line().",
+        "file_path": "src/_pytest/reports.py",
+        "file_content": "    @property\n    def head_line(self):\n        \"\"\"\n        **Experimental**\n\n        Returns the head line shown with longrepr output for this report, more commonly during\n        traceback representation during failures::\n\n            ________ Test.foo ________\n\n\n        In the example above, the head_line is \"Test.foo\".\n\n        .. note::\n\n            This function is considered **experimental**, so beware that it is subject to changes\n            even in patch releases.\n        \"\"\"\n        if self.location is not None:\n            fspath, lineno, domain = self.location"
+      },
+      {
+        "name": "Item#reportinfo().",
+        "file_path": "src/_pytest/nodes.py",
+        "file_content": "    def reportinfo(self):"
+      }
+    ]
+  }
+}

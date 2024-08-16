@@ -1,0 +1,74 @@
+{
+  "name": "FilesKeywordSearch",
+  "model": "gpt-4o-mini",
+  "metadata": {},
+  "issue": "<description>:caplog fixture doesn't restore log level after test\nFrom the documentation at https://docs.pytest.org/en/6.0.0/logging.html#caplog-fixture, \"The log levels set are restored automatically at the end of the test\".\r\nIt used to work, but looks broken in new 6.0 release. Minimal example to reproduce:\r\n\r\n```\r\ndef test_foo(caplog):\r\n    caplog.set_level(42)\r\n\r\ndef test_bar(caplog):\r\n    print(caplog.handler.level)\r\n```\r\n\r\nIt prints \"0\" for pytest<6, \"42\" after.\n</description>",
+  "request": {
+    "tokens": [
+      "caplog",
+      "set_level",
+      "test_foo",
+      "test_bar",
+      "logger",
+      "logging",
+      "restore",
+      "log",
+      "loglevel",
+      "handler"
+    ]
+  },
+  "response": {
+    "results": {
+      "caplog": [
+        "src/_pytest/debugging.py",
+        "src/_pytest/logging.py",
+        "src/_pytest/junitxml.py",
+        "src/_pytest/reports.py"
+      ],
+      "log": [
+        "src/_pytest/terminal.py",
+        "src/_pytest/logging.py",
+        "src/_pytest/junitxml.py",
+        "src/_pytest/reports.py",
+        "src/_pytest/helpconfig.py",
+        "src/_pytest/debugging.py",
+        "src/_pytest/pastebin.py",
+        "src/_pytest/warnings.py",
+        "src/_pytest/deprecated.py",
+        "src/_pytest/runner.py",
+        "src/_pytest/resultlog.py"
+      ],
+      "test_foo": [
+        "src/_pytest/junitxml.py",
+        "src/_pytest/mark/structures.py",
+        "src/_pytest/nodes.py",
+        "src/_pytest/pathlib.py",
+        "src/_pytest/fixtures.py"
+      ],
+      "logging": [
+        "src/_pytest/logging.py",
+        "src/_pytest/junitxml.py",
+        "src/_pytest/hookspec.py",
+        "src/_pytest/config/__init__.py",
+        "src/_pytest/compat.py"
+      ],
+      "handler": [
+        "src/_pytest/faulthandler.py",
+        "src/_pytest/logging.py",
+        "src/_pytest/tmpdir.py"
+      ],
+      "restore": [
+        "src/_pytest/junitxml.py",
+        "src/_pytest/logging.py",
+        "src/_pytest/capture.py",
+        "src/_pytest/pytester.py"
+      ],
+      "set_level": [
+        "src/_pytest/logging.py"
+      ],
+      "logger": [
+        "src/_pytest/logging.py"
+      ]
+    }
+  }
+}
