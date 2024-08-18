@@ -1,0 +1,124 @@
+{
+  "name": "FilesKeywordSearch",
+  "model": "gpt-4o-2024-08-06",
+  "metadata": {},
+  "issue": "<description>:Symlinked directories not collected since pytest 6.1.0\nWhen there is a symlink to a directory in a test directory, is is just skipped over, but it should be followed and collected as usual.\r\n\r\nThis regressed in b473e515bc57ff1133fe650f1e7e6d7e22e5d841 (included in 6.1.0). For some reason I added a `follow_symlinks=False` in there, I don't remember why, but it does not match the previous behavior and should be removed.\r\n\r\nPR for this is coming up.\n</description>",
+  "request": {
+    "tokens": [
+      "follow_symlinks",
+      "pytest_collect_file",
+      "symlink_or_skip",
+      "File",
+      "fspath",
+      "rootdir",
+      "resolve",
+      "Module",
+      "collect",
+      "dir"
+    ]
+  },
+  "response": {
+    "results": {
+      "collect": [
+        "src/pytest/__init__.py",
+        "src/_pytest/assertion/__init__.py",
+        "src/_pytest/nodes.py",
+        "src/_pytest/runner.py",
+        "src/_pytest/warning_types.py",
+        "src/pytest/collect.py",
+        "src/_pytest/python.py",
+        "src/_pytest/deprecated.py",
+        "src/_pytest/terminal.py",
+        "src/_pytest/main.py",
+        "src/_pytest/unittest.py",
+        "src/_pytest/warnings.py",
+        "src/_pytest/pytester.py",
+        "src/_pytest/reports.py",
+        "src/_pytest/hookspec.py",
+        "src/_pytest/doctest.py"
+      ],
+      "fspath": [
+        "src/_pytest/monkeypatch.py",
+        "src/_pytest/nodes.py",
+        "src/_pytest/_code/code.py",
+        "src/_pytest/cacheprovider.py",
+        "src/_pytest/python.py",
+        "src/_pytest/terminal.py",
+        "src/_pytest/main.py",
+        "src/_pytest/assertion/rewrite.py",
+        "src/_pytest/fixtures.py",
+        "src/_pytest/pytester.py",
+        "src/_pytest/reports.py",
+        "src/_pytest/doctest.py"
+      ],
+      "File": [
+        "src/pytest/__init__.py",
+        "src/_pytest/nodes.py",
+        "src/_pytest/_code/code.py",
+        "src/pytest/collect.py",
+        "src/_pytest/python.py",
+        "src/_pytest/terminal.py",
+        "src/_pytest/capture.py",
+        "src/_pytest/logging.py"
+      ],
+      "dir": [
+        "src/_pytest/nodes.py",
+        "src/_pytest/pathlib.py",
+        "src/_pytest/cacheprovider.py",
+        "src/pytest/collect.py",
+        "src/_pytest/python.py",
+        "src/_pytest/terminal.py",
+        "src/_pytest/main.py",
+        "src/_pytest/config/findpaths.py",
+        "src/_pytest/helpconfig.py",
+        "src/_pytest/assertion/rewrite.py",
+        "src/_pytest/config/__init__.py",
+        "src/_pytest/fixtures.py",
+        "src/_pytest/hookspec.py"
+      ],
+      "rootdir": [
+        "src/_pytest/nodes.py",
+        "src/_pytest/config/findpaths.py",
+        "src/_pytest/main.py",
+        "src/_pytest/terminal.py",
+        "src/_pytest/tmpdir.py",
+        "src/_pytest/config/__init__.py",
+        "src/_pytest/pytester.py",
+        "src/_pytest/fixtures.py"
+      ],
+      "Module": [
+        "src/pytest/__init__.py",
+        "src/_pytest/cacheprovider.py",
+        "src/_pytest/store.py",
+        "src/pytest/collect.py",
+        "src/_pytest/python.py",
+        "src/_pytest/main.py",
+        "src/_pytest/assertion/rewrite.py",
+        "src/_pytest/fixtures.py",
+        "src/_pytest/pytester.py",
+        "src/_pytest/hookspec.py",
+        "src/_pytest/doctest.py"
+      ],
+      "resolve": [
+        "src/_pytest/monkeypatch.py",
+        "src/_pytest/pathlib.py",
+        "src/_pytest/main.py",
+        "src/_pytest/tmpdir.py",
+        "src/_pytest/config/__init__.py",
+        "src/_pytest/fixtures.py"
+      ],
+      "symlink_or_skip": [
+        "src/_pytest/pathlib.py"
+      ],
+      "follow_symlinks": [
+        "src/_pytest/pathlib.py"
+      ],
+      "pytest_collect_file": [
+        "src/_pytest/main.py",
+        "src/_pytest/python.py",
+        "src/_pytest/hookspec.py",
+        "src/_pytest/doctest.py"
+      ]
+    }
+  }
+}

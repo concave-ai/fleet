@@ -1,0 +1,72 @@
+{
+  "name": "FilesKeywordSearch",
+  "model": "gpt-4o-2024-08-06",
+  "metadata": {},
+  "issue": "<description>:caplog fixture doesn't restore log level after test\nFrom the documentation at https://docs.pytest.org/en/6.0.0/logging.html#caplog-fixture, \"The log levels set are restored automatically at the end of the test\".\r\nIt used to work, but looks broken in new 6.0 release. Minimal example to reproduce:\r\n\r\n```\r\ndef test_foo(caplog):\r\n    caplog.set_level(42)\r\n\r\ndef test_bar(caplog):\r\n    print(caplog.handler.level)\r\n```\r\n\r\nIt prints \"0\" for pytest<6, \"42\" after.\n</description>",
+  "request": {
+    "tokens": [
+      "caplog",
+      "LogCaptureFixture",
+      "logging",
+      "set_level",
+      "pytest_runtest_protocol",
+      "LogCaptureHandler",
+      "restore",
+      "LoggingPlugin",
+      "FIXTURE_POSITIONAL_ARGUMENTS",
+      "caplog_handler_key"
+    ]
+  },
+  "response": {
+    "results": {
+      "caplog": [
+        "src/_pytest/logging.py",
+        "src/_pytest/reports.py",
+        "src/_pytest/junitxml.py",
+        "src/_pytest/debugging.py"
+      ],
+      "pytest_runtest_protocol": [
+        "src/_pytest/assertion/__init__.py",
+        "src/_pytest/runner.py",
+        "src/_pytest/main.py",
+        "src/_pytest/warnings.py",
+        "src/_pytest/unittest.py",
+        "src/_pytest/pytester.py",
+        "src/_pytest/hookspec.py",
+        "src/_pytest/faulthandler.py"
+      ],
+      "restore": [
+        "src/_pytest/logging.py",
+        "src/_pytest/capture.py",
+        "src/_pytest/junitxml.py",
+        "src/_pytest/pytester.py"
+      ],
+      "logging": [
+        "src/_pytest/compat.py",
+        "src/_pytest/config/__init__.py",
+        "src/_pytest/junitxml.py",
+        "src/_pytest/logging.py",
+        "src/_pytest/hookspec.py"
+      ],
+      "caplog_handler_key": [
+        "src/_pytest/logging.py"
+      ],
+      "LogCaptureHandler": [
+        "src/_pytest/logging.py"
+      ],
+      "LogCaptureFixture": [
+        "src/_pytest/logging.py"
+      ],
+      "set_level": [
+        "src/_pytest/logging.py"
+      ],
+      "LoggingPlugin": [
+        "src/_pytest/logging.py"
+      ],
+      "FIXTURE_POSITIONAL_ARGUMENTS": [
+        "src/_pytest/deprecated.py",
+        "src/_pytest/fixtures.py"
+      ]
+    }
+  }
+}

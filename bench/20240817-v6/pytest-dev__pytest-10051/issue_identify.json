@@ -1,0 +1,43 @@
+{
+    "file_paths": [
+        "src/_pytest/logging.py"
+    ],
+    "symbols": [
+        "_pytest.logging.LogCaptureFixture.clear"
+    ],
+    "code_spans": {
+        "_pytest.logging.LogCaptureHandler.reset": {
+            "name": "_pytest.logging.LogCaptureHandler.reset",
+            "file_path": "src/_pytest/logging.py",
+            "file_content": "def reset(self) -> None:\n        self.records = []\n        self.stream = StringIO()",
+            "start_line": 343,
+            "start_column": 11859,
+            "end_line": 4,
+            "end_column": 11942,
+            "start_byte": 11859,
+            "end_byte": 4
+        },
+        "_pytest.logging.LogCaptureFixture.get_records": {
+            "name": "_pytest.logging.LogCaptureFixture.get_records",
+            "file_path": "src/_pytest/logging.py",
+            "file_content": "def get_records(self, when: str) -> List[logging.LogRecord]:\n        \"\"\"Get the logging records for one of the possible test phases.\n\n        :param str when:\n            Which test phase to obtain the records from. Valid values are: \"setup\", \"call\" and \"teardown\".\n\n        :returns: The list of captured records at the given stage.\n        :rtype: List[logging.LogRecord]\n\n        .. versionadded:: 3.4\n        \"\"\"\n        return self._item.stash[caplog_records_key].get(when, [])",
+            "start_line": 387,
+            "start_column": 13408,
+            "end_line": 4,
+            "end_column": 13890,
+            "start_byte": 13408,
+            "end_byte": 4
+        },
+        "_pytest.logging.LogCaptureFixture.clear": {
+            "name": "_pytest.logging.LogCaptureFixture.clear",
+            "file_path": "src/_pytest/logging.py",
+            "file_content": "def clear(self) -> None:\n        \"\"\"Reset the list of log records and the captured log text.\"\"\"\n        self.handler.reset()",
+            "start_line": 440,
+            "start_column": 15324,
+            "end_line": 4,
+            "end_column": 15448,
+            "start_byte": 15324,
+            "end_byte": 4
+        }
+    }
+}

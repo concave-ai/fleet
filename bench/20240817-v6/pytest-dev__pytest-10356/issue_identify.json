@@ -1,0 +1,319 @@
+{
+    "file_paths": [
+        "src/_pytest/mark/structures.py"
+    ],
+    "symbols": [
+        "_pytest.mark.Mark.combined_with",
+        "_pytest.mark.store_mark"
+    ],
+    "code_spans": {
+        "_pytest.mark.Mark.combined_with": {
+            "name": "_pytest.mark.Mark.combined_with",
+            "file_path": "src/_pytest/mark/structures.py",
+            "file_content": "def combined_with(self, other: \"Mark\") -> \"Mark\":\n        \"\"\"Return a new Mark which is a combination of this\n        Mark and another Mark.\n\n        Combines by appending args and merging kwargs.\n\n        :param Mark other: The mark to combine with.\n        :rtype: Mark\n        \"\"\"\n        assert self.name == other.name\n\n        # Remember source of ids with parametrize Marks.\n        param_ids_from: Optional[Mark] = None\n        if self.name == \"parametrize\":\n            if other._has_param_ids():\n                param_ids_from = other\n            elif self._has_param_ids():\n                param_ids_from = self\n\n        return Mark(\n            self.name,\n            self.args + other.args,\n            dict(self.kwargs, **other.kwargs),\n            param_ids_from=param_ids_from,\n            _ispytest=True,\n        )",
+            "start_line": 229,
+            "start_column": 7679,
+            "end_line": 4,
+            "end_column": 8509,
+            "start_byte": 7679,
+            "end_byte": 4
+        },
+        "_pytest.mark.MarkDecorator.__call__": {
+            "name": "_pytest.mark.MarkDecorator.__call__",
+            "file_path": "src/_pytest/mark/structures.py",
+            "file_content": "def __call__(self, *args: object, **kwargs: object):\n        \"\"\"Call the MarkDecorator.\"\"\"\n        if args and not kwargs:\n            func = args[0]\n            is_class = inspect.isclass(func)\n            if len(args) == 1 and (istestfunc(func) or is_class):\n                store_mark(func, self.mark)\n                return func\n        return self.with_args(*args, **kwargs)",
+            "start_line": 346,
+            "start_column": 11721,
+            "end_line": 4,
+            "end_column": 12100,
+            "start_byte": 11721,
+            "end_byte": 4
+        },
+        "_pytest.mark.normalize_mark_list": {
+            "name": "_pytest.mark.normalize_mark_list",
+            "file_path": "src/_pytest/mark/structures.py",
+            "file_content": "def normalize_mark_list(\n    mark_list: Iterable[Union[Mark, MarkDecorator]]\n) -> Iterable[Mark]:\n    \"\"\"\n    Normalize an iterable of Mark or MarkDecorator objects into a list of marks\n    by retrieving the `mark` attribute on MarkDecorator instances.\n\n    :param mark_list: marks to normalize\n    :returns: A new list of the extracted Mark objects\n    \"\"\"\n    for mark in mark_list:\n        mark_obj = getattr(mark, \"mark\", mark)\n        if not isinstance(mark_obj, Mark):\n            raise TypeError(f\"got {repr(mark_obj)} instead of Mark\")\n        yield mark_obj",
+            "start_line": 365,
+            "start_column": 12387,
+            "end_line": 0,
+            "end_column": 12953,
+            "start_byte": 12387,
+            "end_byte": 0
+        },
+        "_pytest.mark.store_mark": {
+            "name": "_pytest.mark.store_mark",
+            "file_path": "src/_pytest/mark/structures.py",
+            "file_content": "def store_mark(obj, mark: Mark) -> None:\n    \"\"\"Store a Mark on an object.\n\n    This is used to implement the Mark declarations/decorators correctly.\n    \"\"\"\n    assert isinstance(mark, Mark), mark\n    # Always reassign name to avoid updating pytestmark in a reference that\n    # was only borrowed.\n    obj.pytestmark = [*get_unpacked_marks(obj), mark]",
+            "start_line": 382,
+            "start_column": 12956,
+            "end_line": 0,
+            "end_column": 13308,
+            "start_byte": 12956,
+            "end_byte": 0
+        },
+        "_pytest.mark.MarkGenerator.__getattr__": {
+            "name": "_pytest.mark.MarkGenerator.__getattr__",
+            "file_path": "src/_pytest/mark/structures.py",
+            "file_content": "def __getattr__(self, name: str) -> MarkDecorator:\n        \"\"\"Generate a new :class:`MarkDecorator` with the given name.\"\"\"\n        if name[0] == \"_\":\n            raise AttributeError(\"Marker name must NOT start with underscore\")\n\n        if self._config is not None:\n            # We store a set of markers as a performance optimisation - if a mark\n            # name is in the set we definitely know it, but a mark may be known and\n            # not in the set.  We therefore start by updating the set!\n            if name not in self._markers:\n                for line in self._config.getini(\"markers\"):\n                    # example lines: \"skipif(condition): skip the given test if...\"\n                    # or \"hypothesis: tests which use Hypothesis\", so to get the\n                    # marker name we split on both `:` and `(`.\n                    marker = line.split(\":\")[0].split(\"(\")[0].strip()\n                    self._markers.add(marker)\n\n            # If the name is not in the set of known marks after updating,\n            # then it really is time to issue a warning or an error.\n            if name not in self._markers:\n                if self._config.option.strict_markers or self._config.option.strict:\n                    fail(\n                        f\"{name!r} not found in `markers` configuration option\",\n                        pytrace=False,\n                    )\n\n                # Raise a specific error for common misspellings of \"parametrize\".\n                if name in [\"parameterize\", \"parametrise\", \"parameterise\"]:\n                    __tracebackhide__ = True\n                    fail(f\"Unknown '{name}' mark, did you mean 'parametrize'?\")\n\n                warnings.warn(\n                    \"Unknown pytest.mark.%s - is this a typo?  You can register \"\n                    \"custom marks to avoid this warning - for details, see \"\n                    \"https://docs.pytest.org/en/stable/how-to/mark.html\" % name,\n                    PytestUnknownMarkWarning,\n                    2,\n                )\n\n        return MarkDecorator(Mark(name, (), {}, _ispytest=True), _ispytest=True)",
+            "start_line": 489,
+            "start_column": 16391,
+            "end_line": 4,
+            "end_column": 18508,
+            "start_byte": 16391,
+            "end_byte": 4
+        },
+        "_pytest.cacheprovider.LFPlugin.pytest_collection_modifyitems": {
+            "name": "_pytest.cacheprovider.LFPlugin.pytest_collection_modifyitems",
+            "file_path": "src/_pytest/mark/__init__.py",
+            "file_content": "",
+            "start_line": 326,
+            "start_column": 11780,
+            "end_line": 4,
+            "end_column": 14011,
+            "start_byte": 11780,
+            "end_byte": 4
+        },
+        "_pytest.cacheprovider.NFPlugin.pytest_collection_modifyitems": {
+            "name": "_pytest.cacheprovider.NFPlugin.pytest_collection_modifyitems",
+            "file_path": "src/_pytest/mark/__init__.py",
+            "file_content": "",
+            "start_line": 398,
+            "start_column": 14748,
+            "end_line": 4,
+            "end_column": 15546,
+            "start_byte": 14748,
+            "end_byte": 4
+        },
+        "_pytest.fixtures.FixtureManager.pytest_collection_modifyitems": {
+            "name": "_pytest.fixtures.FixtureManager.pytest_collection_modifyitems",
+            "file_path": "src/_pytest/mark/__init__.py",
+            "file_content": "",
+            "start_line": 1582,
+            "start_column": 61968,
+            "end_line": 4,
+            "end_column": 62121,
+            "start_byte": 61968,
+            "end_byte": 4
+        },
+        "_pytest.hookspec.pytest_collection_modifyitems": {
+            "name": "_pytest.hookspec.pytest_collection_modifyitems",
+            "file_path": "src/_pytest/mark/__init__.py",
+            "file_content": "",
+            "start_line": 244,
+            "start_column": 8470,
+            "end_line": 0,
+            "end_column": 8816,
+            "start_byte": 8470,
+            "end_byte": 0
+        },
+        "_pytest.main.pytest_collection_modifyitems": {
+            "name": "_pytest.main.pytest_collection_modifyitems",
+            "file_path": "src/_pytest/mark/__init__.py",
+            "file_content": "",
+            "start_line": 405,
+            "start_column": 12885,
+            "end_line": 0,
+            "end_column": 13398,
+            "start_byte": 12885,
+            "end_byte": 0
+        },
+        "_pytest.mark.KeywordMatcher": {
+            "name": "_pytest.mark.KeywordMatcher",
+            "file_path": "src/_pytest/mark/__init__.py",
+            "file_content": "@attr.s(slots=True, auto_attribs=True)\nclass KeywordMatcher:\n    \"\"\"A matcher for keywords.\n\n    Given a list of names, matches any substring of one of these names. The\n    string inclusion check is case-insensitive.\n\n    Will match on the name of colitem, including the names of its parents.\n    Only matches names of items which are either a :class:`Class` or a\n    :class:`Function`.\n\n    Additionally, matches on names in the 'extra_keyword_matches' set of\n    any item, as well as names directly assigned to test functions.\n    \"\"\"\n\n    _names: AbstractSet[str]\n\n    @classmethod\n    def from_item(cls, item: \"Item\") -> \"KeywordMatcher\":\n        mapped_names = set()\n\n        # Add the names of the current item and any parent items.\n        import pytest\n\n        for node in item.listchain():\n            if not isinstance(node, pytest.Session):\n                mapped_names.add(node.name)\n\n        # Add the names added as extra keywords to current or parent items.\n        mapped_names.update(item.listextrakeywords())\n\n        # Add the names attached to the current function through direct assignment.\n        function_obj = getattr(item, \"function\", None)\n        if function_obj:\n            mapped_names.update(function_obj.__dict__)\n\n        # Add the markers to the keywords as we no longer handle them correctly.\n        mapped_names.update(mark.name for mark in item.iter_markers())\n\n        return cls(mapped_names)\n\n    def __call__(self, subname: str) -> bool:\n        subname = subname.lower()\n        names = (name.lower() for name in self._names)\n\n        for name in names:\n            if subname in name:\n                return True\n        return False",
+            "start_line": 132,
+            "start_column": 4196,
+            "end_line": 0,
+            "end_column": 5875,
+            "start_byte": 4196,
+            "end_byte": 0
+        },
+        "_pytest.mark.KeywordMatcher._names": {
+            "name": "_pytest.mark.KeywordMatcher._names",
+            "file_path": "src/_pytest/mark/__init__.py",
+            "file_content": "_names: AbstractSet[str]",
+            "start_line": 147,
+            "start_column": 4738,
+            "end_line": 4,
+            "end_column": 4762,
+            "start_byte": 4738,
+            "end_byte": 4
+        },
+        "_pytest.mark.KeywordMatcher.from_item": {
+            "name": "_pytest.mark.KeywordMatcher.from_item",
+            "file_path": "src/_pytest/mark/__init__.py",
+            "file_content": "@classmethod\n    def from_item(cls, item: \"Item\") -> \"KeywordMatcher\":\n        mapped_names = set()\n\n        # Add the names of the current item and any parent items.\n        import pytest\n\n        for node in item.listchain():\n            if not isinstance(node, pytest.Session):\n                mapped_names.add(node.name)\n\n        # Add the names added as extra keywords to current or parent items.\n        mapped_names.update(item.listextrakeywords())\n\n        # Add the names attached to the current function through direct assignment.\n        function_obj = getattr(item, \"function\", None)\n        if function_obj:\n            mapped_names.update(function_obj.__dict__)\n\n        # Add the markers to the keywords as we no longer handle them correctly.\n        mapped_names.update(mark.name for mark in item.iter_markers())\n\n        return cls(mapped_names)",
+            "start_line": 149,
+            "start_column": 4768,
+            "end_line": 4,
+            "end_column": 5630,
+            "start_byte": 4768,
+            "end_byte": 4
+        },
+        "_pytest.mark.KeywordMatcher.__call__": {
+            "name": "_pytest.mark.KeywordMatcher.__call__",
+            "file_path": "src/_pytest/mark/__init__.py",
+            "file_content": "def __call__(self, subname: str) -> bool:\n        subname = subname.lower()\n        names = (name.lower() for name in self._names)\n\n        for name in names:\n            if subname in name:\n                return True\n        return False",
+            "start_line": 173,
+            "start_column": 5636,
+            "end_line": 4,
+            "end_column": 5875,
+            "start_byte": 5636,
+            "end_byte": 4
+        },
+        "_pytest.mark.deselect_by_mark": {
+            "name": "_pytest.mark.deselect_by_mark",
+            "file_path": "src/_pytest/mark/__init__.py",
+            "file_content": "def deselect_by_mark(items: \"List[Item]\", config: Config) -> None:\n    matchexpr = config.option.markexpr\n    if not matchexpr:\n        return\n\n    expr = _parse_expression(matchexpr, \"Wrong expression passed to '-m'\")\n    remaining: List[Item] = []\n    deselected: List[Item] = []\n    for item in items:\n        if expr.evaluate(MarkMatcher.from_item(item)):\n            remaining.append(item)\n        else:\n            deselected.append(item)\n    if deselected:\n        config.hook.pytest_deselected(items=deselected)\n        items[:] = remaining",
+            "start_line": 221,
+            "start_column": 6925,
+            "end_line": 0,
+            "end_column": 7473,
+            "start_byte": 6925,
+            "end_byte": 0
+        },
+        "_pytest.mark.pytest_collection_modifyitems": {
+            "name": "_pytest.mark.pytest_collection_modifyitems",
+            "file_path": "src/_pytest/mark/__init__.py",
+            "file_content": "def pytest_collection_modifyitems(items: \"List[Item]\", config: Config) -> None:\n    deselect_by_keyword(items, config)\n    deselect_by_mark(items, config)",
+            "start_line": 246,
+            "start_column": 7687,
+            "end_line": 0,
+            "end_column": 7841,
+            "start_byte": 7687,
+            "end_byte": 0
+        },
+        "_pytest.stepwise.StepwisePlugin.pytest_collection_modifyitems": {
+            "name": "_pytest.stepwise.StepwisePlugin.pytest_collection_modifyitems",
+            "file_path": "src/_pytest/mark/__init__.py",
+            "file_content": "  group._addoption(\n        \"-k\",\n        action=\"store\",\n        dest=\"keyword\",\n        default=\"\",\n        metavar=\"EXPRESSION\",\n        help=\"Only run tests which match the given substring expression. \"\n        \"An expression is a Python evaluatable expression \"\n        \"where all names are substring-matched against test names \"\n        \"and their parent classes. Example: -k 'test_method or test_\"\n        \"other' matches all test functions and classes whose name \"\n        \"contains 'test_method' or 'test_other', while -k 'not test_method' \"\n        \"matches those that don't contain 'test_method' in their names. \"\n        \"-k 'not test_method and not test_other' will eliminate the matches. \"\n        \"Additionally keywords are matched to classes and functions \"\n        \"containing extra names in their 'extra_keyword_matches' set, \"\n        \"as well as functions which have names assigned directly to them. \"\n        \"The matching ",
+            "start_line": 67,
+            "start_column": 2067,
+            "end_line": 4,
+            "end_column": 3011,
+            "start_byte": 2067,
+            "end_byte": 4
+        },
+        "_pytest.nodes.Node.add_marker": {
+            "name": "_pytest.nodes.Node.add_marker",
+            "file_path": "src/_pytest/nodes.py",
+            "file_content": "def add_marker(\n        self, marker: Union[str, MarkDecorator], append: bool = True\n    ) -> None:\n        \"\"\"Dynamically add a marker object to the node.\n\n        :param marker:\n            The marker.\n        :param append:\n            Whether to append the marker, or prepend it.\n        \"\"\"\n        from _pytest.mark import MARK_GEN\n\n        if isinstance(marker, MarkDecorator):\n            marker_ = marker\n        elif isinstance(marker, str):\n            marker_ = getattr(MARK_GEN, marker)\n        else:\n            raise ValueError(\"is not a string or pytest.mark.* Marker\")\n        self.keywords[marker_.name] = marker_\n        if append:\n            self.own_markers.append(marker_.mark)\n        else:\n            self.own_markers.insert(0, marker_.mark)",
+            "start_line": 338,
+            "start_column": 10576,
+            "end_line": 4,
+            "end_column": 11343,
+            "start_byte": 10576,
+            "end_byte": 4
+        },
+        "_pytest.nodes.Node.iter_markers": {
+            "name": "_pytest.nodes.Node.iter_markers",
+            "file_path": "src/_pytest/nodes.py",
+            "file_content": "def iter_markers(self, name: Optional[str] = None) -> Iterator[Mark]:\n        \"\"\"Iterate over all markers of the node.\n\n        :param name: If given, filter the results by the name attribute.\n        :returns: An iterator of the markers of the node.\n        \"\"\"\n        return (x[1] for x in self.iter_markers_with_node(name=name))",
+            "start_line": 362,
+            "start_column": 11349,
+            "end_line": 4,
+            "end_column": 11681,
+            "start_byte": 11349,
+            "end_byte": 4
+        },
+        "_pytest.nodes.Node.iter_markers_with_node": {
+            "name": "_pytest.nodes.Node.iter_markers_with_node",
+            "file_path": "src/_pytest/nodes.py",
+            "file_content": "def iter_markers_with_node(\n        self, name: Optional[str] = None\n    ) -> Iterator[Tuple[\"Node\", Mark]]:\n        \"\"\"Iterate over all markers of the node.\n\n        :param name: If given, filter the results by the name attribute.\n        :returns: An iterator of (node, mark) tuples.\n        \"\"\"\n        for node in reversed(self.listchain()):\n            for mark in node.own_markers:\n                if name is None or getattr(mark, \"name\", None) == name:\n                    yield node, mark",
+            "start_line": 370,
+            "start_column": 11687,
+            "end_line": 4,
+            "end_column": 12183,
+            "start_byte": 11687,
+            "end_byte": 4
+        },
+        "_pytest.nodes.Node.get_closest_marker": {
+            "name": "_pytest.nodes.Node.get_closest_marker",
+            "file_path": "src/_pytest/nodes.py",
+            "file_content": "def get_closest_marker(\n        self, name: str, default: Optional[Mark] = None\n    ) -> Optional[Mark]:\n        \"\"\"Return the first marker matching the name, from closest (for\n        example function) to farther level (for example module level).\n\n        :param default: Fallback return value if no marker was found.\n        :param name: Name to filter by.\n        \"\"\"\n        return next(self.iter_markers(name=name), default)",
+            "start_line": 391,
+            "start_column": 12374,
+            "end_line": 4,
+            "end_column": 12803,
+            "start_byte": 12374,
+            "end_byte": 4
+        },
+        "_pytest.fixtures.FixtureManager.pytest_generate_tests": {
+            "name": "_pytest.fixtures.FixtureManager.pytest_generate_tests",
+            "file_path": "src/_pytest/python.py",
+            "file_content": "\n    tw = _pytest.config.create_terminal_writer(config)\n    verbose = config.getvalue(\"verbose\")\n\n    def get_best_relpath(func) -> str:\n        loc = getlocation(func, str(curdir))\n        return bestrelpath(curdir, Path(loc))\n\n    def write_fixture(fixture_def: fixtures.FixtureDef[object]) -> None:\n        argname = fixture_def.argname\n        if verbose <= 0 and argname.startswith(\"_\"):\n            return\n        prettypath = _pretty_fixture_path(fixture_def.func)\n        tw.write(f\"{argname}\", green=True)\n        tw.write(f\" -- {prettypath}\", yellow=True)\n        tw.write(\"\\n\")\n        fixture_doc = inspect.getdoc(fixture_def.func)\n        if fixture_doc:\n            write_docstring(\n                tw, fixture_doc.split(\"\\n\\n\")[0] if verbose <= 0 else fixture_doc\n            )\n        else:\n            tw.line(\"    no docstring available\", red=True)\n\n    def write_item(item: nodes.Item) -> None:\n        # Not all items have _fixtureinfo attribute.\n        info: Optional[FuncFixtureInfo] = getattr(item, \"_fixtureinfo\", None)\n        if info is None or not info.name2fixturedefs:\n            # This test item does not use any fixtures.\n            return\n        tw.line()\n        tw.sep(\"-\", f\"fixtures used by {item.name}\")\n        # TODO: Fix this type ignore.\n        tw.sep(\"-\", f\"({get_best_relpath(item.function)})\")  # type: ignore[attr-defined]\n        # dict key not used in loop but needed for sorting.\n        for _, fixturedefs in sorted(info.name2fixturedefs.items()):\n            assert fixturedefs is not None\n            if not fixturedefs:\n                continue\n            # Last item is expected to be the one used by the test item.\n            write_fixture(fixturedefs[-1])\n\n    for session_item in session.items:\n        write_item(session_item)\n\n\ndef showfixtures(config: Config) -> Union[int, ExitCode]:\n    from _pytest.main import wrap_session\n\n    return wrap_session(config, _showfixtures_main)\n\n\ndef _showfixture",
+            "start_line": 1537,
+            "start_column": 59998,
+            "end_line": 4,
+            "end_column": 61962,
+            "start_byte": 59998,
+            "end_byte": 4
+        },
+        "_pytest.hookspec.pytest_generate_tests": {
+            "name": "_pytest.hookspec.pytest_generate_tests",
+            "file_path": "src/_pytest/python.py",
+            "file_content": "e_path[:-1]\n            path: Union[\"os.PathLike[str]\", str] = file_path\n            lineno = compat_co_firstlineno\n        else:\n            path, lineno = getfslineno(obj)\n        modpath = self.getmodpath()\n        as",
+            "start_line": 409,
+            "start_column": 13185,
+            "end_line": 0,
+            "end_column": 13405,
+            "start_byte": 13185,
+            "end_byte": 0
+        },
+        "_pytest.mark.get_unpacked_marks": {
+            "name": "_pytest.mark.get_unpacked_marks",
+            "file_path": "src/_pytest/python.py",
+            "file_content": "name)\n\n    def getmodpath(self, stopatmodule: bool = True, includemodule: bool = False) -> str:\n        \"\"\"Return Python path relative to the containing module.\"\"\"\n        chain = self.listchain()\n        chain.reverse()\n        parts = []\n        for node in chain:\n            na",
+            "start_line": 357,
+            "start_column": 12103,
+            "end_line": 0,
+            "end_column": 12384,
+            "start_byte": 12103,
+            "end_byte": 0
+        },
+        "_pytest.python.pytest_generate_tests": {
+            "name": "_pytest.python.pytest_generate_tests",
+            "file_path": "src/_pytest/python.py",
+            "file_content": "def pytest_generate_tests(metafunc: \"Metafunc\") -> None:\n    for marker in metafunc.definition.iter_markers(name=\"parametrize\"):\n        metafunc.parametrize(*marker.args, **marker.kwargs, _param_mark=marker)",
+            "start_line": 147,
+            "start_column": 4645,
+            "end_line": 0,
+            "end_column": 4853,
+            "start_byte": 4645,
+            "end_byte": 0
+        },
+        "_pytest.python.PyCollector.funcnamefilter": {
+            "name": "_pytest.python.PyCollector.funcnamefilter",
+            "file_path": "src/_pytest/python.py",
+            "file_content": "def funcnamefilter(self, name: str) -> bool:\n        return self._matches_prefix_or_glob_option(\"python_functions\", name)",
+            "start_line": 387,
+            "start_column": 14095,
+            "end_line": 4,
+            "end_column": 14216,
+            "start_byte": 14095,
+            "end_byte": 4
+        },
+        "_pytest.python.PyCollector.istestfunction": {
+            "name": "_pytest.python.PyCollector.istestfunction",
+            "file_path": "src/_pytest/python.py",
+            "file_content": "def istestfunction(self, obj: object, name: str) -> bool:\n        if self.funcnamefilter(name) or self.isnosetest(obj):\n            if isinstance(obj, staticmethod):\n                # staticmethods need to be unwrapped.\n                obj = safe_getattr(obj, \"__func__\", False)\n            return callable(obj) and fixtures.getfixturemarker(obj) is None\n        else:\n            return False",
+            "start_line": 402,
+            "start_column": 14763,
+            "end_line": 4,
+            "end_column": 15156,
+            "start_byte": 14763,
+            "end_byte": 4
+        },
+        "_pytest.python.PyCollector.collect": {
+            "name": "_pytest.python.PyCollector.collect",
+            "file_path": "src/_pytest/python.py",
+            "file_content": "def collect(self) -> Iterable[Union[nodes.Item, nodes.Collector]]:\n        if not getattr(self.obj, \"__test__\", True):\n            return []\n\n        # Avoid random getattrs and peek in the __dict__ instead.\n        dicts = [getattr(self.obj, \"__dict__\", {})]\n        if isinstance(self.obj, type):\n            for basecls in self.obj.__mro__:\n                dicts.append(basecls.__dict__)\n\n        # In each class, nodes should be definition ordered.\n        # __dict__ is definition ordered.\n        seen: Set[str] = set()\n        dict_values: List[List[Union[nodes.Item, nodes.Collector]]] = []\n        ihook = self.ihook\n        for dic in dicts:\n            values: List[Union[nodes.Item, nodes.Collector]] = []\n            # Note: seems like the dict can change during iteration -\n            # be careful not to remove the list() without consideration.\n            for name, obj in list(dic.items()):\n                if name in IGNORED_ATTRIBUTES:\n                    continue\n                if name in seen:\n                    continue\n                seen.add(name)\n                res = ihook.pytest_pycollect_makeitem(\n                    collector=self, name=name, obj=obj\n                )\n                if res is None:\n                    continue\n                elif isinstance(res, list):\n                    values.extend(res)\n                else:\n                    values.append(res)\n            dict_values.append(values)\n\n        # Between classes in the class hierarchy, reverse-MRO order -- nodes\n        # inherited from base classes should come before subclasses.\n        result = []\n        for values in reversed(dict_values):\n            result.extend(values)\n        return result",
+            "start_line": 429,
+            "start_column": 16000,
+            "end_line": 4,
+            "end_column": 17717,
+            "start_byte": 16000,
+            "end_byte": 4
+        }
+    }
+}

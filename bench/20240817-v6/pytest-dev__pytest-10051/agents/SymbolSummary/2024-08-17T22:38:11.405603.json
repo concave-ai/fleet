@@ -1,0 +1,113 @@
+{
+  "name": "SymbolSummary",
+  "model": "gpt-4o-2024-08-06",
+  "metadata": {},
+  "issue": "<description>:caplog.get_records and caplog.clear conflict\n# Description\r\n\r\n`caplog.get_records()` gets decoupled from actual caplog records when `caplog.clear()` is called. As a result, after `caplog.clear()` is called, `caplog.get_records()` is frozen: it does not get cleared, nor does it get new records.\r\n\r\nDuring test set up it is [set to the same list](https://github.com/pytest-dev/pytest/blob/28e8c8582ea947704655a3c3f2d57184831336fd/src/_pytest/logging.py#L699) as `caplog.records`, but the latter gets [replaced rather than cleared](https://github.com/pytest-dev/pytest/blob/28e8c8582ea947704655a3c3f2d57184831336fd/src/_pytest/logging.py#L345) in `caplog.clear()`, which diverges the two objects.\r\n\r\n# Reproductive example\r\n```python\r\nimport logging\r\n\r\ndef test(caplog) -> None:\r\n    def verify_consistency() -> None:\r\n        assert caplog.get_records(\"call\") == caplog.records\r\n\r\n    verify_consistency()\r\n    logging.warning(\"test\")\r\n    verify_consistency()\r\n    caplog.clear()\r\n    verify_consistency()  # fails: assert [<LogRecord: ...y, 8, \"test\">] == []\r\n```\r\n\r\n# Environment details\r\nArch Linux, Python 3.9.10:\r\n```\r\nPackage    Version\r\n---------- -------\r\nattrs      21.4.0\r\niniconfig  1.1.1\r\npackaging  21.3\r\npip        22.0.4\r\npluggy     1.0.0\r\npy         1.11.0\r\npyparsing  3.0.8\r\npytest     7.1.1\r\nsetuptools 60.10.0\r\ntomli      2.0.1\r\nwheel      0.37.1\r\n```\n</description>",
+  "request": {
+    "symbols": {
+      "related_symbols": [],
+      "root_caused_symbols": [
+        {
+          "name": "_pytest.logging.LogCaptureHandler.reset",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "def reset(self) -> None:\n        self.records = []\n        self.stream = StringIO()",
+          "start_line": 343,
+          "start_column": 11859,
+          "end_line": 4,
+          "end_column": 11942,
+          "start_byte": 11859,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.logging.LogCaptureFixture.get_records",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "def get_records(self, when: str) -> List[logging.LogRecord]:\n        \"\"\"Get the logging records for one of the possible test phases.\n\n        :param str when:\n            Which test phase to obtain the records from. Valid values are: \"setup\", \"call\" and \"teardown\".\n\n        :returns: The list of captured records at the given stage.\n        :rtype: List[logging.LogRecord]\n\n        .. versionadded:: 3.4\n        \"\"\"\n        return self._item.stash[caplog_records_key].get(when, [])",
+          "start_line": 387,
+          "start_column": 13408,
+          "end_line": 4,
+          "end_column": 13890,
+          "start_byte": 13408,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.logging.LogCaptureFixture.clear",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "def clear(self) -> None:\n        \"\"\"Reset the list of log records and the captured log text.\"\"\"\n        self.handler.reset()",
+          "start_line": 440,
+          "start_column": 15324,
+          "end_line": 4,
+          "end_column": 15448,
+          "start_byte": 15324,
+          "end_byte": 4
+        }
+      ]
+    },
+    "symbols_evaluate": {
+      "scratch_pad": "1. Analyze User Instructions:\n1.1 What issue is the user describing?\n- User describes that the `caplog.get_records()` function does not return the correct set of log records after `caplog.clear()` is called in a test scenario.\n\n1.2 How was this issue caused?\n- The issue is caused because `caplog.clear()` replaces the `caplog.records` list with a new list (reinitialization), but `caplog.get_records()` remains tied to the old list, which is no longer updated or cleared.\n\n1.3 If the user described the expected result, what should it be fixed to?\n- The user expects that after calling `caplog.clear()`, both `caplog.records` and records returned by `caplog.get_records()` should be in sync (both empty and cleared).\n\n1.4 Expectation:\n- Both data structures should remain in sync in terms of updates and clearing.\n\n1.5 Fix approach:\n- Modify `caplog.clear()` to ensure both `caplog.records` and records returned by `caplog.get_records()` operate on the same data or are updated to be in sync.\n\n2. Make the evaluate:\n2.1. Thoroughly analyze each line in the <symbol>.\n2.2. Evaluate the relevance of each symbol based on how well it aligns with the reported issue and current file context.\n2.3. make the decision on how many symbols need to be changed to resolve the issue.",
+      "symbols": [
+        {
+          "name": "_pytest.logging.LogCaptureFixture.clear",
+          "file_path": "src/_pytest/logging.py",
+          "reason": "The `clear` method calls `self.handler.reset()`, which resets its own list of records (`self.records`). However, the `caplog.get_records()` seems tied to a stash which isn\u2019t updated to reflect this reset. Hence, this method would need alteration to synchronize with `get_records`."
+        }
+      ],
+      "more_info": [
+        {
+          "type": "symbol",
+          "path": "src/_pytest/logging.py",
+          "name": "_pytest.logging.LogCaptureFixture.get_records",
+          "reason": "Verify if get_records accesses an independent list of records that needs re-linking post-clear."
+        }
+      ],
+      "is_done": false,
+      "symbols_scratch_pad": [
+        "The `reset` method of `LogCaptureHandler` resets internal `self.records` and `self.stream`, meaning it clears current logs.\n\n- Relevance: It is relevant because it is part of what `caplog.clear()` calls to effect clearing of the logs.\n- Decision: No change needed but understand its effect when `caplog.clear()` is invoked.",
+        "The `get_records` method fetches records for a specified test phase from a stash, not directly tied to `self.records` manipulated by `caplog.clear()`.\n\n- Relevance: Highly relevant, as its return value is expected to be reset or updated appropriately when `caplog.clear()` is called.\n- Decision: Investigate how this links with `caplog.records` post-clear and modify if there is misalignment.",
+        "`caplog.clear()` calls `reset` to clear the records. Since get_records is not directly linked to this state (self.records), it leads to desync issue.\n\n- Relevance: Central to the problem.\n- Decision: Needs change to ensure synchronization with the list accessed by `get_records`."
+      ]
+    }
+  },
+  "response": {
+    "file_paths": [
+      "src/_pytest/logging.py"
+    ],
+    "symbols": [
+      "_pytest.logging.LogCaptureFixture.clear"
+    ],
+    "code_spans": {
+      "_pytest.logging.LogCaptureHandler.reset": {
+        "name": "_pytest.logging.LogCaptureHandler.reset",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "def reset(self) -> None:\n        self.records = []\n        self.stream = StringIO()",
+        "start_line": 343,
+        "start_column": 11859,
+        "end_line": 4,
+        "end_column": 11942,
+        "start_byte": 11859,
+        "end_byte": 4
+      },
+      "_pytest.logging.LogCaptureFixture.get_records": {
+        "name": "_pytest.logging.LogCaptureFixture.get_records",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "def get_records(self, when: str) -> List[logging.LogRecord]:\n        \"\"\"Get the logging records for one of the possible test phases.\n\n        :param str when:\n            Which test phase to obtain the records from. Valid values are: \"setup\", \"call\" and \"teardown\".\n\n        :returns: The list of captured records at the given stage.\n        :rtype: List[logging.LogRecord]\n\n        .. versionadded:: 3.4\n        \"\"\"\n        return self._item.stash[caplog_records_key].get(when, [])",
+        "start_line": 387,
+        "start_column": 13408,
+        "end_line": 4,
+        "end_column": 13890,
+        "start_byte": 13408,
+        "end_byte": 4
+      },
+      "_pytest.logging.LogCaptureFixture.clear": {
+        "name": "_pytest.logging.LogCaptureFixture.clear",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "def clear(self) -> None:\n        \"\"\"Reset the list of log records and the captured log text.\"\"\"\n        self.handler.reset()",
+        "start_line": 440,
+        "start_column": 15324,
+        "end_line": 4,
+        "end_column": 15448,
+        "start_byte": 15324,
+        "end_byte": 4
+      }
+    }
+  }
+}

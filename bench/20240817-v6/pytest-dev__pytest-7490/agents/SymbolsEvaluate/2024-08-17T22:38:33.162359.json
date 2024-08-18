@@ -1,0 +1,822 @@
+{
+  "name": "SymbolsEvaluate",
+  "model": "gpt-4o-2024-08-06",
+  "metadata": {
+    "token_count": 0,
+    "cost": 0
+  },
+  "issue": "<description>:Pytest 6: Dynamically adding xfail marker in test no longer ignores failure\n<!--\r\nThanks for submitting an issue!\r\n\r\nHere's a quick checklist for what to provide:\r\n-->\r\n\r\n## Description\r\n\r\nWith pytest 5.x, we can dynamically add an xfail to a test `request` object using `request.node.add_marker(mark)` (see example below). In 5.x this treated the failing test like a a test marked statically with an `xfail`. With 6.0.0rc0 it raises. \r\n\r\n## Versions\r\n\r\n<details>\r\n\r\n```\r\n$ pip list\r\nPackage                       Version                         Location                                                      \r\n----------------------------- ------------------------------- --------------------------------------------------------------\r\na                             1.0                             \r\naioftp                        0.13.0                          \r\naiohttp                       3.6.2                           \r\nalabaster                     0.7.12                          \r\napipkg                        1.5                             \r\naplus                         0.11.0                          \r\nappdirs                       1.4.3                           \r\nappnope                       0.1.0                           \r\narrow                         0.15.7                          \r\naspy.yaml                     1.3.0                           \r\nastropy                       3.2.3                           \r\nasv                           0.4.1                           \r\nasync-timeout                 3.0.1                           \r\natomicwrites                  1.3.0                           \r\nattrs                         19.1.0                          \r\naws-sam-translator            1.15.1                          \r\naws-xray-sdk                  0.95                            \r\nBabel                         2.7.0                           \r\nbackcall                      0.1.0                           \r\nbinaryornot                   0.4.4                           \r\nblack                         19.10b0                         \r\nbleach                        3.1.0                           \r\nblurb                         1.0.7                           \r\nbokeh                         1.3.4                           \r\nboto                          2.49.0                          \r\nboto3                         1.7.84                          \r\nbotocore                      1.10.84                         \r\nbqplot                        0.12.12                         \r\nbranca                        0.3.1                           \r\ncachetools                    4.1.0                           \r\ncertifi                       2019.9.11                       \r\ncffi                          1.13.2                          \r\ncfgv                          2.0.1                           \r\ncfn-lint                      0.25.0                          \r\ncftime                        1.0.4.2                         \r\nchardet                       3.0.4                           \r\nClick                         7.0                             \r\nclick-plugins                 1.1.1                           \r\ncligj                         0.5.0                           \r\ncloudpickle                   1.2.2                           \r\ncolorama                      0.4.3                           \r\ncolorcet                      2.0.2                           \r\ncoloredlogs                   14.0                            \r\ncookiecutter                  1.7.2                           \r\ncookies                       2.2.1                           \r\ncoverage                      4.5.4                           \r\ncryptography                  2.8                             \r\ncycler                        0.10.0                          \r\nCython                        3.0a5                           \r\ncytoolz                       0.10.1                          \r\ndask                          2.4.0                           /Users/taugspurger/Envs/pandas-dev/lib/python3.7/site-packages\r\nDateTime                      4.3                             \r\ndecorator                     4.4.0                           \r\ndefusedxml                    0.6.0                           \r\nDeprecated                    1.2.7                           \r\ndistributed                   2.4.0                           \r\ndocker                        4.1.0                           \r\ndocutils                      0.15.2                          \r\necdsa                         0.14.1                          \r\nentrypoints                   0.3                             \r\net-xmlfile                    1.0.1                           \r\nexecnet                       1.7.1                           \r\nfastparquet                   0.3.3                           /Users/taugspurger/sandbox/fastparquet                        \r\nfeedparser                    5.2.1                           \r\nFiona                         1.8.8                           \r\nflake8                        3.7.9                           \r\nflake8-rst                    0.7.1                           \r\nfletcher                      0.3.1                           \r\nflit                          2.1.0                           \r\nflit-core                     2.1.0                           \r\nfsspec                        0.7.4                           \r\nfuture                        0.18.2                          \r\ngcsfs                         0.6.2                           \r\ngeopandas                     0.6.0+1.g95b8e1a.dirty          /Users/taugspurger/sandbox/geopandas                          \r\ngitdb2                        2.0.5                           \r\nGitPython                     3.0.2                           \r\ngoogle-auth                   1.16.1                          \r\ngoogle-auth-oauthlib          0.4.1                           \r\ngraphviz                      0.13                            \r\nh5py                          2.10.0                          \r\nHeapDict                      1.0.1                           \r\nholoviews                     1.12.6                          \r\nhumanfriendly                 8.1                             \r\nhunter                        3.1.3                           \r\nhvplot                        0.5.2                           \r\nhypothesis                    4.36.2                          \r\nidentify                      1.4.7                           \r\nidna                          2.8                             \r\nimagesize                     1.1.0                           \r\nimportlib-metadata            0.23                            \r\nimportlib-resources           1.0.2                           \r\niniconfig                     1.0.0                           \r\nintake                        0.5.3                           \r\nipydatawidgets                4.0.1                           \r\nipykernel                     5.1.2                           \r\nipyleaflet                    0.13.0                          \r\nipympl                        0.5.6                           \r\nipython                       7.11.1                          \r\nipython-genutils              0.2.0                           \r\nipyvolume                     0.5.2                           \r\nipyvue                        1.3.2                           \r\nipyvuetify                    1.4.0                           \r\nipywebrtc                     0.5.0                           \r\nipywidgets                    7.5.1                           \r\nisort                         4.3.21                          \r\njdcal                         1.4.1                           \r\njedi                          0.16.0                          \r\nJinja2                        2.11.2                          \r\njinja2-time                   0.2.0                           \r\njmespath                      0.9.4                           \r\njoblib                        0.14.1                          \r\njson5                         0.9.4                           \r\njsondiff                      1.1.1                           \r\njsonpatch                     1.24                            \r\njsonpickle                    1.2                             \r\njsonpointer                   2.0                             \r\njsonschema                    3.0.2                           \r\njupyter                       1.0.0                           \r\njupyter-client                5.3.3                           \r\njupyter-console               6.0.0                           \r\njupyter-core                  4.5.0                           \r\njupyterlab                    2.1.2                           \r\njupyterlab-server             1.1.4                           \r\nkiwisolver                    1.1.0                           \r\nline-profiler                 2.1.1                           \r\nllvmlite                      0.33.0                          \r\nlocket                        0.2.0                           /Users/taugspurger/sandbox/locket.py                          \r\nlxml                          4.5.0                           \r\nmanhole                       1.6.0                           \r\nMarkdown                      3.1.1                           \r\nMarkupSafe                    1.1.1                           \r\nmatplotlib                    3.2.2                           \r\nmccabe                        0.6.1                           \r\nmemory-profiler               0.55.0                          \r\nmistune                       0.8.4                           \r\nmock                          3.0.5                           \r\nmore-itertools                7.2.0                           \r\nmoto                          1.3.6                           \r\nmsgpack                       0.6.2                           \r\nmultidict                     4.5.2                           \r\nmunch                         2.3.2                           \r\nmypy                          0.730                           \r\nmypy-extensions               0.4.1                           \r\nnbconvert                     5.6.0                           \r\nnbformat                      4.4.0                           \r\nnbsphinx                      0.4.2                           \r\nnest-asyncio                  1.3.3                           \r\nnodeenv                       1.3.3                           \r\nnotebook                      6.0.1                           \r\nnumexpr                       2.7.1                           \r\nnumpy                         1.19.0                          \r\nnumpydoc                      1.0.0.dev0                      \r\noauthlib                      3.1.0                           \r\nodfpy                         1.4.0                           \r\nopenpyxl                      3.0.3                           \r\npackaging                     20.4                            \r\npandas                        1.1.0.dev0+1758.g035e1fe831     /Users/taugspurger/sandbox/pandas                             \r\npandas-sphinx-theme           0.0.1.dev0                      /Users/taugspurger/sandbox/pandas-sphinx-theme                \r\npandocfilters                 1.4.2                           \r\nparam                         1.9.2                           \r\nparfive                       1.0.0                           \r\nparso                         0.6.0                           \r\npartd                         1.0.0                           \r\npathspec                      0.8.0                           \r\npatsy                         0.5.1                           \r\npexpect                       4.7.0                           \r\npickleshare                   0.7.5                           \r\nPillow                        6.1.0                           \r\npip                           20.0.2                          \r\npluggy                        0.13.0                          \r\npoyo                          0.5.0                           \r\npre-commit                    1.18.3                          \r\nprogressbar2                  3.51.3                          \r\nprometheus-client             0.7.1                           \r\nprompt-toolkit                2.0.9                           \r\npsutil                        5.6.3                           \r\nptyprocess                    0.6.0                           \r\npy                            1.9.0                           \r\npyaml                         20.4.0                          \r\npyarrow                       0.16.0                          \r\npyasn1                        0.4.7                           \r\npyasn1-modules                0.2.8                           \r\npycodestyle                   2.5.0                           \r\npycparser                     2.19                            \r\npycryptodome                  3.9.8                           \r\npyct                          0.4.6                           \r\npydata-sphinx-theme           0.1.1                           \r\npydeps                        1.9.0                           \r\npyflakes                      2.1.1                           \r\nPyGithub                      1.44.1                          \r\nPygments                      2.4.2                           \r\nPyJWT                         1.7.1                           \r\npyparsing                     2.4.2                           \r\npyproj                        2.4.0                           \r\npyrsistent                    0.15.4                          \r\npytest                        5.4.3                           \r\npytest-asyncio                0.10.0                          \r\npytest-cov                    2.8.1                           \r\npytest-cover                  3.0.0                           \r\npytest-forked                 1.0.2                           \r\npytest-repeat                 0.8.0                           \r\npytest-xdist                  1.29.0                          \r\npython-boilerplate            0.1.0                           \r\npython-dateutil               2.8.0                           \r\npython-jose                   2.0.2                           \r\npython-jsonrpc-server         0.3.2                           \r\npython-language-server        0.31.4                          \r\npython-slugify                4.0.1                           \r\npython-utils                  2.4.0                           \r\npythreejs                     2.2.0                           \r\npytoml                        0.1.21                          \r\npytz                          2019.2                          \r\npyviz-comms                   0.7.2                           \r\nPyYAML                        5.1.2                           \r\npyzmq                         18.1.0                          \r\nqtconsole                     4.5.5                           \r\nregex                         2020.6.8                        \r\nrequests                      2.24.0                          \r\nrequests-oauthlib             1.3.0                           \r\nresponses                     0.10.6                          \r\nrsa                           4.0                             \r\nrstcheck                      3.3.1                           \r\ns3fs                          0.4.2                           \r\ns3transfer                    0.1.13                          \r\nscikit-learn                  0.22.2.post1                    \r\nscipy                         1.3.1                           \r\nseaborn                       0.9.0                           \r\nSend2Trash                    1.5.0                           \r\nsetuptools                    49.2.0                          \r\nShapely                       1.6.4.post2                     \r\nsix                           1.12.0                          \r\nsmmap2                        2.0.5                           \r\nsnakeviz                      2.0.1                           \r\nsnowballstemmer               1.9.1                           \r\nsortedcontainers              2.1.0                           \r\nsparse                        0.10.0                          \r\nSphinx                        3.1.1                           \r\nsphinxcontrib-applehelp       1.0.2                           \r\nsphinxcontrib-devhelp         1.0.2                           \r\nsphinxcontrib-htmlhelp        1.0.3                           \r\nsphinxcontrib-jsmath          1.0.1                           \r\nsphinxcontrib-qthelp          1.0.3                           \r\nsphinxcontrib-serializinghtml 1.1.4                           \r\nsphinxcontrib-websupport      1.1.2                           \r\nsphinxcontrib.youtube         0.1.2                           \r\nSQLAlchemy                    1.3.11                          \r\nsshpubkeys                    3.1.0                           \r\nstatsmodels                   0.10.2                          \r\nstdlib-list                   0.6.0                           \r\nsunpy                         1.1.dev518+gcad2d473f.d20191103 /Users/taugspurger/sandbox/sunpy                              \r\ntables                        3.6.1                           \r\ntabulate                      0.8.6                           \r\ntblib                         1.4.0                           \r\nterminado                     0.8.2                           \r\ntest                          1.0.0                           \r\ntestpath                      0.4.2                           \r\ntext-unidecode                1.3                             \r\nthrift                        0.13.0                          \r\ntoml                          0.10.0                          \r\ntoolz                         0.10.0                          \r\ntornado                       6.0.3                           \r\ntqdm                          4.37.0                          \r\ntraitlets                     4.3.2                           \r\ntraittypes                    0.2.1                           \r\ntyped-ast                     1.4.0                           \r\ntyping-extensions             3.7.4                           \r\nujson                         1.35                            \r\nurllib3                       1.25.5                          \r\nvaex                          3.0.0                           \r\nvaex-arrow                    0.5.1                           \r\nvaex-astro                    0.7.0                           \r\nvaex-core                     2.0.2                           \r\nvaex-hdf5                     0.6.0                           \r\nvaex-jupyter                  0.5.1.post0                     \r\nvaex-ml                       0.9.0                           \r\nvaex-server                   0.3.1                           \r\nvaex-viz                      0.4.0                           \r\nvirtualenv                    16.7.5                          \r\nwcwidth                       0.1.7                           \r\nwebencodings                  0.5.1                           \r\nwebsocket-client              0.56.0                          \r\nWerkzeug                      0.16.0                          \r\nwheel                         0.34.2                          \r\nwidgetsnbextension            3.5.1                           \r\nwrapt                         1.11.2                          \r\nxarray                        0.14.1+36.gb3d3b448             /Users/taugspurger/sandbox/xarray                             \r\nxlwt                          1.3.0                           \r\nxmltodict                     0.12.0                          \r\nyarl                          1.3.0                           \r\nzict                          1.0.0                           \r\nzipp                          0.6.0                           \r\nzope.interface                4.7.1                           \r\n```\r\n\r\n</details>\r\n\r\n- [ ] pytest and operating system versions\r\n\r\nPytest 6.0.1rc0 and MacOS 10.14.5\r\n\r\n```python\r\n# file: test_foo.py\r\nimport pytest\r\n\r\n\r\ndef test_xfail_test(request):\r\n    mark = pytest.mark.xfail(reason=\"xfail\")\r\n    request.node.add_marker(mark)\r\n    assert 0\r\n```\r\n\r\nWith 5.4.3\r\n\r\n```\r\n\r\n$ pytest -rsx test_foo.py\r\n=============================================================================== test session starts ================================================================================\r\nplatform darwin -- Python 3.7.6, pytest-5.4.3, py-1.9.0, pluggy-0.13.0\r\nhypothesis profile 'default' -> database=DirectoryBasedExampleDatabase('/Users/taugspurger/sandbox/.hypothesis/examples')\r\nrootdir: /Users/taugspurger/sandbox\r\nplugins: xdist-1.29.0, hypothesis-4.36.2, forked-1.0.2, repeat-0.8.0, asyncio-0.10.0, cov-2.8.1\r\ncollected 1 item\r\n\r\ntest_foo.py x                                                                                                                                                                [100%]\r\n\r\n============================================================================= short test summary info ==============================================================================\r\nXFAIL test_foo.py::test_xfail_test\r\n  xfail\r\n================================================================================ 1 xfailed in 0.07s ================================================================================\r\n```\r\n\r\nWith 6.0.0rc0\r\n\r\n```\r\n$ pytest -rsx test_foo.py\r\n=============================================================================== test session starts ================================================================================\r\nplatform darwin -- Python 3.7.6, pytest-6.0.0rc1, py-1.9.0, pluggy-0.13.0\r\nhypothesis profile 'default' -> database=DirectoryBasedExampleDatabase('/Users/taugspurger/sandbox/.hypothesis/examples')\r\nrootdir: /Users/taugspurger/sandbox\r\nplugins: xdist-1.29.0, hypothesis-4.36.2, forked-1.0.2, repeat-0.8.0, asyncio-0.10.0, cov-2.8.1\r\ncollected 1 item\r\n\r\ntest_foo.py F                                                                                                                                                                [100%]\r\n\r\n===================================================================================== FAILURES =====================================================================================\r\n_________________________________________________________________________________ test_xfail_test __________________________________________________________________________________\r\n\r\nrequest = <FixtureRequest for <Function test_xfail_test>>\r\n\r\n    def test_xfail_test(request):\r\n        mark = pytest.mark.xfail(reason=\"xfail\")\r\n        request.node.add_marker(mark)\r\n>       assert 0\r\nE       assert 0\r\n\r\ntest_foo.py:7: AssertionError\r\n```\r\n\n</description>",
+  "request": {
+    "related_symbols": [
+      {
+        "name": "_pytest.fixtures._FixtureFunction",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "types import PytestUnhandledCoroutineWarning\n\nif TYPE_CHECKING:\n    from ty",
+        "start_line": 73,
+        "start_column": 2273,
+        "end_line": 0,
+        "end_column": 2348,
+        "start_byte": 2273,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.fixtures.FixtureFunctionMarker",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "                 )\n\n\ndef _find_parametrized_scope(\n    argnames: typing.Sequence[str],\n    arg2fixturedefs: Mapping[str, typing.Sequence[fixtures.FixtureDef]],\n    indirect: Union[bool, typing.Sequence[str]],\n) -> \"fixtures._Scope\":\n    \"\"\"Find the most appropriate scope for a parametrized call based on its arguments.\n\n    When there's at least one direct argument, always use \"function\" scope.\n\n    When a test function is parametrized and all its arguments are indirect\n    (e.g. fixtures), return the most narrow scope based on the fixtures used.\n\n    Related to issue #1832, based on code posted by @Kingdread.\n    \"\"\"\n    if isinstance(indirect, Sequence):\n        all_arguments_are_fixtures = len(indirect) == len(argnames)\n    else:\n        all_arguments_are_fixtures = bool(indirect)\n\n    if all_arguments_are_fixtures:\n        fixturedefs = arg2fixturedefs or {}\n        used_scopes = [\n            fixturedef[0].scope\n            for name, fixturedef in fixturedefs.items()\n            if name in argnames\n        ]\n        if used_scopes:\n            # Takes the most narrow scope from used fixtures\n            for scope in reversed(fixtures.scopes):\n                if scope in used_scopes:\n                    return scope\n\n    return \"function\"\n\n\ndef _ascii_escaped_by_config(val: Union[str, bytes], config: Optional[Config]) -> str:\n    if config is None:\n        escape_option = False\n    else:\n        escape_option = config.getini(\n            \"disable_test_id_escaping_and_forfeit_al",
+        "start_line": 1174,
+        "start_column": 45925,
+        "end_line": 0,
+        "end_column": 47430,
+        "start_byte": 45925,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.fixtures.FixtureFunctionMarker.scope",
+        "file_path": "src/_pytest/python.py",
+        "file_content": " argnames: typing.Sequence[str],\n    arg2fixturedefs: Mapping[str, typ",
+        "start_line": 1176,
+        "start_column": 45979,
+        "end_line": 4,
+        "end_column": 46049,
+        "start_byte": 45979,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.fixtures.FixtureFunctionMarker.params",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "equence[fixtures.FixtureDef]],\n    indirect: Union[bool, typing.Sequence[str]],\n",
+        "start_line": 1177,
+        "start_column": 46054,
+        "end_line": 4,
+        "end_column": 46134,
+        "start_byte": 46054,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.fixtures.FixtureFunctionMarker.autouse",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "\"fixtures._Scope\":\n    \"\"\"Find the most app",
+        "start_line": 1178,
+        "start_column": 46139,
+        "end_line": 4,
+        "end_column": 46182,
+        "start_byte": 46139,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.fixtures.FixtureFunctionMarker.ids",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "ate scope for a parametrized call based on its arguments.\n\n    When there's at least one direct argument, always use \"function\" scope.\n\n    When a test function is parametrized and all its arguments are indirect\n    (e.g. fi",
+        "start_line": 1179,
+        "start_column": 46187,
+        "end_line": 4,
+        "end_column": 46411,
+        "start_byte": 46187,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.fixtures.FixtureFunctionMarker.name",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "s), return the most narrow scope based on the fi",
+        "start_line": 1187,
+        "start_column": 46416,
+        "end_line": 4,
+        "end_column": 46464,
+        "start_byte": 46416,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.fixtures.FixtureFunctionMarker.__call__",
+        "file_path": "src/_pytest/python.py",
+        "file_content": " used.\n\n    Related to issue #1832, based on code posted by @Kingdread.\n    \"\"\"\n    if isinstance(indirect, Sequence):\n        all_arguments_are_fixtures = len(indirect) == len(argnames)\n    else:\n        all_arguments_are_fixtures = bool(indirect)\n\n    if all_arguments_are_fixtures:\n        fixturedefs = arg2fixturedefs or {}\n        used_scopes = [\n            fixturedef[0].scope\n            for name, fixturedef in fixturedefs.items()\n            if name in argnames\n        ]\n        if used_scopes:\n            # Takes the most narrow scope from used fixtures\n            for scope in reversed(fixtures.scopes):\n                if scope in used_scopes:\n                    return scope\n\n    return \"function\"\n\n\ndef _ascii_escaped_by_config(val: Union[str, bytes], config: Optional[Config]) -> str:\n    if config is None:\n        escape_option = False\n    else:\n        escape_option = config.getini(\n            \"disable_test_id_escaping_and_forfeit_al",
+        "start_line": 1189,
+        "start_column": 46470,
+        "end_line": 4,
+        "end_column": 47430,
+        "start_byte": 46470,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.python.Function",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "class Function(PyobjMixin, nodes.Item):\n    \"\"\" a Function Item is responsible for setting up and executing a\n    Python test function.\n    \"\"\"\n\n    # disable since functions handle it themselves\n    _ALLOW_MARKERS = False\n\n    def __init__(\n        self,\n        name: str,\n        parent,\n        config: Optional[Config] = None,\n        callspec: Optional[CallSpec2] = None,\n        callobj=NOTSET,\n        keywords=None,\n        session: Optional[Session] = None,\n        fixtureinfo: Optional[FuncFixtureInfo] = None,\n        originalname: Optional[str] = None,\n    ) -> None:\n        \"\"\"\n        param name: the full function name, including any decorations like those\n            added by parametrization (``my_func[my_param]``).\n        param parent: the parent Node.\n        param config: the pytest Config object\n        param callspec: if given, this is function has been parametrized and the callspec contains\n            meta information about the parametrization.\n        param callobj: if given, the object which will be called when the Function is invoked,\n            otherwise the callobj will be obtained from ``parent`` using ``originalname``\n        param keywords: keywords bound to the function object for \"-k\" matching.\n        param session: the pytest Session object\n        param fixtureinfo: fixture information already resolved at this fixture node.\n        param originalname:\n            The attribute name to use for accessing the underlying function object.\n            Defaults to ``name``. Set this if name is different from the original name,\n            for example when it contains decorations like those added by parametrization\n            (``my_func[my_param]``).\n        \"\"\"\n        super().__init__(name, parent, config=config, session=session)\n\n        if callobj is not NOTSET:\n            self.obj = callobj\n\n        #: Original function name, without any decorations (for example\n        #: parametrization adds a ``\"[...]\"`` suffix to function names), used to access\n        #: the underlying function object from ``parent`` (in case ``callobj`` is not given\n        #: explicitly).\n        #:\n        #: .. versionadded:: 3.0\n        self.originalname = originalname or name\n\n        # note: when FunctionDefinition is introduced, we should change ``originalname``\n        # to a readonly property that returns FunctionDefinition.name\n\n        self.keywords.update(self.obj.__dict__)\n        self.own_markers.extend(get_unpacked_marks(self.obj))\n        if callspec:\n            self.callspec = callspec\n            # this is total hostile and a mess\n            # keywords are broken by design by now\n            # this will be redeemed later\n            for mark in callspec.marks:\n                # feel free to cry, this was broken for years before\n                # and keywords cant fix it per design\n                self.keywords[mark.name] = mark\n            self.own_markers.extend(normalize_mark_list(callspec.marks))\n        if keywords:\n            self.keywords.update(keywords)\n\n        # todo: this is a hell of a hack\n        # https://github.com/pytest-dev/pytest/issues/4569\n\n        self.keywords.update(\n            {\n                mark.name: True\n                for mark in self.iter_markers()\n                if mark.name not in self.keywords\n            }\n        )\n\n        if fixtureinfo is None:\n            fixtureinfo = self.session._fixturemanager.getfixtureinfo(\n                self, self.obj, self.cls, funcargs=True\n            )\n        self._fixtureinfo = fixtureinfo  # type: FuncFixtureInfo\n        self.fixturenames = fixtureinfo.names_closure\n        self._initrequest()\n\n    @classmethod\n    def from_parent(cls, parent, **kw):  # todo: determine sound type limitations\n        \"\"\"\n        The public  constructor\n        \"\"\"\n        return super().from_parent(parent=parent, **kw)\n\n    def _initrequest(self) -> None:\n        self.funcargs = {}  # type: Dict[str, object]\n        self._request = fixtures.FixtureRequest(self)\n\n    @property\n    def function(self):\n        \"underlying python 'function' object\"\n        return getimfunc(self.obj)\n\n    def _getobj(self):\n        assert self.parent is not None\n        return getattr(self.parent.obj, self.originalname)  # type: ignore[attr-defined]\n\n    @property\n    def _pyfuncitem(self):\n        \"(compatonly) for code expecting pytest-2.2 style request objects\"\n        return self\n\n    @property\n    def funcargnames(self) -> List[str]:\n        \"\"\" alias attribute for ``fixturenames`` for pre-2.3 compatibility\"\"\"\n        warnings.warn(FUNCARGNAMES, stacklevel=2)\n        return self.fixturenames\n\n    def runtest(self) -> None:\n        \"\"\" execute the underlying test function. \"\"\"\n        self.ihook.pytest_pyfunc_call(pyfuncitem=self)\n\n    def setup(self) -> None:\n        if isinstance(self.parent, Instance):\n            self.parent.newinstance()\n            self.obj = self._getobj()\n        self._request._fillfixtures()\n\n    def _prunetraceback(self, excinfo: ExceptionInfo) -> None:\n        if hasattr(self, \"_obj\") and not self.config.getoption(\"fulltrace\", False):\n            code = _pytest._code.Code(get_real_func(self.obj))\n            path, firstlineno = code.path, code.firstlineno\n            traceback = excinfo.traceback\n            ntraceback = traceback.cut(path=path, firstlineno=firstlineno)\n            if ntraceback == traceback:\n                ntraceback = ntraceback.cut(path=path)\n                if ntraceback == traceback:\n                    ntraceback = ntraceback.filter(filter_traceback)\n                    if not ntraceback:\n                        ntraceback = traceback\n\n            excinfo.traceback = ntraceback.filter()\n            # issue364: mark all but first and last frames to\n            # only show a single-line message for each frame\n            if self.config.getoption(\"tbstyle\", \"auto\") == \"auto\":\n                if len(excinfo.traceback) > 2:\n                    for entry in excinfo.traceback[1:-1]:\n                        entry.set_repr_style(\"short\")\n\n    # TODO: Type ignored -- breaks Liskov Substitution.\n    def repr_failure(  # type: ignore[override]\n        self, excinfo: ExceptionInfo[BaseException],\n    ) -> Union[str, TerminalRepr]:\n        style = self.config.getoption(\"tbstyle\", \"auto\")\n        if style == \"auto\":\n            style = \"long\"\n        return self._repr_failure_py(excinfo, style=style)",
+        "start_line": 1444,
+        "start_column": 55214,
+        "end_line": 0,
+        "end_column": 61637,
+        "start_byte": 55214,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.python.Function._ALLOW_MARKERS",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "_ALLOW_MARKERS = False",
+        "start_line": 1450,
+        "start_column": 55414,
+        "end_line": 4,
+        "end_column": 55436,
+        "start_byte": 55414,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.python.Function.__init__",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "def __init__(\n        self,\n        name: str,\n        parent,\n        config: Optional[Config] = None,\n        callspec: Optional[CallSpec2] = None,\n        callobj=NOTSET,\n        keywords=None,\n        session: Optional[Session] = None,\n        fixtureinfo: Optional[FuncFixtureInfo] = None,\n        originalname: Optional[str] = None,\n    ) -> None:\n        \"\"\"\n        param name: the full function name, including any decorations like those\n            added by parametrization (``my_func[my_param]``).\n        param parent: the parent Node.\n        param config: the pytest Config object\n        param callspec: if given, this is function has been parametrized and the callspec contains\n            meta information about the parametrization.\n        param callobj: if given, the object which will be called when the Function is invoked,\n            otherwise the callobj will be obtained from ``parent`` using ``originalname``\n        param keywords: keywords bound to the function object for \"-k\" matching.\n        param session: the pytest Session object\n        param fixtureinfo: fixture information already resolved at this fixture node.\n        param originalname:\n            The attribute name to use for accessing the underlying function object.\n            Defaults to ``name``. Set this if name is different from the original name,\n            for example when it contains decorations like those added by parametrization\n            (``my_func[my_param]``).\n        \"\"\"\n        super().__init__(name, parent, config=config, session=session)\n\n        if callobj is not NOTSET:\n            self.obj = callobj\n\n        #: Original function name, without any decorations (for example\n        #: parametrization adds a ``\"[...]\"`` suffix to function names), used to access\n        #: the underlying function object from ``parent`` (in case ``callobj`` is not given\n        #: explicitly).\n        #:\n        #: .. versionadded:: 3.0\n        self.originalname = originalname or name\n\n        # note: when FunctionDefinition is introduced, we should change ``originalname``\n        # to a readonly property that returns FunctionDefinition.name\n\n        self.keywords.update(self.obj.__dict__)\n        self.own_markers.extend(get_unpacked_marks(self.obj))\n        if callspec:\n            self.callspec = callspec\n            # this is total hostile and a mess\n            # keywords are broken by design by now\n            # this will be redeemed later\n            for mark in callspec.marks:\n                # feel free to cry, this was broken for years before\n                # and keywords cant fix it per design\n                self.keywords[mark.name] = mark\n            self.own_markers.extend(normalize_mark_list(callspec.marks))\n        if keywords:\n            self.keywords.update(keywords)\n\n        # todo: this is a hell of a hack\n        # https://github.com/pytest-dev/pytest/issues/4569\n\n        self.keywords.update(\n            {\n                mark.name: True\n                for mark in self.iter_markers()\n                if mark.name not in self.keywords\n            }\n        )\n\n        if fixtureinfo is None:\n            fixtureinfo = self.session._fixturemanager.getfixtureinfo(\n                self, self.obj, self.cls, funcargs=True\n            )\n        self._fixtureinfo = fixtureinfo  # type: FuncFixtureInfo\n        self.fixturenames = fixtureinfo.names_closure\n        self._initrequest()",
+        "start_line": 1452,
+        "start_column": 55442,
+        "end_line": 4,
+        "end_column": 58875,
+        "start_byte": 55442,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.python.Function.from_parent",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "@classmethod\n    def from_parent(cls, parent, **kw):  # todo: determine sound type limitations\n        \"\"\"\n        The public  constructor\n        \"\"\"\n        return super().from_parent(parent=parent, **kw)",
+        "start_line": 1532,
+        "start_column": 58881,
+        "end_line": 4,
+        "end_column": 59087,
+        "start_byte": 58881,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.python.Function._initrequest",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "def _initrequest(self) -> None:\n        self.funcargs = {}  # type: Dict[str, object]\n        self._request = fixtures.FixtureRequest(self)",
+        "start_line": 1539,
+        "start_column": 59093,
+        "end_line": 4,
+        "end_column": 59232,
+        "start_byte": 59093,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.python.Function.function",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "@property\n    def function(self):\n        \"underlying python 'function' object\"\n        return getimfunc(self.obj)",
+        "start_line": 1543,
+        "start_column": 59238,
+        "end_line": 4,
+        "end_column": 59352,
+        "start_byte": 59238,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.python.Function._getobj",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "def _getobj(self):\n        assert self.parent is not None\n        return getattr(self.parent.obj, self.originalname)  # type: ignore[attr-defined]",
+        "start_line": 1548,
+        "start_column": 59358,
+        "end_line": 4,
+        "end_column": 59504,
+        "start_byte": 59358,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.python.Function._pyfuncitem",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "@property\n    def _pyfuncitem(self):\n        \"(compatonly) for code expecting pytest-2.2 style request objects\"\n        return self",
+        "start_line": 1552,
+        "start_column": 59510,
+        "end_line": 4,
+        "end_column": 59641,
+        "start_byte": 59510,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.python.Function.funcargnames",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "@property\n    def funcargnames(self) -> List[str]:\n        \"\"\" alias attribute for ``fixturenames`` for pre-2.3 compatibility\"\"\"\n        warnings.warn(FUNCARGNAMES, stacklevel=2)\n        return self.fixturenames",
+        "start_line": 1557,
+        "start_column": 59647,
+        "end_line": 4,
+        "end_column": 59858,
+        "start_byte": 59647,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.python.Function.runtest",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "def runtest(self) -> None:\n        \"\"\" execute the underlying test function. \"\"\"\n        self.ihook.pytest_pyfunc_call(pyfuncitem=self)",
+        "start_line": 1563,
+        "start_column": 59864,
+        "end_line": 4,
+        "end_column": 59999,
+        "start_byte": 59864,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.python.Function.setup",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "def setup(self) -> None:\n        if isinstance(self.parent, Instance):\n            self.parent.newinstance()\n            self.obj = self._getobj()\n        self._request._fillfixtures()",
+        "start_line": 1567,
+        "start_column": 60005,
+        "end_line": 4,
+        "end_column": 60189,
+        "start_byte": 60005,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.python.Function._prunetraceback",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "def _prunetraceback(self, excinfo: ExceptionInfo) -> None:\n        if hasattr(self, \"_obj\") and not self.config.getoption(\"fulltrace\", False):\n            code = _pytest._code.Code(get_real_func(self.obj))\n            path, firstlineno = code.path, code.firstlineno\n            traceback = excinfo.traceback\n            ntraceback = traceback.cut(path=path, firstlineno=firstlineno)\n            if ntraceback == traceback:\n                ntraceback = ntraceback.cut(path=path)\n                if ntraceback == traceback:\n                    ntraceback = ntraceback.filter(filter_traceback)\n                    if not ntraceback:\n                        ntraceback = traceback\n\n            excinfo.traceback = ntraceback.filter()\n            # issue364: mark all but first and last frames to\n            # only show a single-line message for each frame\n            if self.config.getoption(\"tbstyle\", \"auto\") == \"auto\":\n                if len(excinfo.traceback) > 2:\n                    for entry in excinfo.traceback[1:-1]:\n                        entry.set_repr_style(\"short\")",
+        "start_line": 1573,
+        "start_column": 60195,
+        "end_line": 4,
+        "end_column": 61273,
+        "start_byte": 60195,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.python.Function.repr_failure",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "def repr_failure(  # type: ignore[override]\n        self, excinfo: ExceptionInfo[BaseException],\n    ) -> Union[str, TerminalRepr]:\n        style = self.config.getoption(\"tbstyle\", \"auto\")\n        if style == \"auto\":\n            style = \"long\"\n        return self._repr_failure_py(excinfo, style=style)",
+        "start_line": 1595,
+        "start_column": 61335,
+        "end_line": 4,
+        "end_column": 61637,
+        "start_byte": 61335,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.python.FunctionDefinition",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "class FunctionDefinition(Function):\n    \"\"\"\n    internal hack until we get actual definition nodes instead of the\n    crappy metafunc hack\n    \"\"\"\n\n    def runtest(self) -> None:\n        raise RuntimeError(\"function definitions are not supposed to be used\")\n\n    setup = runtest",
+        "start_line": 1604,
+        "start_column": 61640,
+        "end_line": 0,
+        "end_column": 61918,
+        "start_byte": 61640,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.python.FunctionDefinition.runtest",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "def runtest(self) -> None:\n        raise RuntimeError(\"function definitions are not supposed to be used\")",
+        "start_line": 1610,
+        "start_column": 61792,
+        "end_line": 4,
+        "end_column": 61897,
+        "start_byte": 61792,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.python.FunctionDefinition.setup",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "setup = runtest",
+        "start_line": 1613,
+        "start_column": 61903,
+        "end_line": 4,
+        "end_column": 61918,
+        "start_byte": 61903,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.unittest.TestCaseFunction",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "list of values if argnames specifies only one name \"\n        \"or a list of tuples of values if argnames specifies multiple names. \"\n        \"Example: @parametrize('arg1', [1,2]) would lead to two calls of the \"\n        \"decorated test function, one with arg1=1 and another with arg1=2.\"\n        \"see https://docs.pytest.org/en/stable/parametrize.html for more info \"\n        \"and examples.\",\n    )\n    config.addinivalue_line(\n        \"markers\",\n        \"usefixtures(fixturename1, fixturename2, ...): mark tests as needing \"\n        \"all of the specified fixtures. see \"\n        \"https://docs.pytest.org/en/stable/fixture.html#usefixtures \",\n    )\n\n\ndef async_warn_and_skip(nodeid: str) -> None:\n    msg = \"async def functions are not natively supported and have been skipped.\\n\"\n    msg += (\n        \"You need to install a suitable plugin for your async framework, for example:\\n\"\n    )\n    msg += \"  - pytest-asyncio\\n\"\n    msg += \"  - pytest-trio\\n\"\n    msg += \"  - pytest-tornasync\\n\"\n    msg += \"  - pytest-twisted\"\n    warnings.warn(PytestUnhandledCoroutineWarning(msg.format(nodeid)))\n    skip(msg=\"async def function and no async plugin installed (see warnings)\")\n\n\n@hookimpl(trylast=True)\ndef pytest_pyfunc_call(pyfuncitem: \"Function\") -> Optional[object]:\n    testfunction = pyfuncitem.obj\n    if is_async_function(testfunction):\n        async_warn_and_skip(pyfuncitem.nodeid)\n    funcargs = pyfuncitem.funcargs\n    testargs = {arg: funcargs[arg] for arg in pyfuncitem._fixtureinfo.argnames}\n    result = testfunction(**testargs)\n    if hasattr(result, \"__await__\") or hasattr(result, \"__aiter__\"):\n        async_warn_and_skip(pyfuncitem.nodeid)\n    return True\n\n\ndef pytest_collect_file(path: py.path.local, parent) -> Optional[\"Module\"]:\n    ext = path.ext\n    if ext == \".py\":\n        if not parent.session.isinitpath(path):\n            if not path_matches_patterns(\n                path, parent.config.getini(\"python_files\") + [\"__init__.py\"]\n            ):\n                return None\n        ihook = parent.session.gethookproxy(path)\n        module = ihook.pytest_pycollect_makemodule(\n            path=path, parent=parent\n        )  # type: Module\n        return module\n    return None\n\n\ndef path_matches_patterns(path: py.path.local, patterns: Iterable[str]) -> bool:\n    \"\"\"Returns True if path matches any of the patterns in the list of globs given.\"\"\"\n    return any(path.fnmatch(pattern) for pattern in patterns)\n\n\ndef pytest_pycollect_makemodule(path: py.path.local, parent) -> \"Module\":\n    if path.basename == \"__init__.py\":\n        pkg = Package.from_parent(parent, fspath=path)  # type: Package\n        return pkg\n    mod = Module.from_parent(parent, fspath=path)  # type: Module\n    return mod\n\n\n@hookimpl(trylast=True)\ndef pytest_pycollect_makeitem(collector: \"PyCollector\", name: str, obj: object):\n    # nothing was collected elsewhere, let's do it here\n    if safe_isclass(obj):\n        if collector.istestclass(obj, name):\n            return Class.from_parent(collector, name=name, obj=obj)\n    elif collector.istestfunction(obj, name):\n        # mock seems to store unbound methods (issue473), normalize it\n        obj = getattr(obj, \"__func__\", obj)\n        # We need to try and unwrap the function if it's a functools.partial\n        # or a functools.wrapped.\n        # We mustn't if it's been wrapped with mock.patch (python 2 only)\n        if not (inspect.isfunction(obj) or inspect.isfunction(get_real_func(obj))):\n            filename, lineno = getfslineno(obj)\n            warnings.warn_explicit(\n                message=PytestCollectionWarning(\n                    \"cannot collect %r because it is not a function.\" % name\n                ),\n                category=None,\n                filename=str(filename),\n                lineno=lineno + 1,\n            )\n        elif getattr(obj, \"__test__\", True):\n            if is_generator(obj):\n                res = Function.from_parent(collector, name=name)\n                reason = \"yield tests were removed in pytest 4.0 - {name} will be ignored\".format(\n                    name=name\n                )\n                res.add_marker(MARK_GEN.xfail(run=False, reason=reason))\n                res.warn(PytestCollectionWarning(reason))\n            else:\n                res = list(collector._genfunctions(name, obj))\n            return res\n\n\nclass PyobjMixin:\n    _ALLOW_MARKERS = True\n\n    # Function and attributes that the mixin needs (for type-checking only).\n    if TYPE_CHECKING:\n        name = \"\"  # type: str\n        parent = None  # type: Optional[nodes.Node]\n        own_markers = []  # type: List[Mark]\n\n        def getparent(self, cls: Type[nodes._NodeType]) -> Optional[nodes._NodeType]:\n            ...\n\n        def listchain(self) -> List[nodes.Node]:\n            ...\n\n    @property\n    def module(self):\n        \"\"\"Python module object this node was collected from (can be None).\"\"\"\n        node = self.getparent(Module)\n        return node.obj if node is not None else None\n\n    @property\n    def cls(self):\n        \"\"\"Python class object this node was collected from (can be None).\"\"\"\n        node = self.getparent(Class)\n        return node.obj if node is not None else None\n\n    @property\n    def instance(self):\n        \"\"\"Python instance object this node was collected from (can be None).\"\"\"\n        node = self.getparent(Instance)\n        return node.obj if node is not None else None\n\n    @property\n    def obj(self):\n        \"\"\"Underlying Python object.\"\"\"\n        obj = getattr(self, \"_obj\", None)\n        if obj is None:\n            self._obj = obj = self._getobj()\n            # XXX evil hack\n            # used to avoid Instance collector marker duplication\n            if self._ALLOW_MARKERS:\n                self.own_markers.extend(get_unpacked_marks(self.obj))\n        return obj\n\n    @obj.setter\n    def obj(self, value):\n        self._obj = value\n\n    def _getobj(self):\n        \"\"\"Gets the underlying Python object. May be overwr",
+        "start_line": 141,
+        "start_column": 4727,
+        "end_line": 0,
+        "end_column": 10680,
+        "start_byte": 4727,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.unittest.TestCaseFunction.nofuncargs",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "nly one name \"\n  ",
+        "start_line": 142,
+        "start_column": 4765,
+        "end_line": 4,
+        "end_column": 4782,
+        "start_byte": 4765,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.unittest.TestCaseFunction._excinfo",
+        "file_path": "src/_pytest/python.py",
+        "file_content": " \"or a list of ",
+        "start_line": 143,
+        "start_column": 4787,
+        "end_line": 4,
+        "end_column": 4802,
+        "start_byte": 4787,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.unittest.TestCaseFunction._testcase",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "       \"Example:",
+        "start_line": 144,
+        "start_column": 4860,
+        "end_line": 4,
+        "end_column": 4876,
+        "start_byte": 4860,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.unittest.TestCaseFunction.setup",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "two calls of the \"\n        \"decorated test function, one with arg1=1 and another with arg1=2.\"\n        \"see https://docs.pytest.org/en/stable/parametrize.html for more info \"\n        \"and examples.\",\n    )\n    config.addinivalue_line(\n        \"markers\",\n        \"usefixtures(fixturename1, fixturename2, ...): mark tests as needing \"\n        \"all of the specified fixtures. see \"\n        \"https://docs.pytest.org/en/stable/fixture.html#use",
+        "start_line": 146,
+        "start_column": 4919,
+        "end_line": 4,
+        "end_column": 5357,
+        "start_byte": 4919,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.unittest.TestCaseFunction.teardown",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "es \",\n    )\n\n\ndef async_warn_and_skip(nodeid: str) -> None:\n    msg = \"async def functions are not natively supported and have been skipped.\\n\"\n    msg += (\n        \"You need to install a suitable plugin for you",
+        "start_line": 155,
+        "start_column": 5363,
+        "end_line": 4,
+        "end_column": 5574,
+        "start_byte": 5363,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.unittest.TestCaseFunction.startTest",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "c framework, for example:\\n\"\n    )\n    msg += \"  - pytest-asyncio\\n\"\n   ",
+        "start_line": 162,
+        "start_column": 5580,
+        "end_line": 4,
+        "end_column": 5652,
+        "start_byte": 5580,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.unittest.TestCaseFunction._addexcinfo",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "= \"  - pytest-trio\\n\"\n    msg += \"  - pytest-tornasync\\n\"\n    msg += \"  - pytest-twisted\"\n    warnings.warn(PytestUnhandledCoroutineWarning(msg.format(nodeid)))\n    skip(msg=\"async def function and no async plugin installed (see warnings)\")\n\n\n@hookimpl(trylast=True)\ndef pytest_pyfunc_call(pyfuncitem: \"Function\") -> Optional[object]:\n    testfunction = pyfuncitem.obj\n    if is_async_function(testfunction):\n        async_warn_and_skip(pyfuncitem.nodeid)\n    funcargs = pyfuncitem.funcargs\n    testargs = {arg: funcargs[arg] for arg in pyfuncitem._fixtureinfo.argnames}\n    result = testfunction(**testargs)\n    if hasattr(result, \"__await__\") or hasattr(result, \"__aiter__\"):\n        async_warn_and_skip(pyfuncitem.nodeid)\n    return True\n\n\ndef pytest_collect_file(path: py.path.local, parent) -> Optional[\"Module\"]:\n    ext = path.ext\n    if ext == \".py\":\n        if not parent.session.isinitpath(path):\n            if not path_matches_patterns(\n                path, parent.config.getini(\"python_files\") + [\"__init__.py\"]\n            ):\n                return None\n        ihook = parent.session.gethookproxy(path)\n        module = ihook.pytest_pycollect_makemodule(\n            path=path, parent=parent\n        )  # type: Module\n        return module\n    return None\n\n\ndef path_matches_patterns(path: py.path.local, patterns: Iterable[str]) -> bool:\n    \"\"\"Returns True if path matches any of the patterns in the list of globs given.\"\"\"",
+        "start_line": 165,
+        "start_column": 5658,
+        "end_line": 4,
+        "end_column": 7099,
+        "start_byte": 5658,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.unittest.TestCaseFunction.addError",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "eturn any(path.fnmatch(pattern) for pattern in patterns)\n\n\ndef pytest_pycollect_makemodule(path: py.path.local, parent) -> \"Module\":\n    if path.basename == \"__init__.py\":\n        pkg = Package.from_parent(parent, fspath=path)  # type: Package\n        return pkg\n    mod = Module.from_parent(pa",
+        "start_line": 198,
+        "start_column": 7105,
+        "end_line": 4,
+        "end_column": 7399,
+        "start_byte": 7105,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.unittest.TestCaseFunction.addFailure",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "fspath=path)  # type: Module\n    return mod\n\n\n@hookimpl(trylast=True)\ndef pytest_pycollect_makeitem(collector: \"PyCollector\", name: str, obj: ",
+        "start_line": 208,
+        "start_column": 7405,
+        "end_line": 4,
+        "end_column": 7547,
+        "start_byte": 7405,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.unittest.TestCaseFunction.addSkip",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "):\n    # nothing was collected elsewhere, let's do it here\n    if safe_isclass(obj):\n        if collector.istestclass(obj, name):\n            return Class.from_parent(collector, name=name, obj=obj)\n    elif collector.istestfunction(obj,",
+        "start_line": 213,
+        "start_column": 7553,
+        "end_line": 4,
+        "end_column": 7789,
+        "start_byte": 7553,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.unittest.TestCaseFunction.addExpectedFailure",
+        "file_path": "src/_pytest/python.py",
+        "file_content": ":\n        # mock seems to store unbound methods (issue473), normalize it\n        obj = getattr(obj, \"__func__\", obj)\n        # We need to try and unwrap the function if it's a functools.partial\n        # or a functools.wrapped.\n        # We mustn't if it's been wrapped with mo",
+        "start_line": 220,
+        "start_column": 7795,
+        "end_line": 4,
+        "end_column": 8072,
+        "start_byte": 7795,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.unittest.TestCaseFunction.addUnexpectedSuccess",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "ch (python 2 only)\n        if not (inspect.isfunction(obj) or inspect.isfunction(get_real_func(obj))):\n            filename, lineno = getfslineno(obj)\n   ",
+        "start_line": 231,
+        "start_column": 8078,
+        "end_line": 4,
+        "end_column": 8232,
+        "start_byte": 8078,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.unittest.TestCaseFunction.addSuccess",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "   warnings.warn_explicit(\n                message=PytestCollectionWarnin",
+        "start_line": 236,
+        "start_column": 8238,
+        "end_line": 4,
+        "end_column": 8311,
+        "start_byte": 8238,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.unittest.TestCaseFunction.stopTest",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "                 \"cannot collect %r because it is not a function.\" % na",
+        "start_line": 239,
+        "start_column": 8317,
+        "end_line": 4,
+        "end_column": 8388,
+        "start_byte": 8317,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.unittest.TestCaseFunction._expecting_failure",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "             ),\n                category=None,\n                filename=str(filename),\n                lineno=lineno + 1,\n            )\n        elif getattr(obj, \"__test__\", True):\n            if is_generator(obj):\n                res = Function.from_parent(collector, name=name)\n                reason = \"yield tests were removed in pytest 4.0 - {name} will be ignored\".format(\n                    name=name\n                )\n                res.a",
+        "start_line": 242,
+        "start_column": 8394,
+        "end_line": 4,
+        "end_column": 8842,
+        "start_byte": 8394,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.unittest.TestCaseFunction.runtest",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "ker(MARK_GEN.xfail(run=False, reason=reason))\n                res.warn(PytestCollectionWarning(reason))\n            else:\n                res = list(collector._genfunctions(name, obj))\n            return res\n\n\nclass PyobjMixin:\n    _ALLOW_MARKERS = True\n\n    # Function and attributes that the mixin needs (for type-checking only).\n    if TYPE_CHECKING:\n        name = \"\"  # type: str\n        parent = None  # type: Optional[nodes.Node]\n        own_markers = []  # type: List[Mark]\n\n        def getparent(self, cls: Type[nodes._NodeType]) -> Optional[nodes._NodeType]:\n            ...\n\n        def listchain(self) -> List[nodes.Node]:\n            ...\n\n    @property\n    def module(self):\n        \"\"\"Python module object this node was collected from (can be None).\"\"\"\n        node = self.getparent(Module)\n        return node.obj if node is not None else None\n\n    @property\n    def cls(self):\n        \"\"\"Python class object this node was collected from (can be None).\"\"\"\n        node = self.getparent(Class)\n        return node.obj if node is not None else None\n\n    @property\n    def instance(self):\n        \"\"\"Python instance object this node was collected from (can be None).\"\"\"\n        node = self.getparent(Instance)\n        return node.obj if node is not None else None\n\n    @property\n    def obj(self):\n        \"\"\"Underlying Python object.\"\"\"\n        obj = getattr(self, \"_obj\", None)\n        if obj is None:\n            self._obj = obj = self._getobj()\n            # XXX evil hack\n            # used to avoid Instanc",
+        "start_line": 251,
+        "start_column": 8848,
+        "end_line": 4,
+        "end_column": 10372,
+        "start_byte": 8848,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.unittest.TestCaseFunction._prunetraceback",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "ector marker duplication\n            if self._ALLOW_MARKERS:\n                self.own_markers.extend(get_unpacked_marks(self.obj))\n        return obj\n\n    @obj.setter\n    def obj(self, value):\n        self._obj = value\n\n    def _getobj(self):\n        \"\"\"Gets the underlying Python object. May be overwr",
+        "start_line": 281,
+        "start_column": 10378,
+        "end_line": 4,
+        "end_column": 10680,
+        "start_byte": 10378,
+        "end_byte": 4
+      }
+    ],
+    "root_caused_symbols": [
+      {
+        "name": "_pytest.hookspec.pytest_runtest_makereport",
+        "file_path": "src/_pytest/skipping.py",
+        "file_content": "",
+        "start_line": 486,
+        "start_column": 17380,
+        "end_line": 0,
+        "end_column": 17867,
+        "start_byte": 17380,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.runner.pytest_runtest_makereport",
+        "file_path": "src/_pytest/skipping.py",
+        "file_content": "ort_teststatus(report: BaseReport) -> Optional[Tuple[str, str, str]]:\n    if hasattr(report, \"wasxfail\"):\n        if report.skipped",
+        "start_line": 318,
+        "start_column": 10464,
+        "end_line": 0,
+        "end_column": 10595,
+        "start_byte": 10464,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.skipping.evaluate_xfail_marks",
+        "file_path": "src/_pytest/skipping.py",
+        "file_content": "def evaluate_xfail_marks(item: Item) -> Optional[Xfail]:\n    \"\"\"Evaluate xfail marks on item, returning Xfail if triggered.\"\"\"\n    for mark in item.iter_markers(name=\"xfail\"):\n        run = mark.kwargs.get(\"run\", True)\n        strict = mark.kwargs.get(\"strict\", item.config.getini(\"xfail_strict\"))\n        raises = mark.kwargs.get(\"raises\", None)\n        if \"condition\" not in mark.kwargs:\n            conditions = mark.args\n        else:\n            conditions = (mark.kwargs[\"condition\"],)\n\n        # Unconditional.\n        if not conditions:\n            reason = mark.kwargs.get(\"reason\", \"\")\n            return Xfail(reason, run, strict, raises)\n\n        # If any of the conditions are true.\n        for condition in conditions:\n            result, reason = evaluate_condition(item, mark, condition)\n            if result:\n                return Xfail(reason, run, strict, raises)\n\n    return None",
+        "start_line": 199,
+        "start_column": 6507,
+        "end_line": 0,
+        "end_column": 7408,
+        "start_byte": 6507,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.skipping.pytest_runtest_makereport",
+        "file_path": "src/_pytest/skipping.py",
+        "file_content": "@hookimpl(hookwrapper=True)\ndef pytest_runtest_makereport(item: Item, call: CallInfo[None]):\n    outcome = yield\n    rep = outcome.get_result()\n    xfailed = item._store.get(xfailed_key, None)\n    # unittest special case, see setting of unexpectedsuccess_key\n    if unexpectedsuccess_key in item._store and rep.when == \"call\":\n        reason = item._store[unexpectedsuccess_key]\n        if reason:\n            rep.longrepr = \"Unexpected success: {}\".format(reason)\n        else:\n            rep.longrepr = \"Unexpected success\"\n        rep.outcome = \"failed\"\n    elif item.config.option.runxfail:\n        pass  # don't interfere\n    elif call.excinfo and isinstance(call.excinfo.value, xfail.Exception):\n        assert call.excinfo.value.msg is not None\n        rep.wasxfail = \"reason: \" + call.excinfo.value.msg\n        rep.outcome = \"skipped\"\n    elif not rep.skipped and xfailed:\n        if call.excinfo:\n            raises = xfailed.raises\n            if raises is not None and not isinstance(call.excinfo.value, raises):\n                rep.outcome = \"failed\"\n            else:\n                rep.outcome = \"skipped\"\n                rep.wasxfail = xfailed.reason\n        elif call.when == \"call\":\n            if xfailed.strict:\n                rep.outcome = \"failed\"\n                rep.longrepr = \"[XPASS(strict)] \" + xfailed.reason\n            else:\n                rep.outcome = \"passed\"\n                rep.wasxfail = xfailed.reason\n\n    if (\n        item._store.get(skipped_by_mark_key, True)\n        and rep.skipped\n        and type(rep.longrepr) is tuple\n    ):\n        # skipped by mark.skipif; change the location of the failure\n        # to point to the item definition, otherwise it will display\n        # the location of where the skip exception was raised within pytest\n        _, _, reason = rep.longrepr\n        filename, line = item.reportinfo()[:2]\n        assert line is not None\n        rep.longrepr = str(filename), line + 1, reason",
+        "start_line": 259,
+        "start_column": 8490,
+        "end_line": 0,
+        "end_column": 10447,
+        "start_byte": 8490,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.unittest.pytest_runtest_makereport",
+        "file_path": "src/_pytest/skipping.py",
+        "file_content": "urn \"xpassed\", \"X\", \"XPASS\"\n    return None\n",
+        "start_line": 290,
+        "start_column": 10683,
+        "end_line": 0,
+        "end_column": 11441,
+        "start_byte": 10683,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.nodes.Node.add_marker",
+        "file_path": "src/_pytest/nodes.py",
+        "file_content": "def add_marker(\n        self, marker: Union[str, MarkDecorator], append: bool = True\n    ) -> None:\n        \"\"\"dynamically add a marker object to the node.\n\n        :type marker: ``str`` or ``pytest.mark.*``  object\n        :param marker:\n            ``append=True`` whether to append the marker,\n            if ``False`` insert at position ``0``.\n        \"\"\"\n        from _pytest.mark import MARK_GEN\n\n        if isinstance(marker, MarkDecorator):\n            marker_ = marker\n        elif isinstance(marker, str):\n            marker_ = getattr(MARK_GEN, marker)\n        else:\n            raise ValueError(\"is not a string or pytest.mark.* Marker\")\n        self.keywords[marker_.name] = marker_\n        if append:\n            self.own_markers.append(marker_.mark)\n        else:\n            self.own_markers.insert(0, marker_.mark)",
+        "start_line": 260,
+        "start_column": 8242,
+        "end_line": 4,
+        "end_column": 9073,
+        "start_byte": 8242,
+        "end_byte": 4
+      }
+    ]
+  },
+  "response": {
+    "scratch_pad": "1. Analyzing User Instructions:\n1.1 The issue described is that pytest version 6.0.0rc0 is no longer ignoring the failure of tests when dynamically adding an `xfail` marker via `request.node.add_marker(mark)`, which used to work in pytest 5.x.\n1.2 This issue was likely caused by changes in the pytest internal logic for handling xfail markers between versions 5.x and 6.0.0rc0.\n1.3 The expected result is that when an xfail marker is dynamically added to a test using `request.node.add_marker(mark)`, pytest should treat the failing test as expectedly failing, similar to statically marked xfail tests.\n1.4 If no expected result was given, it could be ensuring compatibility with the behavior in previous pytest versions (5.x), where such tests were not considered failures.\n1.5 To fix it, the implementation should check if dynamically added xfail markers are being handled in the same manner as they were previously, i.e., ensure that the test outcome is 'skipped' or 'xfailed'. The logic in `pytest_runtest_makereport` seems particularly relevant for ensuring this behavior.\n\n2. Evaluating Symbols:\n2.1 Analyzing each provided symbol to determine its relevance to the issue with dynamically adding xfail markers.\n2.2 Investigating the implementation details in `pytest_runtest_makereport` found in `src/_pytest/skipping.py` which seem to deal directly with handling the xfail conditions during the test report generation.\n2.3 Consideration of other relevant symbols such as `_pytest.nodes.Node.add_marker` to understand how markers are added to nodes within pytest.\n2.4 Determining that the critical part here involves the logic within `pytest_runtest_makereport` to ensure dynamically added xfail marks are properly processed.\n2.5 Other symbols more related to tests set up or unrelated logic (like `FixtureFunctionMarker`) seem to not directly influence the xfail issue as described and can be deprioritized or dismissed.\n2.6 Based on this, we should potentially change or add logic in `pytest_runtest_makereport` to handle dynamic xfail as intended.",
+    "symbols": [
+      {
+        "name": "_pytest.skipping.pytest_runtest_makereport",
+        "file_path": "src/_pytest/skipping.py",
+        "reason": "The function implements the report creation logic that should handle xfail markers during test execution. Ensuring this code correctly processes dynamically added xfail markers to produce an 'xfail' result rather than a failure as described in the issue is necessary."
+      },
+      {
+        "name": "_pytest.nodes.Node.add_marker",
+        "file_path": "src/_pytest/nodes.py",
+        "reason": "Handles how markers are added to nodes; relevant to ensure dynamic addition of xfail markers aligns with established marker registration practices and potentially influences the modification of test execution flow."
+      }
+    ],
+    "more_info": [],
+    "is_done": true,
+    "symbols_scratch_pad": [
+      "This is related to how pytest handles test reports. It can decide whether an outcome should be marked as 'xfailed'. If dynamically adding xfail markers isn't working correctly, this might need to be adapted or revisited.",
+      "This seems like partial or misaligned logic for setting outcomes based on xfail; only a small, clipped portion of the logic is visible.",
+      "The function seems to deal with evaluating xfail marks, determining which should trigger based on given conditions; relevant for understanding if dynamically added xfail marks are being captured by this evaluation process.",
+      "This appears to be key logic for producing test results and may directly influence how pytest handles skipped or expected failure outcomes, including xfails.",
+      "This is unrelated content or potentially non-consequential logic; lacking specific visible logic in this context for xfail handling.",
+      "This defines how to add markers in general, which is directly relevant for the mechanism of adding xfail markers to a request node, potentially influencing if they take effect properly."
+    ]
+  },
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are an autonomous AI assistant tasked with finding relevant code in an existing \ncodebase based on a reported issue. \nYour task is base on the symbol code to identify how many symbols need to be change to resolve the issue. \n#Input Structure:\n\n* <issue>: Contains the reported issue.\n* <symbol>: the code might to be relevant to the issue.\n\n# Your Task:\n\n1. Analyze User Instructions:\nCarefully read the reported issue within the <issue> tag.\nthink step by step and write out your thoughts in the scratch_pad field.\n1.1 What issue is the user describing?\n1.2 How was this issue caused?\n1.3 If the user described the expected result, what should it be fixed to?\n1.4 If the user did not provide an expected result, what should the expectation be?\n1.5 How should the issue be fixed to meet the expectation?\n\n2. Make the evaluate:\n2.1. Thoroughly analyze each lines in the <symbol> and <symbol> tags.\n2.2. Match the symbol/code/pattern with the key elements, functions, variables, or patterns identified in the reported issue.\n2.3. Evaluate the relevance of each symbol based on how well it aligns with the reported issue and current file context.\n2.4. make the decision how many symbols need to be change to resolve the issue.\n2.5. if you need more file content or symbol information, you can ask the user for more information.\n2.6. relative symbol means, He might be the root cause of the problem, or he could be a part of the process that reproduces the issue.\n\nThink step by step and write out your thoughts in the scratch_pad field.  \n"
+    },
+    {
+      "role": "user",
+      "content": "<issue><description>:Pytest 6: Dynamically adding xfail marker in test no longer ignores failure\n<!--\r\nThanks for submitting an issue!\r\n\r\nHere's a quick checklist for what to provide:\r\n-->\r\n\r\n## Description\r\n\r\nWith pytest 5.x, we can dynamically add an xfail to a test `request` object using `request.node.add_marker(mark)` (see example below). In 5.x this treated the failing test like a a test marked statically with an `xfail`. With 6.0.0rc0 it raises. \r\n\r\n## Versions\r\n\r\n<details>\r\n\r\n```\r\n$ pip list\r\nPackage                       Version                         Location                                                      \r\n----------------------------- ------------------------------- --------------------------------------------------------------\r\na                             1.0                             \r\naioftp                        0.13.0                          \r\naiohttp                       3.6.2                           \r\nalabaster                     0.7.12                          \r\napipkg                        1.5                             \r\naplus                         0.11.0                          \r\nappdirs                       1.4.3                           \r\nappnope                       0.1.0                           \r\narrow                         0.15.7                          \r\naspy.yaml                     1.3.0                           \r\nastropy                       3.2.3                           \r\nasv                           0.4.1                           \r\nasync-timeout                 3.0.1                           \r\natomicwrites                  1.3.0                           \r\nattrs                         19.1.0                          \r\naws-sam-translator            1.15.1                          \r\naws-xray-sdk                  0.95                            \r\nBabel                         2.7.0                           \r\nbackcall                      0.1.0                           \r\nbinaryornot                   0.4.4                           \r\nblack                         19.10b0                         \r\nbleach                        3.1.0                           \r\nblurb                         1.0.7                           \r\nbokeh                         1.3.4                           \r\nboto                          2.49.0                          \r\nboto3                         1.7.84                          \r\nbotocore                      1.10.84                         \r\nbqplot                        0.12.12                         \r\nbranca                        0.3.1                           \r\ncachetools                    4.1.0                           \r\ncertifi                       2019.9.11                       \r\ncffi                          1.13.2                          \r\ncfgv                          2.0.1                           \r\ncfn-lint                      0.25.0                          \r\ncftime                        1.0.4.2                         \r\nchardet                       3.0.4                           \r\nClick                         7.0                             \r\nclick-plugins                 1.1.1                           \r\ncligj                         0.5.0                           \r\ncloudpickle                   1.2.2                           \r\ncolorama                      0.4.3                           \r\ncolorcet                      2.0.2                           \r\ncoloredlogs                   14.0                            \r\ncookiecutter                  1.7.2                           \r\ncookies                       2.2.1                           \r\ncoverage                      4.5.4                           \r\ncryptography                  2.8                             \r\ncycler                        0.10.0                          \r\nCython                        3.0a5                           \r\ncytoolz                       0.10.1                          \r\ndask                          2.4.0                           /Users/taugspurger/Envs/pandas-dev/lib/python3.7/site-packages\r\nDateTime                      4.3                             \r\ndecorator                     4.4.0                           \r\ndefusedxml                    0.6.0                           \r\nDeprecated                    1.2.7                           \r\ndistributed                   2.4.0                           \r\ndocker                        4.1.0                           \r\ndocutils                      0.15.2                          \r\necdsa                         0.14.1                          \r\nentrypoints                   0.3                             \r\net-xmlfile                    1.0.1                           \r\nexecnet                       1.7.1                           \r\nfastparquet                   0.3.3                           /Users/taugspurger/sandbox/fastparquet                        \r\nfeedparser                    5.2.1                           \r\nFiona                         1.8.8                           \r\nflake8                        3.7.9                           \r\nflake8-rst                    0.7.1                           \r\nfletcher                      0.3.1                           \r\nflit                          2.1.0                           \r\nflit-core                     2.1.0                           \r\nfsspec                        0.7.4                           \r\nfuture                        0.18.2                          \r\ngcsfs                         0.6.2                           \r\ngeopandas                     0.6.0+1.g95b8e1a.dirty          /Users/taugspurger/sandbox/geopandas                          \r\ngitdb2                        2.0.5                           \r\nGitPython                     3.0.2                           \r\ngoogle-auth                   1.16.1                          \r\ngoogle-auth-oauthlib          0.4.1                           \r\ngraphviz                      0.13                            \r\nh5py                          2.10.0                          \r\nHeapDict                      1.0.1                           \r\nholoviews                     1.12.6                          \r\nhumanfriendly                 8.1                             \r\nhunter                        3.1.3                           \r\nhvplot                        0.5.2                           \r\nhypothesis                    4.36.2                          \r\nidentify                      1.4.7                           \r\nidna                          2.8                             \r\nimagesize                     1.1.0                           \r\nimportlib-metadata            0.23                            \r\nimportlib-resources           1.0.2                           \r\niniconfig                     1.0.0                           \r\nintake                        0.5.3                           \r\nipydatawidgets                4.0.1                           \r\nipykernel                     5.1.2                           \r\nipyleaflet                    0.13.0                          \r\nipympl                        0.5.6                           \r\nipython                       7.11.1                          \r\nipython-genutils              0.2.0                           \r\nipyvolume                     0.5.2                           \r\nipyvue                        1.3.2                           \r\nipyvuetify                    1.4.0                           \r\nipywebrtc                     0.5.0                           \r\nipywidgets                    7.5.1                           \r\nisort                         4.3.21                          \r\njdcal                         1.4.1                           \r\njedi                          0.16.0                          \r\nJinja2                        2.11.2                          \r\njinja2-time                   0.2.0                           \r\njmespath                      0.9.4                           \r\njoblib                        0.14.1                          \r\njson5                         0.9.4                           \r\njsondiff                      1.1.1                           \r\njsonpatch                     1.24                            \r\njsonpickle                    1.2                             \r\njsonpointer                   2.0                             \r\njsonschema                    3.0.2                           \r\njupyter                       1.0.0                           \r\njupyter-client                5.3.3                           \r\njupyter-console               6.0.0                           \r\njupyter-core                  4.5.0                           \r\njupyterlab                    2.1.2                           \r\njupyterlab-server             1.1.4                           \r\nkiwisolver                    1.1.0                           \r\nline-profiler                 2.1.1                           \r\nllvmlite                      0.33.0                          \r\nlocket                        0.2.0                           /Users/taugspurger/sandbox/locket.py                          \r\nlxml                          4.5.0                           \r\nmanhole                       1.6.0                           \r\nMarkdown                      3.1.1                           \r\nMarkupSafe                    1.1.1                           \r\nmatplotlib                    3.2.2                           \r\nmccabe                        0.6.1                           \r\nmemory-profiler               0.55.0                          \r\nmistune                       0.8.4                           \r\nmock                          3.0.5                           \r\nmore-itertools                7.2.0                           \r\nmoto                          1.3.6                           \r\nmsgpack                       0.6.2                           \r\nmultidict                     4.5.2                           \r\nmunch                         2.3.2                           \r\nmypy                          0.730                           \r\nmypy-extensions               0.4.1                           \r\nnbconvert                     5.6.0                           \r\nnbformat                      4.4.0                           \r\nnbsphinx                      0.4.2                           \r\nnest-asyncio                  1.3.3                           \r\nnodeenv                       1.3.3                           \r\nnotebook                      6.0.1                           \r\nnumexpr                       2.7.1                           \r\nnumpy                         1.19.0                          \r\nnumpydoc                      1.0.0.dev0                      \r\noauthlib                      3.1.0                           \r\nodfpy                         1.4.0                           \r\nopenpyxl                      3.0.3                           \r\npackaging                     20.4                            \r\npandas                        1.1.0.dev0+1758.g035e1fe831     /Users/taugspurger/sandbox/pandas                             \r\npandas-sphinx-theme           0.0.1.dev0                      /Users/taugspurger/sandbox/pandas-sphinx-theme                \r\npandocfilters                 1.4.2                           \r\nparam                         1.9.2                           \r\nparfive                       1.0.0                           \r\nparso                         0.6.0                           \r\npartd                         1.0.0                           \r\npathspec                      0.8.0                           \r\npatsy                         0.5.1                           \r\npexpect                       4.7.0                           \r\npickleshare                   0.7.5                           \r\nPillow                        6.1.0                           \r\npip                           20.0.2                          \r\npluggy                        0.13.0                          \r\npoyo                          0.5.0                           \r\npre-commit                    1.18.3                          \r\nprogressbar2                  3.51.3                          \r\nprometheus-client             0.7.1                           \r\nprompt-toolkit                2.0.9                           \r\npsutil                        5.6.3                           \r\nptyprocess                    0.6.0                           \r\npy                            1.9.0                           \r\npyaml                         20.4.0                          \r\npyarrow                       0.16.0                          \r\npyasn1                        0.4.7                           \r\npyasn1-modules                0.2.8                           \r\npycodestyle                   2.5.0                           \r\npycparser                     2.19                            \r\npycryptodome                  3.9.8                           \r\npyct                          0.4.6                           \r\npydata-sphinx-theme           0.1.1                           \r\npydeps                        1.9.0                           \r\npyflakes                      2.1.1                           \r\nPyGithub                      1.44.1                          \r\nPygments                      2.4.2                           \r\nPyJWT                         1.7.1                           \r\npyparsing                     2.4.2                           \r\npyproj                        2.4.0                           \r\npyrsistent                    0.15.4                          \r\npytest                        5.4.3                           \r\npytest-asyncio                0.10.0                          \r\npytest-cov                    2.8.1                           \r\npytest-cover                  3.0.0                           \r\npytest-forked                 1.0.2                           \r\npytest-repeat                 0.8.0                           \r\npytest-xdist                  1.29.0                          \r\npython-boilerplate            0.1.0                           \r\npython-dateutil               2.8.0                           \r\npython-jose                   2.0.2                           \r\npython-jsonrpc-server         0.3.2                           \r\npython-language-server        0.31.4                          \r\npython-slugify                4.0.1                           \r\npython-utils                  2.4.0                           \r\npythreejs                     2.2.0                           \r\npytoml                        0.1.21                          \r\npytz                          2019.2                          \r\npyviz-comms                   0.7.2                           \r\nPyYAML                        5.1.2                           \r\npyzmq                         18.1.0                          \r\nqtconsole                     4.5.5                           \r\nregex                         2020.6.8                        \r\nrequests                      2.24.0                          \r\nrequests-oauthlib             1.3.0                           \r\nresponses                     0.10.6                          \r\nrsa                           4.0                             \r\nrstcheck                      3.3.1                           \r\ns3fs                          0.4.2                           \r\ns3transfer                    0.1.13                          \r\nscikit-learn                  0.22.2.post1                    \r\nscipy                         1.3.1                           \r\nseaborn                       0.9.0                           \r\nSend2Trash                    1.5.0                           \r\nsetuptools                    49.2.0                          \r\nShapely                       1.6.4.post2                     \r\nsix                           1.12.0                          \r\nsmmap2                        2.0.5                           \r\nsnakeviz                      2.0.1                           \r\nsnowballstemmer               1.9.1                           \r\nsortedcontainers              2.1.0                           \r\nsparse                        0.10.0                          \r\nSphinx                        3.1.1                           \r\nsphinxcontrib-applehelp       1.0.2                           \r\nsphinxcontrib-devhelp         1.0.2                           \r\nsphinxcontrib-htmlhelp        1.0.3                           \r\nsphinxcontrib-jsmath          1.0.1                           \r\nsphinxcontrib-qthelp          1.0.3                           \r\nsphinxcontrib-serializinghtml 1.1.4                           \r\nsphinxcontrib-websupport      1.1.2                           \r\nsphinxcontrib.youtube         0.1.2                           \r\nSQLAlchemy                    1.3.11                          \r\nsshpubkeys                    3.1.0                           \r\nstatsmodels                   0.10.2                          \r\nstdlib-list                   0.6.0                           \r\nsunpy                         1.1.dev518+gcad2d473f.d20191103 /Users/taugspurger/sandbox/sunpy                              \r\ntables                        3.6.1                           \r\ntabulate                      0.8.6                           \r\ntblib                         1.4.0                           \r\nterminado                     0.8.2                           \r\ntest                          1.0.0                           \r\ntestpath                      0.4.2                           \r\ntext-unidecode                1.3                             \r\nthrift                        0.13.0                          \r\ntoml                          0.10.0                          \r\ntoolz                         0.10.0                          \r\ntornado                       6.0.3                           \r\ntqdm                          4.37.0                          \r\ntraitlets                     4.3.2                           \r\ntraittypes                    0.2.1                           \r\ntyped-ast                     1.4.0                           \r\ntyping-extensions             3.7.4                           \r\nujson                         1.35                            \r\nurllib3                       1.25.5                          \r\nvaex                          3.0.0                           \r\nvaex-arrow                    0.5.1                           \r\nvaex-astro                    0.7.0                           \r\nvaex-core                     2.0.2                           \r\nvaex-hdf5                     0.6.0                           \r\nvaex-jupyter                  0.5.1.post0                     \r\nvaex-ml                       0.9.0                           \r\nvaex-server                   0.3.1                           \r\nvaex-viz                      0.4.0                           \r\nvirtualenv                    16.7.5                          \r\nwcwidth                       0.1.7                           \r\nwebencodings                  0.5.1                           \r\nwebsocket-client              0.56.0                          \r\nWerkzeug                      0.16.0                          \r\nwheel                         0.34.2                          \r\nwidgetsnbextension            3.5.1                           \r\nwrapt                         1.11.2                          \r\nxarray                        0.14.1+36.gb3d3b448             /Users/taugspurger/sandbox/xarray                             \r\nxlwt                          1.3.0                           \r\nxmltodict                     0.12.0                          \r\nyarl                          1.3.0                           \r\nzict                          1.0.0                           \r\nzipp                          0.6.0                           \r\nzope.interface                4.7.1                           \r\n```\r\n\r\n</details>\r\n\r\n- [ ] pytest and operating system versions\r\n\r\nPytest 6.0.1rc0 and MacOS 10.14.5\r\n\r\n```python\r\n# file: test_foo.py\r\nimport pytest\r\n\r\n\r\ndef test_xfail_test(request):\r\n    mark = pytest.mark.xfail(reason=\"xfail\")\r\n    request.node.add_marker(mark)\r\n    assert 0\r\n```\r\n\r\nWith 5.4.3\r\n\r\n```\r\n\r\n$ pytest -rsx test_foo.py\r\n=============================================================================== test session starts ================================================================================\r\nplatform darwin -- Python 3.7.6, pytest-5.4.3, py-1.9.0, pluggy-0.13.0\r\nhypothesis profile 'default' -> database=DirectoryBasedExampleDatabase('/Users/taugspurger/sandbox/.hypothesis/examples')\r\nrootdir: /Users/taugspurger/sandbox\r\nplugins: xdist-1.29.0, hypothesis-4.36.2, forked-1.0.2, repeat-0.8.0, asyncio-0.10.0, cov-2.8.1\r\ncollected 1 item\r\n\r\ntest_foo.py x                                                                                                                                                                [100%]\r\n\r\n============================================================================= short test summary info ==============================================================================\r\nXFAIL test_foo.py::test_xfail_test\r\n  xfail\r\n================================================================================ 1 xfailed in 0.07s ================================================================================\r\n```\r\n\r\nWith 6.0.0rc0\r\n\r\n```\r\n$ pytest -rsx test_foo.py\r\n=============================================================================== test session starts ================================================================================\r\nplatform darwin -- Python 3.7.6, pytest-6.0.0rc1, py-1.9.0, pluggy-0.13.0\r\nhypothesis profile 'default' -> database=DirectoryBasedExampleDatabase('/Users/taugspurger/sandbox/.hypothesis/examples')\r\nrootdir: /Users/taugspurger/sandbox\r\nplugins: xdist-1.29.0, hypothesis-4.36.2, forked-1.0.2, repeat-0.8.0, asyncio-0.10.0, cov-2.8.1\r\ncollected 1 item\r\n\r\ntest_foo.py F                                                                                                                                                                [100%]\r\n\r\n===================================================================================== FAILURES =====================================================================================\r\n_________________________________________________________________________________ test_xfail_test __________________________________________________________________________________\r\n\r\nrequest = <FixtureRequest for <Function test_xfail_test>>\r\n\r\n    def test_xfail_test(request):\r\n        mark = pytest.mark.xfail(reason=\"xfail\")\r\n        request.node.add_marker(mark)\r\n>       assert 0\r\nE       assert 0\r\n\r\ntest_foo.py:7: AssertionError\r\n```\r\n\n</description></issue>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.hookspec.pytest_runtest_makereport</name><path>src/_pytest/skipping.py</path><content></content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.runner.pytest_runtest_makereport</name><path>src/_pytest/skipping.py</path><content>ort_teststatus(report: BaseReport) -> Optional[Tuple[str, str, str]]:\n    if hasattr(report, \"wasxfail\"):\n        if report.skipped</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.skipping.evaluate_xfail_marks</name><path>src/_pytest/skipping.py</path><content>def evaluate_xfail_marks(item: Item) -> Optional[Xfail]:\n    \"\"\"Evaluate xfail marks on item, returning Xfail if triggered.\"\"\"\n    for mark in item.iter_markers(name=\"xfail\"):\n        run = mark.kwargs.get(\"run\", True)\n        strict = mark.kwargs.get(\"strict\", item.config.getini(\"xfail_strict\"))\n        raises = mark.kwargs.get(\"raises\", None)\n        if \"condition\" not in mark.kwargs:\n            conditions = mark.args\n        else:\n            conditions = (mark.kwargs[\"condition\"],)\n\n        # Unconditional.\n        if not conditions:\n            reason = mark.kwargs.get(\"reason\", \"\")\n            return Xfail(reason, run, strict, raises)\n\n        # If any of the conditions are true.\n        for condition in conditions:\n            result, reason = evaluate_condition(item, mark, condition)\n            if result:\n                return Xfail(reason, run, strict, raises)\n\n    return None</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.skipping.pytest_runtest_makereport</name><path>src/_pytest/skipping.py</path><content>@hookimpl(hookwrapper=True)\ndef pytest_runtest_makereport(item: Item, call: CallInfo[None]):\n    outcome = yield\n    rep = outcome.get_result()\n    xfailed = item._store.get(xfailed_key, None)\n    # unittest special case, see setting of unexpectedsuccess_key\n    if unexpectedsuccess_key in item._store and rep.when == \"call\":\n        reason = item._store[unexpectedsuccess_key]\n        if reason:\n            rep.longrepr = \"Unexpected success: {}\".format(reason)\n        else:\n            rep.longrepr = \"Unexpected success\"\n        rep.outcome = \"failed\"\n    elif item.config.option.runxfail:\n        pass  # don't interfere\n    elif call.excinfo and isinstance(call.excinfo.value, xfail.Exception):\n        assert call.excinfo.value.msg is not None\n        rep.wasxfail = \"reason: \" + call.excinfo.value.msg\n        rep.outcome = \"skipped\"\n    elif not rep.skipped and xfailed:\n        if call.excinfo:\n            raises = xfailed.raises\n            if raises is not None and not isinstance(call.excinfo.value, raises):\n                rep.outcome = \"failed\"\n            else:\n                rep.outcome = \"skipped\"\n                rep.wasxfail = xfailed.reason\n        elif call.when == \"call\":\n            if xfailed.strict:\n                rep.outcome = \"failed\"\n                rep.longrepr = \"[XPASS(strict)] \" + xfailed.reason\n            else:\n                rep.outcome = \"passed\"\n                rep.wasxfail = xfailed.reason\n\n    if (\n        item._store.get(skipped_by_mark_key, True)\n        and rep.skipped\n        and type(rep.longrepr) is tuple\n    ):\n        # skipped by mark.skipif; change the location of the failure\n        # to point to the item definition, otherwise it will display\n        # the location of where the skip exception was raised within pytest\n        _, _, reason = rep.longrepr\n        filename, line = item.reportinfo()[:2]\n        assert line is not None\n        rep.longrepr = str(filename), line + 1, reason</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.unittest.pytest_runtest_makereport</name><path>src/_pytest/skipping.py</path><content>urn \"xpassed\", \"X\", \"XPASS\"\n    return None\n</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.nodes.Node.add_marker</name><path>src/_pytest/nodes.py</path><content>def add_marker(\n        self, marker: Union[str, MarkDecorator], append: bool = True\n    ) -> None:\n        \"\"\"dynamically add a marker object to the node.\n\n        :type marker: ``str`` or ``pytest.mark.*``  object\n        :param marker:\n            ``append=True`` whether to append the marker,\n            if ``False`` insert at position ``0``.\n        \"\"\"\n        from _pytest.mark import MARK_GEN\n\n        if isinstance(marker, MarkDecorator):\n            marker_ = marker\n        elif isinstance(marker, str):\n            marker_ = getattr(MARK_GEN, marker)\n        else:\n            raise ValueError(\"is not a string or pytest.mark.* Marker\")\n        self.keywords[marker_.name] = marker_\n        if append:\n            self.own_markers.append(marker_.mark)\n        else:\n            self.own_markers.insert(0, marker_.mark)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.fixtures._FixtureFunction</name><path>src/_pytest/python.py</path><content>types import PytestUnhandledCoroutineWarning\n\nif TYPE_CHECKING:\n    from ty</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.fixtures.FixtureFunctionMarker</name><path>src/_pytest/python.py</path><content>                 )\n\n\ndef _find_parametrized_scope(\n    argnames: typing.Sequence[str],\n    arg2fixturedefs: Mapping[str, typing.Sequence[fixtures.FixtureDef]],\n    indirect: Union[bool, typing.Sequence[str]],\n) -> \"fixtures._Scope\":\n    \"\"\"Find the most appropriate scope for a parametrized call based on its arguments.\n\n    When there's at least one direct argument, always use \"function\" scope.\n\n    When a test function is parametrized and all its arguments are indirect\n    (e.g. fixtures), return the most narrow scope based on the fixtures used.\n\n    Related to issue #1832, based on code posted by @Kingdread.\n    \"\"\"\n    if isinstance(indirect, Sequence):\n        all_arguments_are_fixtures = len(indirect) == len(argnames)\n    else:\n        all_arguments_are_fixtures = bool(indirect)\n\n    if all_arguments_are_fixtures:\n        fixturedefs = arg2fixturedefs or {}\n        used_scopes = [\n            fixturedef[0].scope\n            for name, fixturedef in fixturedefs.items()\n            if name in argnames\n        ]\n        if used_scopes:\n            # Takes the most narrow scope from used fixtures\n            for scope in reversed(fixtures.scopes):\n                if scope in used_scopes:\n                    return scope\n\n    return \"function\"\n\n\ndef _ascii_escaped_by_config(val: Union[str, bytes], config: Optional[Config]) -> str:\n    if config is None:\n        escape_option = False\n    else:\n        escape_option = config.getini(\n            \"disable_test_id_escaping_and_forfeit_al</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.fixtures.FixtureFunctionMarker.scope</name><path>src/_pytest/python.py</path><content> argnames: typing.Sequence[str],\n    arg2fixturedefs: Mapping[str, typ</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.fixtures.FixtureFunctionMarker.params</name><path>src/_pytest/python.py</path><content>equence[fixtures.FixtureDef]],\n    indirect: Union[bool, typing.Sequence[str]],\n</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.fixtures.FixtureFunctionMarker.autouse</name><path>src/_pytest/python.py</path><content>\"fixtures._Scope\":\n    \"\"\"Find the most app</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.fixtures.FixtureFunctionMarker.ids</name><path>src/_pytest/python.py</path><content>ate scope for a parametrized call based on its arguments.\n\n    When there's at least one direct argument, always use \"function\" scope.\n\n    When a test function is parametrized and all its arguments are indirect\n    (e.g. fi</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.fixtures.FixtureFunctionMarker.name</name><path>src/_pytest/python.py</path><content>s), return the most narrow scope based on the fi</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.fixtures.FixtureFunctionMarker.__call__</name><path>src/_pytest/python.py</path><content> used.\n\n    Related to issue #1832, based on code posted by @Kingdread.\n    \"\"\"\n    if isinstance(indirect, Sequence):\n        all_arguments_are_fixtures = len(indirect) == len(argnames)\n    else:\n        all_arguments_are_fixtures = bool(indirect)\n\n    if all_arguments_are_fixtures:\n        fixturedefs = arg2fixturedefs or {}\n        used_scopes = [\n            fixturedef[0].scope\n            for name, fixturedef in fixturedefs.items()\n            if name in argnames\n        ]\n        if used_scopes:\n            # Takes the most narrow scope from used fixtures\n            for scope in reversed(fixtures.scopes):\n                if scope in used_scopes:\n                    return scope\n\n    return \"function\"\n\n\ndef _ascii_escaped_by_config(val: Union[str, bytes], config: Optional[Config]) -> str:\n    if config is None:\n        escape_option = False\n    else:\n        escape_option = config.getini(\n            \"disable_test_id_escaping_and_forfeit_al</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python.Function</name><path>src/_pytest/python.py</path><content>class Function(PyobjMixin, nodes.Item):\n    \"\"\" a Function Item is responsible for setting up and executing a\n    Python test function.\n    \"\"\"\n\n    # disable since functions handle it themselves\n    _ALLOW_MARKERS = False\n\n    def __init__(\n        self,\n        name: str,\n        parent,\n        config: Optional[Config] = None,\n        callspec: Optional[CallSpec2] = None,\n        callobj=NOTSET,\n        keywords=None,\n        session: Optional[Session] = None,\n        fixtureinfo: Optional[FuncFixtureInfo] = None,\n        originalname: Optional[str] = None,\n    ) -> None:\n        \"\"\"\n        param name: the full function name, including any decorations like those\n            added by parametrization (``my_func[my_param]``).\n        param parent: the parent Node.\n        param config: the pytest Config object\n        param callspec: if given, this is function has been parametrized and the callspec contains\n            meta information about the parametrization.\n        param callobj: if given, the object which will be called when the Function is invoked,\n            otherwise the callobj will be obtained from ``parent`` using ``originalname``\n        param keywords: keywords bound to the function object for \"-k\" matching.\n        param session: the pytest Session object\n        param fixtureinfo: fixture information already resolved at this fixture node.\n        param originalname:\n            The attribute name to use for accessing the underlying function object.\n            Defaults to ``name``. Set this if name is different from the original name,\n            for example when it contains decorations like those added by parametrization\n            (``my_func[my_param]``).\n        \"\"\"\n        super().__init__(name, parent, config=config, session=session)\n\n        if callobj is not NOTSET:\n            self.obj = callobj\n\n        #: Original function name, without any decorations (for example\n        #: parametrization adds a ``\"[...]\"`` suffix to function names), used to access\n        #: the underlying function object from ``parent`` (in case ``callobj`` is not given\n        #: explicitly).\n        #:\n        #: .. versionadded:: 3.0\n        self.originalname = originalname or name\n\n        # note: when FunctionDefinition is introduced, we should change ``originalname``\n        # to a readonly property that returns FunctionDefinition.name\n\n        self.keywords.update(self.obj.__dict__)\n        self.own_markers.extend(get_unpacked_marks(self.obj))\n        if callspec:\n            self.callspec = callspec\n            # this is total hostile and a mess\n            # keywords are broken by design by now\n            # this will be redeemed later\n            for mark in callspec.marks:\n                # feel free to cry, this was broken for years before\n                # and keywords cant fix it per design\n                self.keywords[mark.name] = mark\n            self.own_markers.extend(normalize_mark_list(callspec.marks))\n        if keywords:\n            self.keywords.update(keywords)\n\n        # todo: this is a hell of a hack\n        # https://github.com/pytest-dev/pytest/issues/4569\n\n        self.keywords.update(\n            {\n                mark.name: True\n                for mark in self.iter_markers()\n                if mark.name not in self.keywords\n            }\n        )\n\n        if fixtureinfo is None:\n            fixtureinfo = self.session._fixturemanager.getfixtureinfo(\n                self, self.obj, self.cls, funcargs=True\n            )\n        self._fixtureinfo = fixtureinfo  # type: FuncFixtureInfo\n        self.fixturenames = fixtureinfo.names_closure\n        self._initrequest()\n\n    @classmethod\n    def from_parent(cls, parent, **kw):  # todo: determine sound type limitations\n        \"\"\"\n        The public  constructor\n        \"\"\"\n        return super().from_parent(parent=parent, **kw)\n\n    def _initrequest(self) -> None:\n        self.funcargs = {}  # type: Dict[str, object]\n        self._request = fixtures.FixtureRequest(self)\n\n    @property\n    def function(self):\n        \"underlying python 'function' object\"\n        return getimfunc(self.obj)\n\n    def _getobj(self):\n        assert self.parent is not None\n        return getattr(self.parent.obj, self.originalname)  # type: ignore[attr-defined]\n\n    @property\n    def _pyfuncitem(self):\n        \"(compatonly) for code expecting pytest-2.2 style request objects\"\n        return self\n\n    @property\n    def funcargnames(self) -> List[str]:\n        \"\"\" alias attribute for ``fixturenames`` for pre-2.3 compatibility\"\"\"\n        warnings.warn(FUNCARGNAMES, stacklevel=2)\n        return self.fixturenames\n\n    def runtest(self) -> None:\n        \"\"\" execute the underlying test function. \"\"\"\n        self.ihook.pytest_pyfunc_call(pyfuncitem=self)\n\n    def setup(self) -> None:\n        if isinstance(self.parent, Instance):\n            self.parent.newinstance()\n            self.obj = self._getobj()\n        self._request._fillfixtures()\n\n    def _prunetraceback(self, excinfo: ExceptionInfo) -> None:\n        if hasattr(self, \"_obj\") and not self.config.getoption(\"fulltrace\", False):\n            code = _pytest._code.Code(get_real_func(self.obj))\n            path, firstlineno = code.path, code.firstlineno\n            traceback = excinfo.traceback\n            ntraceback = traceback.cut(path=path, firstlineno=firstlineno)\n            if ntraceback == traceback:\n                ntraceback = ntraceback.cut(path=path)\n                if ntraceback == traceback:\n                    ntraceback = ntraceback.filter(filter_traceback)\n                    if not ntraceback:\n                        ntraceback = traceback\n\n            excinfo.traceback = ntraceback.filter()\n            # issue364: mark all but first and last frames to\n            # only show a single-line message for each frame\n            if self.config.getoption(\"tbstyle\", \"auto\") == \"auto\":\n                if len(excinfo.traceback) > 2:\n                    for entry in excinfo.traceback[1:-1]:\n                        entry.set_repr_style(\"short\")\n\n    # TODO: Type ignored -- breaks Liskov Substitution.\n    def repr_failure(  # type: ignore[override]\n        self, excinfo: ExceptionInfo[BaseException],\n    ) -> Union[str, TerminalRepr]:\n        style = self.config.getoption(\"tbstyle\", \"auto\")\n        if style == \"auto\":\n            style = \"long\"\n        return self._repr_failure_py(excinfo, style=style)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python.Function._ALLOW_MARKERS</name><path>src/_pytest/python.py</path><content>_ALLOW_MARKERS = False</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python.Function.__init__</name><path>src/_pytest/python.py</path><content>def __init__(\n        self,\n        name: str,\n        parent,\n        config: Optional[Config] = None,\n        callspec: Optional[CallSpec2] = None,\n        callobj=NOTSET,\n        keywords=None,\n        session: Optional[Session] = None,\n        fixtureinfo: Optional[FuncFixtureInfo] = None,\n        originalname: Optional[str] = None,\n    ) -> None:\n        \"\"\"\n        param name: the full function name, including any decorations like those\n            added by parametrization (``my_func[my_param]``).\n        param parent: the parent Node.\n        param config: the pytest Config object\n        param callspec: if given, this is function has been parametrized and the callspec contains\n            meta information about the parametrization.\n        param callobj: if given, the object which will be called when the Function is invoked,\n            otherwise the callobj will be obtained from ``parent`` using ``originalname``\n        param keywords: keywords bound to the function object for \"-k\" matching.\n        param session: the pytest Session object\n        param fixtureinfo: fixture information already resolved at this fixture node.\n        param originalname:\n            The attribute name to use for accessing the underlying function object.\n            Defaults to ``name``. Set this if name is different from the original name,\n            for example when it contains decorations like those added by parametrization\n            (``my_func[my_param]``).\n        \"\"\"\n        super().__init__(name, parent, config=config, session=session)\n\n        if callobj is not NOTSET:\n            self.obj = callobj\n\n        #: Original function name, without any decorations (for example\n        #: parametrization adds a ``\"[...]\"`` suffix to function names), used to access\n        #: the underlying function object from ``parent`` (in case ``callobj`` is not given\n        #: explicitly).\n        #:\n        #: .. versionadded:: 3.0\n        self.originalname = originalname or name\n\n        # note: when FunctionDefinition is introduced, we should change ``originalname``\n        # to a readonly property that returns FunctionDefinition.name\n\n        self.keywords.update(self.obj.__dict__)\n        self.own_markers.extend(get_unpacked_marks(self.obj))\n        if callspec:\n            self.callspec = callspec\n            # this is total hostile and a mess\n            # keywords are broken by design by now\n            # this will be redeemed later\n            for mark in callspec.marks:\n                # feel free to cry, this was broken for years before\n                # and keywords cant fix it per design\n                self.keywords[mark.name] = mark\n            self.own_markers.extend(normalize_mark_list(callspec.marks))\n        if keywords:\n            self.keywords.update(keywords)\n\n        # todo: this is a hell of a hack\n        # https://github.com/pytest-dev/pytest/issues/4569\n\n        self.keywords.update(\n            {\n                mark.name: True\n                for mark in self.iter_markers()\n                if mark.name not in self.keywords\n            }\n        )\n\n        if fixtureinfo is None:\n            fixtureinfo = self.session._fixturemanager.getfixtureinfo(\n                self, self.obj, self.cls, funcargs=True\n            )\n        self._fixtureinfo = fixtureinfo  # type: FuncFixtureInfo\n        self.fixturenames = fixtureinfo.names_closure\n        self._initrequest()</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python.Function.from_parent</name><path>src/_pytest/python.py</path><content>@classmethod\n    def from_parent(cls, parent, **kw):  # todo: determine sound type limitations\n        \"\"\"\n        The public  constructor\n        \"\"\"\n        return super().from_parent(parent=parent, **kw)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python.Function._initrequest</name><path>src/_pytest/python.py</path><content>def _initrequest(self) -> None:\n        self.funcargs = {}  # type: Dict[str, object]\n        self._request = fixtures.FixtureRequest(self)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python.Function.function</name><path>src/_pytest/python.py</path><content>@property\n    def function(self):\n        \"underlying python 'function' object\"\n        return getimfunc(self.obj)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python.Function._getobj</name><path>src/_pytest/python.py</path><content>def _getobj(self):\n        assert self.parent is not None\n        return getattr(self.parent.obj, self.originalname)  # type: ignore[attr-defined]</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python.Function._pyfuncitem</name><path>src/_pytest/python.py</path><content>@property\n    def _pyfuncitem(self):\n        \"(compatonly) for code expecting pytest-2.2 style request objects\"\n        return self</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python.Function.funcargnames</name><path>src/_pytest/python.py</path><content>@property\n    def funcargnames(self) -> List[str]:\n        \"\"\" alias attribute for ``fixturenames`` for pre-2.3 compatibility\"\"\"\n        warnings.warn(FUNCARGNAMES, stacklevel=2)\n        return self.fixturenames</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python.Function.runtest</name><path>src/_pytest/python.py</path><content>def runtest(self) -> None:\n        \"\"\" execute the underlying test function. \"\"\"\n        self.ihook.pytest_pyfunc_call(pyfuncitem=self)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python.Function.setup</name><path>src/_pytest/python.py</path><content>def setup(self) -> None:\n        if isinstance(self.parent, Instance):\n            self.parent.newinstance()\n            self.obj = self._getobj()\n        self._request._fillfixtures()</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python.Function._prunetraceback</name><path>src/_pytest/python.py</path><content>def _prunetraceback(self, excinfo: ExceptionInfo) -> None:\n        if hasattr(self, \"_obj\") and not self.config.getoption(\"fulltrace\", False):\n            code = _pytest._code.Code(get_real_func(self.obj))\n            path, firstlineno = code.path, code.firstlineno\n            traceback = excinfo.traceback\n            ntraceback = traceback.cut(path=path, firstlineno=firstlineno)\n            if ntraceback == traceback:\n                ntraceback = ntraceback.cut(path=path)\n                if ntraceback == traceback:\n                    ntraceback = ntraceback.filter(filter_traceback)\n                    if not ntraceback:\n                        ntraceback = traceback\n\n            excinfo.traceback = ntraceback.filter()\n            # issue364: mark all but first and last frames to\n            # only show a single-line message for each frame\n            if self.config.getoption(\"tbstyle\", \"auto\") == \"auto\":\n                if len(excinfo.traceback) > 2:\n                    for entry in excinfo.traceback[1:-1]:\n                        entry.set_repr_style(\"short\")</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python.Function.repr_failure</name><path>src/_pytest/python.py</path><content>def repr_failure(  # type: ignore[override]\n        self, excinfo: ExceptionInfo[BaseException],\n    ) -> Union[str, TerminalRepr]:\n        style = self.config.getoption(\"tbstyle\", \"auto\")\n        if style == \"auto\":\n            style = \"long\"\n        return self._repr_failure_py(excinfo, style=style)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python.FunctionDefinition</name><path>src/_pytest/python.py</path><content>class FunctionDefinition(Function):\n    \"\"\"\n    internal hack until we get actual definition nodes instead of the\n    crappy metafunc hack\n    \"\"\"\n\n    def runtest(self) -> None:\n        raise RuntimeError(\"function definitions are not supposed to be used\")\n\n    setup = runtest</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python.FunctionDefinition.runtest</name><path>src/_pytest/python.py</path><content>def runtest(self) -> None:\n        raise RuntimeError(\"function definitions are not supposed to be used\")</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python.FunctionDefinition.setup</name><path>src/_pytest/python.py</path><content>setup = runtest</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.unittest.TestCaseFunction</name><path>src/_pytest/python.py</path><content>list of values if argnames specifies only one name \"\n        \"or a list of tuples of values if argnames specifies multiple names. \"\n        \"Example: @parametrize('arg1', [1,2]) would lead to two calls of the \"\n        \"decorated test function, one with arg1=1 and another with arg1=2.\"\n        \"see https://docs.pytest.org/en/stable/parametrize.html for more info \"\n        \"and examples.\",\n    )\n    config.addinivalue_line(\n        \"markers\",\n        \"usefixtures(fixturename1, fixturename2, ...): mark tests as needing \"\n        \"all of the specified fixtures. see \"\n        \"https://docs.pytest.org/en/stable/fixture.html#usefixtures \",\n    )\n\n\ndef async_warn_and_skip(nodeid: str) -> None:\n    msg = \"async def functions are not natively supported and have been skipped.\\n\"\n    msg += (\n        \"You need to install a suitable plugin for your async framework, for example:\\n\"\n    )\n    msg += \"  - pytest-asyncio\\n\"\n    msg += \"  - pytest-trio\\n\"\n    msg += \"  - pytest-tornasync\\n\"\n    msg += \"  - pytest-twisted\"\n    warnings.warn(PytestUnhandledCoroutineWarning(msg.format(nodeid)))\n    skip(msg=\"async def function and no async plugin installed (see warnings)\")\n\n\n@hookimpl(trylast=True)\ndef pytest_pyfunc_call(pyfuncitem: \"Function\") -> Optional[object]:\n    testfunction = pyfuncitem.obj\n    if is_async_function(testfunction):\n        async_warn_and_skip(pyfuncitem.nodeid)\n    funcargs = pyfuncitem.funcargs\n    testargs = {arg: funcargs[arg] for arg in pyfuncitem._fixtureinfo.argnames}\n    result = testfunction(**testargs)\n    if hasattr(result, \"__await__\") or hasattr(result, \"__aiter__\"):\n        async_warn_and_skip(pyfuncitem.nodeid)\n    return True\n\n\ndef pytest_collect_file(path: py.path.local, parent) -> Optional[\"Module\"]:\n    ext = path.ext\n    if ext == \".py\":\n        if not parent.session.isinitpath(path):\n            if not path_matches_patterns(\n                path, parent.config.getini(\"python_files\") + [\"__init__.py\"]\n            ):\n                return None\n        ihook = parent.session.gethookproxy(path)\n        module = ihook.pytest_pycollect_makemodule(\n            path=path, parent=parent\n        )  # type: Module\n        return module\n    return None\n\n\ndef path_matches_patterns(path: py.path.local, patterns: Iterable[str]) -> bool:\n    \"\"\"Returns True if path matches any of the patterns in the list of globs given.\"\"\"\n    return any(path.fnmatch(pattern) for pattern in patterns)\n\n\ndef pytest_pycollect_makemodule(path: py.path.local, parent) -> \"Module\":\n    if path.basename == \"__init__.py\":\n        pkg = Package.from_parent(parent, fspath=path)  # type: Package\n        return pkg\n    mod = Module.from_parent(parent, fspath=path)  # type: Module\n    return mod\n\n\n@hookimpl(trylast=True)\ndef pytest_pycollect_makeitem(collector: \"PyCollector\", name: str, obj: object):\n    # nothing was collected elsewhere, let's do it here\n    if safe_isclass(obj):\n        if collector.istestclass(obj, name):\n            return Class.from_parent(collector, name=name, obj=obj)\n    elif collector.istestfunction(obj, name):\n        # mock seems to store unbound methods (issue473), normalize it\n        obj = getattr(obj, \"__func__\", obj)\n        # We need to try and unwrap the function if it's a functools.partial\n        # or a functools.wrapped.\n        # We mustn't if it's been wrapped with mock.patch (python 2 only)\n        if not (inspect.isfunction(obj) or inspect.isfunction(get_real_func(obj))):\n            filename, lineno = getfslineno(obj)\n            warnings.warn_explicit(\n                message=PytestCollectionWarning(\n                    \"cannot collect %r because it is not a function.\" % name\n                ),\n                category=None,\n                filename=str(filename),\n                lineno=lineno + 1,\n            )\n        elif getattr(obj, \"__test__\", True):\n            if is_generator(obj):\n                res = Function.from_parent(collector, name=name)\n                reason = \"yield tests were removed in pytest 4.0 - {name} will be ignored\".format(\n                    name=name\n                )\n                res.add_marker(MARK_GEN.xfail(run=False, reason=reason))\n                res.warn(PytestCollectionWarning(reason))\n            else:\n                res = list(collector._genfunctions(name, obj))\n            return res\n\n\nclass PyobjMixin:\n    _ALLOW_MARKERS = True\n\n    # Function and attributes that the mixin needs (for type-checking only).\n    if TYPE_CHECKING:\n        name = \"\"  # type: str\n        parent = None  # type: Optional[nodes.Node]\n        own_markers = []  # type: List[Mark]\n\n        def getparent(self, cls: Type[nodes._NodeType]) -> Optional[nodes._NodeType]:\n            ...\n\n        def listchain(self) -> List[nodes.Node]:\n            ...\n\n    @property\n    def module(self):\n        \"\"\"Python module object this node was collected from (can be None).\"\"\"\n        node = self.getparent(Module)\n        return node.obj if node is not None else None\n\n    @property\n    def cls(self):\n        \"\"\"Python class object this node was collected from (can be None).\"\"\"\n        node = self.getparent(Class)\n        return node.obj if node is not None else None\n\n    @property\n    def instance(self):\n        \"\"\"Python instance object this node was collected from (can be None).\"\"\"\n        node = self.getparent(Instance)\n        return node.obj if node is not None else None\n\n    @property\n    def obj(self):\n        \"\"\"Underlying Python object.\"\"\"\n        obj = getattr(self, \"_obj\", None)\n        if obj is None:\n            self._obj = obj = self._getobj()\n            # XXX evil hack\n            # used to avoid Instance collector marker duplication\n            if self._ALLOW_MARKERS:\n                self.own_markers.extend(get_unpacked_marks(self.obj))\n        return obj\n\n    @obj.setter\n    def obj(self, value):\n        self._obj = value\n\n    def _getobj(self):\n        \"\"\"Gets the underlying Python object. May be overwr</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.unittest.TestCaseFunction.nofuncargs</name><path>src/_pytest/python.py</path><content>nly one name \"\n  </content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.unittest.TestCaseFunction._excinfo</name><path>src/_pytest/python.py</path><content> \"or a list of </content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.unittest.TestCaseFunction._testcase</name><path>src/_pytest/python.py</path><content>       \"Example:</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.unittest.TestCaseFunction.setup</name><path>src/_pytest/python.py</path><content>two calls of the \"\n        \"decorated test function, one with arg1=1 and another with arg1=2.\"\n        \"see https://docs.pytest.org/en/stable/parametrize.html for more info \"\n        \"and examples.\",\n    )\n    config.addinivalue_line(\n        \"markers\",\n        \"usefixtures(fixturename1, fixturename2, ...): mark tests as needing \"\n        \"all of the specified fixtures. see \"\n        \"https://docs.pytest.org/en/stable/fixture.html#use</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.unittest.TestCaseFunction.teardown</name><path>src/_pytest/python.py</path><content>es \",\n    )\n\n\ndef async_warn_and_skip(nodeid: str) -> None:\n    msg = \"async def functions are not natively supported and have been skipped.\\n\"\n    msg += (\n        \"You need to install a suitable plugin for you</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.unittest.TestCaseFunction.startTest</name><path>src/_pytest/python.py</path><content>c framework, for example:\\n\"\n    )\n    msg += \"  - pytest-asyncio\\n\"\n   </content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.unittest.TestCaseFunction._addexcinfo</name><path>src/_pytest/python.py</path><content>= \"  - pytest-trio\\n\"\n    msg += \"  - pytest-tornasync\\n\"\n    msg += \"  - pytest-twisted\"\n    warnings.warn(PytestUnhandledCoroutineWarning(msg.format(nodeid)))\n    skip(msg=\"async def function and no async plugin installed (see warnings)\")\n\n\n@hookimpl(trylast=True)\ndef pytest_pyfunc_call(pyfuncitem: \"Function\") -> Optional[object]:\n    testfunction = pyfuncitem.obj\n    if is_async_function(testfunction):\n        async_warn_and_skip(pyfuncitem.nodeid)\n    funcargs = pyfuncitem.funcargs\n    testargs = {arg: funcargs[arg] for arg in pyfuncitem._fixtureinfo.argnames}\n    result = testfunction(**testargs)\n    if hasattr(result, \"__await__\") or hasattr(result, \"__aiter__\"):\n        async_warn_and_skip(pyfuncitem.nodeid)\n    return True\n\n\ndef pytest_collect_file(path: py.path.local, parent) -> Optional[\"Module\"]:\n    ext = path.ext\n    if ext == \".py\":\n        if not parent.session.isinitpath(path):\n            if not path_matches_patterns(\n                path, parent.config.getini(\"python_files\") + [\"__init__.py\"]\n            ):\n                return None\n        ihook = parent.session.gethookproxy(path)\n        module = ihook.pytest_pycollect_makemodule(\n            path=path, parent=parent\n        )  # type: Module\n        return module\n    return None\n\n\ndef path_matches_patterns(path: py.path.local, patterns: Iterable[str]) -> bool:\n    \"\"\"Returns True if path matches any of the patterns in the list of globs given.\"\"\"</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.unittest.TestCaseFunction.addError</name><path>src/_pytest/python.py</path><content>eturn any(path.fnmatch(pattern) for pattern in patterns)\n\n\ndef pytest_pycollect_makemodule(path: py.path.local, parent) -> \"Module\":\n    if path.basename == \"__init__.py\":\n        pkg = Package.from_parent(parent, fspath=path)  # type: Package\n        return pkg\n    mod = Module.from_parent(pa</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.unittest.TestCaseFunction.addFailure</name><path>src/_pytest/python.py</path><content>fspath=path)  # type: Module\n    return mod\n\n\n@hookimpl(trylast=True)\ndef pytest_pycollect_makeitem(collector: \"PyCollector\", name: str, obj: </content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.unittest.TestCaseFunction.addSkip</name><path>src/_pytest/python.py</path><content>):\n    # nothing was collected elsewhere, let's do it here\n    if safe_isclass(obj):\n        if collector.istestclass(obj, name):\n            return Class.from_parent(collector, name=name, obj=obj)\n    elif collector.istestfunction(obj,</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.unittest.TestCaseFunction.addExpectedFailure</name><path>src/_pytest/python.py</path><content>:\n        # mock seems to store unbound methods (issue473), normalize it\n        obj = getattr(obj, \"__func__\", obj)\n        # We need to try and unwrap the function if it's a functools.partial\n        # or a functools.wrapped.\n        # We mustn't if it's been wrapped with mo</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.unittest.TestCaseFunction.addUnexpectedSuccess</name><path>src/_pytest/python.py</path><content>ch (python 2 only)\n        if not (inspect.isfunction(obj) or inspect.isfunction(get_real_func(obj))):\n            filename, lineno = getfslineno(obj)\n   </content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.unittest.TestCaseFunction.addSuccess</name><path>src/_pytest/python.py</path><content>   warnings.warn_explicit(\n                message=PytestCollectionWarnin</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.unittest.TestCaseFunction.stopTest</name><path>src/_pytest/python.py</path><content>                 \"cannot collect %r because it is not a function.\" % na</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.unittest.TestCaseFunction._expecting_failure</name><path>src/_pytest/python.py</path><content>             ),\n                category=None,\n                filename=str(filename),\n                lineno=lineno + 1,\n            )\n        elif getattr(obj, \"__test__\", True):\n            if is_generator(obj):\n                res = Function.from_parent(collector, name=name)\n                reason = \"yield tests were removed in pytest 4.0 - {name} will be ignored\".format(\n                    name=name\n                )\n                res.a</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.unittest.TestCaseFunction.runtest</name><path>src/_pytest/python.py</path><content>ker(MARK_GEN.xfail(run=False, reason=reason))\n                res.warn(PytestCollectionWarning(reason))\n            else:\n                res = list(collector._genfunctions(name, obj))\n            return res\n\n\nclass PyobjMixin:\n    _ALLOW_MARKERS = True\n\n    # Function and attributes that the mixin needs (for type-checking only).\n    if TYPE_CHECKING:\n        name = \"\"  # type: str\n        parent = None  # type: Optional[nodes.Node]\n        own_markers = []  # type: List[Mark]\n\n        def getparent(self, cls: Type[nodes._NodeType]) -> Optional[nodes._NodeType]:\n            ...\n\n        def listchain(self) -> List[nodes.Node]:\n            ...\n\n    @property\n    def module(self):\n        \"\"\"Python module object this node was collected from (can be None).\"\"\"\n        node = self.getparent(Module)\n        return node.obj if node is not None else None\n\n    @property\n    def cls(self):\n        \"\"\"Python class object this node was collected from (can be None).\"\"\"\n        node = self.getparent(Class)\n        return node.obj if node is not None else None\n\n    @property\n    def instance(self):\n        \"\"\"Python instance object this node was collected from (can be None).\"\"\"\n        node = self.getparent(Instance)\n        return node.obj if node is not None else None\n\n    @property\n    def obj(self):\n        \"\"\"Underlying Python object.\"\"\"\n        obj = getattr(self, \"_obj\", None)\n        if obj is None:\n            self._obj = obj = self._getobj()\n            # XXX evil hack\n            # used to avoid Instanc</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.unittest.TestCaseFunction._prunetraceback</name><path>src/_pytest/python.py</path><content>ector marker duplication\n            if self._ALLOW_MARKERS:\n                self.own_markers.extend(get_unpacked_marks(self.obj))\n        return obj\n\n    @obj.setter\n    def obj(self, value):\n        self._obj = value\n\n    def _getobj(self):\n        \"\"\"Gets the underlying Python object. May be overwr</content></symbol>"
+    }
+  ],
+  "completion": {
+    "id": "chatcmpl-9xSuLKWVtFMdN7heluV4Djdpj9aZY",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\"scratch_pad\":\"1. Analyzing User Instructions:\\n1.1 The issue described is that pytest version 6.0.0rc0 is no longer ignoring the failure of tests when dynamically adding an `xfail` marker via `request.node.add_marker(mark)`, which used to work in pytest 5.x.\\n1.2 This issue was likely caused by changes in the pytest internal logic for handling xfail markers between versions 5.x and 6.0.0rc0.\\n1.3 The expected result is that when an xfail marker is dynamically added to a test using `request.node.add_marker(mark)`, pytest should treat the failing test as expectedly failing, similar to statically marked xfail tests.\\n1.4 If no expected result was given, it could be ensuring compatibility with the behavior in previous pytest versions (5.x), where such tests were not considered failures.\\n1.5 To fix it, the implementation should check if dynamically added xfail markers are being handled in the same manner as they were previously, i.e., ensure that the test outcome is 'skipped' or 'xfailed'. The logic in `pytest_runtest_makereport` seems particularly relevant for ensuring this behavior.\\n\\n2. Evaluating Symbols:\\n2.1 Analyzing each provided symbol to determine its relevance to the issue with dynamically adding xfail markers.\\n2.2 Investigating the implementation details in `pytest_runtest_makereport` found in `src/_pytest/skipping.py` which seem to deal directly with handling the xfail conditions during the test report generation.\\n2.3 Consideration of other relevant symbols such as `_pytest.nodes.Node.add_marker` to understand how markers are added to nodes within pytest.\\n2.4 Determining that the critical part here involves the logic within `pytest_runtest_makereport` to ensure dynamically added xfail marks are properly processed.\\n2.5 Other symbols more related to tests set up or unrelated logic (like `FixtureFunctionMarker`) seem to not directly influence the xfail issue as described and can be deprioritized or dismissed.\\n2.6 Based on this, we should potentially change or add logic in `pytest_runtest_makereport` to handle dynamic xfail as intended.\",\"symbols\":[{\"name\":\"_pytest.skipping.pytest_runtest_makereport\",\"file_path\":\"src/_pytest/skipping.py\",\"reason\":\"The function implements the report creation logic that should handle xfail markers during test execution. Ensuring this code correctly processes dynamically added xfail markers to produce an 'xfail' result rather than a failure as described in the issue is necessary.\"},{\"name\":\"_pytest.nodes.Node.add_marker\",\"file_path\":\"src/_pytest/nodes.py\",\"reason\":\"Handles how markers are added to nodes; relevant to ensure dynamic addition of xfail markers aligns with established marker registration practices and potentially influences the modification of test execution flow.\"}],\"more_info\":[],\"is_done\":true,\"symbols_scratch_pad\":[\"This is related to how pytest handles test reports. It can decide whether an outcome should be marked as 'xfailed'. If dynamically adding xfail markers isn't working correctly, this might need to be adapted or revisited.\",\"This seems like partial or misaligned logic for setting outcomes based on xfail; only a small, clipped portion of the logic is visible.\",\"The function seems to deal with evaluating xfail marks, determining which should trigger based on given conditions; relevant for understanding if dynamically added xfail marks are being captured by this evaluation process.\",\"This appears to be key logic for producing test results and may directly influence how pytest handles skipped or expected failure outcomes, including xfails.\",\"This is unrelated content or potentially non-consequential logic; lacking specific visible logic in this context for xfail handling.\",\"This defines how to add markers in general, which is directly relevant for the mechanism of adding xfail markers to a request node, potentially influencing if they take effect properly.\"]}",
+          "refusal": null,
+          "role": "assistant",
+          "function_call": null,
+          "tool_calls": [],
+          "parsed": {
+            "scratch_pad": "1. Analyzing User Instructions:\n1.1 The issue described is that pytest version 6.0.0rc0 is no longer ignoring the failure of tests when dynamically adding an `xfail` marker via `request.node.add_marker(mark)`, which used to work in pytest 5.x.\n1.2 This issue was likely caused by changes in the pytest internal logic for handling xfail markers between versions 5.x and 6.0.0rc0.\n1.3 The expected result is that when an xfail marker is dynamically added to a test using `request.node.add_marker(mark)`, pytest should treat the failing test as expectedly failing, similar to statically marked xfail tests.\n1.4 If no expected result was given, it could be ensuring compatibility with the behavior in previous pytest versions (5.x), where such tests were not considered failures.\n1.5 To fix it, the implementation should check if dynamically added xfail markers are being handled in the same manner as they were previously, i.e., ensure that the test outcome is 'skipped' or 'xfailed'. The logic in `pytest_runtest_makereport` seems particularly relevant for ensuring this behavior.\n\n2. Evaluating Symbols:\n2.1 Analyzing each provided symbol to determine its relevance to the issue with dynamically adding xfail markers.\n2.2 Investigating the implementation details in `pytest_runtest_makereport` found in `src/_pytest/skipping.py` which seem to deal directly with handling the xfail conditions during the test report generation.\n2.3 Consideration of other relevant symbols such as `_pytest.nodes.Node.add_marker` to understand how markers are added to nodes within pytest.\n2.4 Determining that the critical part here involves the logic within `pytest_runtest_makereport` to ensure dynamically added xfail marks are properly processed.\n2.5 Other symbols more related to tests set up or unrelated logic (like `FixtureFunctionMarker`) seem to not directly influence the xfail issue as described and can be deprioritized or dismissed.\n2.6 Based on this, we should potentially change or add logic in `pytest_runtest_makereport` to handle dynamic xfail as intended.",
+            "symbols": [
+              {
+                "name": "_pytest.skipping.pytest_runtest_makereport",
+                "file_path": "src/_pytest/skipping.py",
+                "reason": "The function implements the report creation logic that should handle xfail markers during test execution. Ensuring this code correctly processes dynamically added xfail markers to produce an 'xfail' result rather than a failure as described in the issue is necessary."
+              },
+              {
+                "name": "_pytest.nodes.Node.add_marker",
+                "file_path": "src/_pytest/nodes.py",
+                "reason": "Handles how markers are added to nodes; relevant to ensure dynamic addition of xfail markers aligns with established marker registration practices and potentially influences the modification of test execution flow."
+              }
+            ],
+            "more_info": [],
+            "is_done": true,
+            "symbols_scratch_pad": [
+              "This is related to how pytest handles test reports. It can decide whether an outcome should be marked as 'xfailed'. If dynamically adding xfail markers isn't working correctly, this might need to be adapted or revisited.",
+              "This seems like partial or misaligned logic for setting outcomes based on xfail; only a small, clipped portion of the logic is visible.",
+              "The function seems to deal with evaluating xfail marks, determining which should trigger based on given conditions; relevant for understanding if dynamically added xfail marks are being captured by this evaluation process.",
+              "This appears to be key logic for producing test results and may directly influence how pytest handles skipped or expected failure outcomes, including xfails.",
+              "This is unrelated content or potentially non-consequential logic; lacking specific visible logic in this context for xfail handling.",
+              "This defines how to add markers in general, which is directly relevant for the mechanism of adding xfail markers to a request node, potentially influencing if they take effect properly."
+            ]
+          }
+        }
+      }
+    ],
+    "created": 1723959501,
+    "model": "gpt-4o-2024-08-06",
+    "object": "chat.completion",
+    "service_tier": null,
+    "system_fingerprint": "fp_2a322c9ffc",
+    "usage": {
+      "completion_tokens": 823,
+      "prompt_tokens": 13469,
+      "total_tokens": 14292
+    }
+  }
+}

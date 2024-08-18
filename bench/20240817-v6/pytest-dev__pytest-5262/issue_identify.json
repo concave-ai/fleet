@@ -1,0 +1,374 @@
+{
+    "file_paths": [
+        "src/_pytest/capture.py"
+    ],
+    "symbols": [
+        "_pytest.capture.EncodedFile.__getattr__",
+        "_pytest.capture.safe_text_dupfile"
+    ],
+    "code_spans": {
+        "_pytest.capture.safe_text_dupfile": {
+            "name": "_pytest.capture.safe_text_dupfile",
+            "file_path": "src/_pytest/capture.py",
+            "file_content": "def safe_text_dupfile(f, mode, default_encoding=\"UTF8\"):\n    \"\"\" return an open text file object that's a duplicate of f on the\n        FD-level if possible.\n    \"\"\"\n    encoding = getattr(f, \"encoding\", None)\n    try:\n        fd = f.fileno()\n    except Exception:\n        if \"b\" not in getattr(f, \"mode\", \"\") and hasattr(f, \"encoding\"):\n            # we seem to have a text stream, let's just use it\n            return f\n    else:\n        newfd = os.dup(fd)\n        if \"b\" not in mode:\n            mode += \"b\"\n        f = os.fdopen(newfd, mode, 0)  # no buffering\n    return EncodedFile(f, encoding or default_encoding)",
+            "start_line": 405,
+            "start_column": 14074,
+            "end_line": 0,
+            "end_column": 14694,
+            "start_byte": 14074,
+            "end_byte": 0
+        },
+        "_pytest.capture.MultiCapture": {
+            "name": "_pytest.capture.MultiCapture",
+            "file_path": "src/_pytest/pytester.py",
+            "file_content": "ytest_subprocess\n\n        mp = self.monkeypatch = MonkeyPatch()\n        mp.setenv(\"PYTEST_DEBUG_TEMPROOT\", str(self.test_tmproot))\n        # Ensure no unexpected caching via tox.\n        mp.delenv(\"TOX_ENV_DIR\", raising=False)\n        # Discard outer pytest options.\n        mp.delenv(\"PYTEST_ADDOPTS\", raising=False)\n\n    def __repr__(self):\n        return \"<Testdir %r>\" % (self.tmpdir,)\n\n    def __str__(self):\n        return str(self.tmpdir)\n\n    def finalize(self):\n        \"\"\"Clean up global state artifacts.\n\n        Some methods modify the global interpreter state and this tries to\n        clean this up.  It does not remove the temporary directory however so\n        it can be looked at after the test run has finished.\n\n        \"\"\"\n        self._sys_modules_snapshot.restore()\n        self._sys_path_snapshot.restore()\n        self._cwd_snapshot.restore()\n        self.monkeypatch.undo()\n\n    def __take_sys_modules_snapshot(self):\n        # some zope modules used by twisted-related tests keep internal state\n        # and can't be deleted; we had some trouble in the past with\n        # `zope.interface` for example\n        def preserve_module(name):\n            return name.startswith(\"zope\")\n\n        return SysModulesSnapshot(preserve=preserve_module)\n\n    def make_hook_recorder(self, pluginmanager):\n        \"\"\"Create a new :py:class:`HookRecorder` for a PluginManager.\"\"\"\n        pluginmanager.reprec = reprec = HookRecorder(pluginmanager)\n        self.request.addfinalizer(reprec.finish_recording)\n        return reprec\n\n    def chdir(self):\n        \"\"\"Cd into the temporary directory.\n\n        This is done automatically upon instantiation.\n\n        \"\"\"\n        self.tmpdir.chdir()\n\n    def _makefile(self, ext, args, kwargs, encoding=\"utf-8\"):\n        items = list(kwargs.items())\n\n        def to_text(s):\n            return s.decode(encoding) if isinstance(s, bytes) else six.text_type(s)\n\n        if args:\n            source = u\"\\n\".join(to_text(x) for x in args)\n            basename = self.request.function.__name__\n            items.insert(0, (basename, source))\n\n        ret = None\n        for basename, value in items:\n            p = self.tmpdir.join(basename).new(ext=ext)\n            p.dirpath(",
+            "start_line": 456,
+            "start_column": 15585,
+            "end_line": 0,
+            "end_column": 17811,
+            "start_byte": 15585,
+            "end_byte": 0
+        },
+        "_pytest.capture.MultiCapture.out": {
+            "name": "_pytest.capture.MultiCapture.out",
+            "file_path": "src/_pytest/pytester.py",
+            "file_content": "elf.monkeypatch = Monk",
+            "start_line": 457,
+            "start_column": 15617,
+            "end_line": 4,
+            "end_column": 15639,
+            "start_byte": 15617,
+            "end_byte": 4
+        },
+        "_pytest.capture.MultiCapture._state": {
+            "name": "_pytest.capture.MultiCapture._state",
+            "file_path": "src/_pytest/pytester.py",
+            "file_content": "ch()\n        ",
+            "start_line": 458,
+            "start_column": 15644,
+            "end_line": 4,
+            "end_column": 15657,
+            "start_byte": 15644,
+            "end_byte": 4
+        },
+        "_pytest.capture.MultiCapture.__init__": {
+            "name": "_pytest.capture.MultiCapture.__init__",
+            "file_path": "src/_pytest/pytester.py",
+            "file_content": "env(\"PYTEST_DEBUG_TEMPROOT\", str(self.test_tmproot))\n        # Ensure no unexpected caching via tox.\n        mp.delenv(\"TOX_ENV_DIR\", raising=False)\n        # Discard outer pytest options.\n        mp.delenv(\"PYTES",
+            "start_line": 460,
+            "start_column": 15663,
+            "end_line": 4,
+            "end_column": 15876,
+            "start_byte": 15663,
+            "end_byte": 4
+        },
+        "_pytest.capture.MultiCapture.__repr__": {
+            "name": "_pytest.capture.MultiCapture.__repr__",
+            "file_path": "src/_pytest/pytester.py",
+            "file_content": "PTS\", raising=False)\n\n    def __repr__(self):\n        return \"<Testdir %r>\" % (self.tmpdir,)\n\n    def __str__(self):\n        return str(self.tmpdir)\n\n    def finalize(self):\n        \"\"\"Clean up global state artifacts.\n\n        Some methods modify the global i",
+            "start_line": 468,
+            "start_column": 15882,
+            "end_line": 4,
+            "end_column": 16141,
+            "start_byte": 15882,
+            "end_byte": 4
+        },
+        "_pytest.capture.MultiCapture.start_capturing": {
+            "name": "_pytest.capture.MultiCapture.start_capturing",
+            "file_path": "src/_pytest/pytester.py",
+            "file_content": "eter state and this tries to\n        clean this up.  It does not remove the temporary directory however so\n        it can be looked at after the test run has finished.\n\n        \"\"\"\n        self._sys_modules_s",
+            "start_line": 477,
+            "start_column": 16147,
+            "end_line": 4,
+            "end_column": 16355,
+            "start_byte": 16147,
+            "end_byte": 4
+        },
+        "_pytest.capture.MultiCapture.pop_outerr_to_orig": {
+            "name": "_pytest.capture.MultiCapture.pop_outerr_to_orig",
+            "file_path": "src/_pytest/pytester.py",
+            "file_content": "t.restore()\n        self._sys_path_snapshot.restore()\n        self._cwd_snapshot.restore()\n        self.monkeypatch.undo()\n\n    def __take_sys_modules_snapshot(self):\n        # some zope modules used by twisted-related tests keep internal state\n        # and can't be dele",
+            "start_line": 486,
+            "start_column": 16361,
+            "end_line": 4,
+            "end_column": 16633,
+            "start_byte": 16361,
+            "end_byte": 4
+        },
+        "_pytest.capture.MultiCapture.suspend_capturing": {
+            "name": "_pytest.capture.MultiCapture.suspend_capturing",
+            "file_path": "src/_pytest/pytester.py",
+            "file_content": "e had some trouble in the past with\n        # `zope.interface` for example\n        def preserve_module(name):\n            return name.startswith(\"zope\")\n\n        return SysModulesSnapshot(preserve=preserve_module)\n\n    def make_hook_recorder(self, pluginmanager):\n        \"\"\"",
+            "start_line": 495,
+            "start_column": 16639,
+            "end_line": 4,
+            "end_column": 16914,
+            "start_byte": 16639,
+            "end_byte": 4
+        },
+        "_pytest.capture.MultiCapture.resume_capturing": {
+            "name": "_pytest.capture.MultiCapture.resume_capturing",
+            "file_path": "src/_pytest/pytester.py",
+            "file_content": " a new :py:class:`HookRecorder` for a PluginManager.\"\"\"\n        pluginmanager.reprec = reprec = HookRecorder(pluginmanager)\n        self.request.addfinalizer(reprec.finish_recording)\n        return reprec\n\n    def chdir(self):\n        \"\"\"Cd into the temporary directory",
+            "start_line": 505,
+            "start_column": 16920,
+            "end_line": 4,
+            "end_column": 17189,
+            "start_byte": 16920,
+            "end_byte": 4
+        },
+        "_pytest.capture.MultiCapture.stop_capturing": {
+            "name": "_pytest.capture.MultiCapture.stop_capturing",
+            "file_path": "src/_pytest/pytester.py",
+            "file_content": "     This is done automatically upon instantiation.\n\n        \"\"\"\n        self.tmpdir.chdir()\n\n    def _makefile(self, ext, args, kwargs, encoding=\"utf-8\"):\n        items = list(kwargs.items())\n\n        def to_text(s):\n            return s.decode(encoding) if isinstance(s, bytes) else six.text_type(s)\n\n        if args:\n            source = u\"\\n\".join(",
+            "start_line": 515,
+            "start_column": 17195,
+            "end_line": 4,
+            "end_column": 17547,
+            "start_byte": 17195,
+            "end_byte": 4
+        },
+        "_pytest.capture.MultiCapture.readouterr": {
+            "name": "_pytest.capture.MultiCapture.readouterr",
+            "file_path": "src/_pytest/pytester.py",
+            "file_content": "t(x) for x in args)\n            basename = self.request.function.__name__\n            items.insert(0, (basename, source))\n\n        ret = None\n        for basename, value in items:\n            p = self.tmpdir.join(basename).new(ext=ext)\n            p.dirpath(",
+            "start_line": 527,
+            "start_column": 17553,
+            "end_line": 4,
+            "end_column": 17811,
+            "start_byte": 17553,
+            "end_byte": 4
+        },
+        "_pytest.capture.SysCapture": {
+            "name": "_pytest.capture.SysCapture",
+            "file_path": "src/_pytest/pytester.py",
+            "file_content": "s None:\n            func_name = self.request.function.__name__\n            maybe_dir = example_dir / func_name\n            maybe_file = example_dir / (func_name + \".py\")\n\n            if maybe_dir.isdir():\n                example_path = maybe_dir\n            elif maybe_file.isfile():\n                example_path = maybe_file\n            else:\n                raise LookupError(\n                    \"{} cant be found as module or package in {}\".format(\n                        func_name, example_dir.bestrelpath(self.request.config.rootdir)\n                    )\n                )\n        else:\n            example_path = example_dir.join(name)\n\n        if example_path.isdir() and not example_path.join(\"__init__.py\").isfile():\n            example_path.copy(self.tmpdir)\n            return self.tmpdir\n        elif example_path.isfile():\n            result = self.tmpdir.join(example_path.basename)\n            example_path.copy(result)\n            return result\n        else:\n            raise LookupError(\n                'example \"{}\" is not found as a file or directory'.format(example_path)\n            )\n\n    Session = Session\n\n    def getnode(self, config, arg):\n        \"\"\"Return the collection node of a file.\n\n        :param config: :py:class:`_pytest.config.Config` instance, see\n    ",
+            "start_line": 640,
+            "start_column": 21048,
+            "end_line": 0,
+            "end_column": 22344,
+            "start_byte": 21048,
+            "end_byte": 0
+        },
+        "_pytest.capture.SysCapture.EMPTY_BUFFER": {
+            "name": "_pytest.capture.SysCapture.EMPTY_BUFFER",
+            "file_path": "src/_pytest/pytester.py",
+            "file_content": " self.request.functi",
+            "start_line": 642,
+            "start_column": 21079,
+            "end_line": 4,
+            "end_column": 21099,
+            "start_byte": 21079,
+            "end_byte": 4
+        },
+        "_pytest.capture.SysCapture._state": {
+            "name": "_pytest.capture.SysCapture._state",
+            "file_path": "src/_pytest/pytester.py",
+            "file_content": "name__\n      ",
+            "start_line": 643,
+            "start_column": 21104,
+            "end_line": 4,
+            "end_column": 21117,
+            "start_byte": 21104,
+            "end_byte": 4
+        },
+        "_pytest.capture.SysCapture.__init__": {
+            "name": "_pytest.capture.SysCapture.__init__",
+            "file_path": "src/_pytest/pytester.py",
+            "file_content": "maybe_dir = example_dir / func_name\n            maybe_file = example_dir / (func_name + \".py\")\n\n            if maybe_dir.isdir():\n                example_path = maybe_dir\n            elif maybe_file.isfile():\n                example_path = maybe_file\n            else:\n                raise LookupError(\n                    \"{",
+            "start_line": 645,
+            "start_column": 21123,
+            "end_line": 4,
+            "end_column": 21449,
+            "start_byte": 21123,
+            "end_byte": 4
+        },
+        "_pytest.capture.SysCapture.__repr__": {
+            "name": "_pytest.capture.SysCapture.__repr__",
+            "file_path": "src/_pytest/pytester.py",
+            "file_content": " be found as module or package in {}\".format(\n                        func_name, example_dir.bestrelpath(self.request.config.rootdir)\n                    )\n                )\n        else:\n     ",
+            "start_line": 656,
+            "start_column": 21455,
+            "end_line": 4,
+            "end_column": 21648,
+            "start_byte": 21455,
+            "end_byte": 4
+        },
+        "_pytest.capture.SysCapture.start": {
+            "name": "_pytest.capture.SysCapture.start",
+            "file_path": "src/_pytest/pytester.py",
+            "file_content": " example_path = example_dir.join(name)\n\n        if example_path.isdir() and not example_path.j",
+            "start_line": 664,
+            "start_column": 21654,
+            "end_line": 4,
+            "end_column": 21748,
+            "start_byte": 21654,
+            "end_byte": 4
+        },
+        "_pytest.capture.SysCapture.snap": {
+            "name": "_pytest.capture.SysCapture.snap",
+            "file_path": "src/_pytest/pytester.py",
+            "file_content": "_init__.py\").isfile():\n            example_path.copy(self.tmpdir)\n            return self.tmpdir\n        elif example_path.isfile():\n",
+            "start_line": 668,
+            "start_column": 21754,
+            "end_line": 4,
+            "end_column": 21887,
+            "start_byte": 21754,
+            "end_byte": 4
+        },
+        "_pytest.capture.SysCapture.done": {
+            "name": "_pytest.capture.SysCapture.done",
+            "file_path": "src/_pytest/pytester.py",
+            "file_content": "      result = self.tmpdir.join(example_path.basename)\n            example_path.copy(result)\n            return result\n        else:\n            raise LookupError",
+            "start_line": 674,
+            "start_column": 21893,
+            "end_line": 4,
+            "end_column": 22055,
+            "start_byte": 21893,
+            "end_byte": 4
+        },
+        "_pytest.capture.SysCapture.suspend": {
+            "name": "_pytest.capture.SysCapture.suspend",
+            "file_path": "src/_pytest/pytester.py",
+            "file_content": "            'example \"{}\" is not found as a file or directory'.format(example_path)\n           ",
+            "start_line": 680,
+            "start_column": 22061,
+            "end_line": 4,
+            "end_column": 22156,
+            "start_byte": 22061,
+            "end_byte": 4
+        },
+        "_pytest.capture.SysCapture.resume": {
+            "name": "_pytest.capture.SysCapture.resume",
+            "file_path": "src/_pytest/pytester.py",
+            "file_content": "  Session = Session\n\n    def getnode(self, config, arg):\n        \"\"\"Return the collection node ",
+            "start_line": 684,
+            "start_column": 22162,
+            "end_line": 4,
+            "end_column": 22257,
+            "start_byte": 22162,
+            "end_byte": 4
+        },
+        "_pytest.capture.SysCapture.writeorg": {
+            "name": "_pytest.capture.SysCapture.writeorg",
+            "file_path": "src/_pytest/pytester.py",
+            "file_content": "ile.\n\n        :param config: :py:class:`_pytest.config.Config` instance, see\n    ",
+            "start_line": 688,
+            "start_column": 22263,
+            "end_line": 4,
+            "end_column": 22344,
+            "start_byte": 22263,
+            "end_byte": 4
+        },
+        "_pytest.capture.SysCaptureBinary": {
+            "name": "_pytest.capture.SysCaptureBinary",
+            "file_path": "src/_pytest/pytester.py",
+            "file_content": "    :py:meth:`parseconfig` and :py:meth:`parseconfigure` to create the\n           configuration\n\n        :param arg: a :py:class:`py.path.local` instance of the file\n\n        \"\"\"\n        session = Session",
+            "start_line": 693,
+            "start_column": 22347,
+            "end_line": 0,
+            "end_column": 22551,
+            "start_byte": 22347,
+            "end_byte": 0
+        },
+        "_pytest.capture.SysCaptureBinary.EMPTY_BUFFER": {
+            "name": "_pytest.capture.SysCaptureBinary.EMPTY_BUFFER",
+            "file_path": "src/_pytest/pytester.py",
+            "file_content": "`parseconfigure` t",
+            "start_line": 694,
+            "start_column": 22387,
+            "end_line": 4,
+            "end_column": 22405,
+            "start_byte": 22387,
+            "end_byte": 4
+        },
+        "_pytest.capture.SysCaptureBinary.snap": {
+            "name": "_pytest.capture.SysCaptureBinary.snap",
+            "file_path": "src/_pytest/pytester.py",
+            "file_content": "te the\n           configuration\n\n        :param arg: a :py:class:`py.path.local` instance of the file\n\n        \"\"\"\n        session = Session",
+            "start_line": 696,
+            "start_column": 22411,
+            "end_line": 4,
+            "end_column": 22551,
+            "start_byte": 22411,
+            "end_byte": 4
+        },
+        "_pytest.capture.EncodedFile": {
+            "name": "_pytest.capture.EncodedFile",
+            "file_path": "src/_pytest/capture.py",
+            "file_content": "class EncodedFile(object):\n    errors = \"strict\"  # possibly needed by py3 code (issue555)\n\n    def __init__(self, buffer, encoding):\n        self.buffer = buffer\n        self.encoding = encoding\n\n    def write(self, obj):\n        if isinstance(obj, six.text_type):\n            obj = obj.encode(self.encoding, \"replace\")\n        elif _PY3:\n            raise TypeError(\n                \"write() argument must be str, not {}\".format(type(obj).__name__)\n            )\n        self.buffer.write(obj)\n\n    def writelines(self, linelist):\n        data = \"\".join(linelist)\n        self.write(data)\n\n    @property\n    def name(self):\n        \"\"\"Ensure that file.name is a string.\"\"\"\n        return repr(self.buffer)\n\n    def __getattr__(self, name):\n        return getattr(object.__getattribute__(self, \"buffer\"), name)",
+            "start_line": 424,
+            "start_column": 14697,
+            "end_line": 0,
+            "end_column": 15508,
+            "start_byte": 14697,
+            "end_byte": 0
+        },
+        "_pytest.capture.EncodedFile.errors": {
+            "name": "_pytest.capture.EncodedFile.errors",
+            "file_path": "src/_pytest/capture.py",
+            "file_content": "errors = \"strict\"",
+            "start_line": 425,
+            "start_column": 14728,
+            "end_line": 4,
+            "end_column": 14745,
+            "start_byte": 14728,
+            "end_byte": 4
+        },
+        "_pytest.capture.EncodedFile.__init__": {
+            "name": "_pytest.capture.EncodedFile.__init__",
+            "file_path": "src/_pytest/capture.py",
+            "file_content": "def __init__(self, buffer, encoding):\n        self.buffer = buffer\n        self.encoding = encoding",
+            "start_line": 427,
+            "start_column": 14793,
+            "end_line": 4,
+            "end_column": 14892,
+            "start_byte": 14793,
+            "end_byte": 4
+        },
+        "_pytest.capture.EncodedFile.write": {
+            "name": "_pytest.capture.EncodedFile.write",
+            "file_path": "src/_pytest/capture.py",
+            "file_content": "def write(self, obj):\n        if isinstance(obj, six.text_type):\n            obj = obj.encode(self.encoding, \"replace\")\n        elif _PY3:\n            raise TypeError(\n                \"write() argument must be str, not {}\".format(type(obj).__name__)\n            )\n        self.buffer.write(obj)",
+            "start_line": 431,
+            "start_column": 14898,
+            "end_line": 4,
+            "end_column": 15192,
+            "start_byte": 14898,
+            "end_byte": 4
+        },
+        "_pytest.capture.EncodedFile.writelines": {
+            "name": "_pytest.capture.EncodedFile.writelines",
+            "file_path": "src/_pytest/capture.py",
+            "file_content": "def writelines(self, linelist):\n        data = \"\".join(linelist)\n        self.write(data)",
+            "start_line": 440,
+            "start_column": 15198,
+            "end_line": 4,
+            "end_column": 15287,
+            "start_byte": 15198,
+            "end_byte": 4
+        },
+        "_pytest.capture.EncodedFile.name": {
+            "name": "_pytest.capture.EncodedFile.name",
+            "file_path": "src/_pytest/capture.py",
+            "file_content": "@property\n    def name(self):\n        \"\"\"Ensure that file.name is a string.\"\"\"\n        return repr(self.buffer)",
+            "start_line": 444,
+            "start_column": 15293,
+            "end_line": 4,
+            "end_column": 15404,
+            "start_byte": 15293,
+            "end_byte": 4
+        },
+        "_pytest.capture.EncodedFile.__getattr__": {
+            "name": "_pytest.capture.EncodedFile.__getattr__",
+            "file_path": "src/_pytest/capture.py",
+            "file_content": "def __getattr__(self, name):\n        return getattr(object.__getattribute__(self, \"buffer\"), name)",
+            "start_line": 449,
+            "start_column": 15410,
+            "end_line": 4,
+            "end_column": 15508,
+            "start_byte": 15410,
+            "end_byte": 4
+        }
+    }
+}

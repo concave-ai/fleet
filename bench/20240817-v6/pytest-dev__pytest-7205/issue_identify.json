@@ -1,0 +1,241 @@
+{
+    "file_paths": [
+        "src/_pytest/setuponly.py"
+    ],
+    "symbols": [
+        "_pytest.setuponly._show_fixture_action"
+    ],
+    "code_spans": {
+        "_pytest._io.SafeRepr": {
+            "name": "_pytest._io.SafeRepr",
+            "file_path": "src/_pytest/_io/saferepr.py",
+            "file_content": "class SafeRepr(reprlib.Repr):\n    \"\"\"subclass of repr.Repr that limits the resulting size of repr()\n    and includes information on exceptions raised during the call.\n    \"\"\"\n\n    def __init__(self, maxsize: int) -> None:\n        super().__init__()\n        self.maxstring = maxsize\n        self.maxsize = maxsize\n\n    def repr(self, x: Any) -> str:\n        try:\n            s = super().repr(x)\n        except (KeyboardInterrupt, SystemExit):\n            raise\n        except BaseException as exc:\n            s = _format_repr_exception(exc, x)\n        return _ellipsize(s, self.maxsize)\n\n    def repr_instance(self, x: Any, level: int) -> str:\n        try:\n            s = repr(x)\n        except (KeyboardInterrupt, SystemExit):\n            raise\n        except BaseException as exc:\n            s = _format_repr_exception(exc, x)\n        return _ellipsize(s, self.maxsize)",
+            "start_line": 34,
+            "start_column": 871,
+            "end_line": 0,
+            "end_column": 1744,
+            "start_byte": 871,
+            "end_byte": 0
+        },
+        "_pytest._io.SafeRepr.__init__": {
+            "name": "_pytest._io.SafeRepr.__init__",
+            "file_path": "src/_pytest/_io/saferepr.py",
+            "file_content": "def __init__(self, maxsize: int) -> None:\n        super().__init__()\n        self.maxstring = maxsize\n        self.maxsize = maxsize",
+            "start_line": 39,
+            "start_column": 1051,
+            "end_line": 4,
+            "end_column": 1183,
+            "start_byte": 1051,
+            "end_byte": 4
+        },
+        "_pytest._io.SafeRepr.repr": {
+            "name": "_pytest._io.SafeRepr.repr",
+            "file_path": "src/_pytest/_io/saferepr.py",
+            "file_content": "def repr(self, x: Any) -> str:\n        try:\n            s = super().repr(x)\n        except (KeyboardInterrupt, SystemExit):\n            raise\n        except BaseException as exc:\n            s = _format_repr_exception(exc, x)\n        return _ellipsize(s, self.maxsize)",
+            "start_line": 44,
+            "start_column": 1189,
+            "end_line": 4,
+            "end_column": 1457,
+            "start_byte": 1189,
+            "end_byte": 4
+        },
+        "_pytest._io.SafeRepr.repr_instance": {
+            "name": "_pytest._io.SafeRepr.repr_instance",
+            "file_path": "src/_pytest/_io/saferepr.py",
+            "file_content": "def repr_instance(self, x: Any, level: int) -> str:\n        try:\n            s = repr(x)\n        except (KeyboardInterrupt, SystemExit):\n            raise\n        except BaseException as exc:\n            s = _format_repr_exception(exc, x)\n        return _ellipsize(s, self.maxsize)",
+            "start_line": 53,
+            "start_column": 1463,
+            "end_line": 4,
+            "end_column": 1744,
+            "start_byte": 1463,
+            "end_byte": 4
+        },
+        "_pytest._io.saferepr": {
+            "name": "_pytest._io.saferepr",
+            "file_path": "src/_pytest/_io/saferepr.py",
+            "file_content": "def saferepr(obj: Any, maxsize: int = 240) -> str:\n    \"\"\"return a size-limited safe repr-string for the given object.\n    Failing __repr__ functions of user instances will be represented\n    with a short exception info and 'saferepr' generally takes\n    care to never raise exceptions itself.  This function is a wrapper\n    around the Repr/reprlib functionality of the standard 2.6 lib.\n    \"\"\"\n    return SafeRepr(maxsize).repr(obj)",
+            "start_line": 74,
+            "start_column": 2073,
+            "end_line": 0,
+            "end_column": 2508,
+            "start_byte": 2073,
+            "end_byte": 0
+        },
+        "_pytest.assertion._saferepr": {
+            "name": "_pytest.assertion._saferepr",
+            "file_path": "src/_pytest/_io/saferepr.py",
+            "file_content": "",
+            "start_line": 375,
+            "start_column": 13624,
+            "end_line": 0,
+            "end_column": 14124,
+            "start_byte": 13624,
+            "end_byte": 0
+        },
+        "_pytest.assertion.pytest_runtest_protocol": {
+            "name": "_pytest.assertion.pytest_runtest_protocol",
+            "file_path": "src/_pytest/runner.py",
+            "file_content": "ite(\" (fixtures used: {})\".format(\", \".join(used_fixtures)))\n    tw.flush()\n\n\ndef pytest_runtest_setup(item):\n    _update_current_test_var(item, \"setup\")\n    item.session._setupstate.prepare(item)\n\n\ndef pytest_runtest_call(item):\n    _update_current_test_var(item, \"call\")\n    try:\n        del sys.last_type\n        del sys.last_value\n        del sys.last_traceback\n    except AttributeError:\n        pass\n    try:\n        item.runtest()\n    except Exception as e:\n        # Store trace info to allow postmortem debugging\n        sys.last_type = type(e)\n        sys.last_value = e\n        assert e.__traceback__ is not None\n        # Skip *this* frame\n        sys.last_traceback = e.__traceback__.tb_next\n        raise e\n\n\ndef pytest_runtest_teardown(item, nextitem):\n    _update_current_test_var(item, \"teardown\")\n    item.session._setupstate.teardown_exact(item, nextitem)\n    _update_current_test_var(item, None)\n\n\ndef _update_current_test_var(item, when):\n    \"\"\"\n    Update :envvar:`PYTEST_CURRENT_TEST` to reflect the current item and stage.\n\n    If ``when`` is None, delete ``PYTEST_CURRENT_TEST`` from the environment.\n    \"\"\"\n    var_name = \"PYTEST_CURRENT_TEST\"\n    if when:\n        value = \"{} ({})\".format(item.nodeid, when)\n        # don't allow null bytes on environment variables (see #2644, #2957)\n        value = value.replace(\"\\x00\", \"(null)\")\n        os.environ[var_name] = value\n    else:\n        os.environ.pop(var_name)\n\n\ndef pytest_report_teststatus(report):\n    if report.when in (\"setup\", \"teardown\"):\n        if report.failed:\n            #      category, shortletter, verbose-word\n            return \"error\", \"E\", \"ERROR\"\n        elif report.skipped:\n            return \"skipped\", \"s\", \"SKIPPED\"\n        else:\n            return \"\", \"\", \"\"\n\n\n#\n# Implementation\n\n\ndef call_and_report(\n    item, when: \"Literal['setup', 'call', 'teardown']\", log=True, **kwds\n):\n    call = call_runtest_hook(item, when, **kwds)\n    hook = item.ihook\n    report = hook.pytest_runtest_makereport(item=item, call=call)\n    if log:\n        hook.pytest_runtest_logrepo",
+            "start_line": 112,
+            "start_column": 3744,
+            "end_line": 0,
+            "end_column": 5815,
+            "start_byte": 3744,
+            "end_byte": 0
+        },
+        "_pytest.capture.CaptureManager.pytest_runtest_setup": {
+            "name": "_pytest.capture.CaptureManager.pytest_runtest_setup",
+            "file_path": "src/_pytest/runner.py",
+            "file_content": "rrisinstance(reraise):\n                raise\n            result = None\n        # use the perf counter\n        precise_stop = perf_counter()\n ",
+            "start_line": 245,
+            "start_column": 8284,
+            "end_line": 4,
+            "end_column": 8425,
+            "start_byte": 8284,
+            "end_byte": 4
+        },
+        "_pytest.faulthandler.FaultHandlerHooks.pytest_runtest_protocol": {
+            "name": "_pytest.faulthandler.FaultHandlerHooks.pytest_runtest_protocol",
+            "file_path": "src/_pytest/runner.py",
+            "file_content": ", \"setup\", log)\n    reports = [rep]\n    if rep.passed:\n        if item.config.getoption(\"setupshow\", False):\n            show_test_item(item)\n        if not item.config.getoption(\"setuponly\", False):\n            reports.append(call_and_report(item, \"call\", log))\n    reports.append(call_and_report(item, \"teardown\", log, nextitem=nextitem))\n    # after all teardown hooks have been called\n    # want funcargs and request info to go away\n    if hasrequest:\n        item._request = False\n        item.funcargs = None\n",
+            "start_line": 81,
+            "start_column": 2904,
+            "end_line": 4,
+            "end_column": 3419,
+            "start_byte": 2904,
+            "end_byte": 4
+        },
+        "_pytest.hookspec.pytest_runtest_protocol": {
+            "name": "_pytest.hookspec.pytest_runtest_protocol",
+            "file_path": "src/_pytest/runner.py",
+            "file_content": "l be seen by user,\n                #     ideally all should be reported.\n                if exc is None:\n                    exc = e\n        if exc:\n            raise exc\n\n    def _teardown_with_finalization(self, colitem):\n        self._callfinalizers(colitem)\n        colitem.teardown()\n        for colitem in self._finalizers:\n            assert colitem in self.stack\n\n    def teardown_all(self):\n        while self.stack:\n            self._pop_and_teardown()\n        for key in list(self._finalizers):\n            self._teardown_with_finalization(key)\n        assert not self._finalizers\n\n    def teardown_exact(self, item, nextitem):\n   ",
+            "start_line": 338,
+            "start_column": 11262,
+            "end_line": 0,
+            "end_column": 11904,
+            "start_byte": 11262,
+            "end_byte": 0
+        },
+        "_pytest.hookspec.pytest_runtest_setup": {
+            "name": "_pytest.hookspec.pytest_runtest_setup",
+            "file_path": "src/_pytest/runner.py",
+            "file_content": "y setup objects.\"\"\"\n        needed_collectors = colitem.listchain()\n        self._teardo",
+            "start_line": 378,
+            "start_column": 12657,
+            "end_line": 0,
+            "end_column": 12745,
+            "start_byte": 12657,
+            "end_byte": 0
+        },
+        "_pytest.logging.LoggingPlugin.pytest_runtest_setup": {
+            "name": "_pytest.logging.LoggingPlugin.pytest_runtest_setup",
+            "file_path": "src/_pytest/runner.py",
+            "file_content": "",
+            "start_line": 657,
+            "start_column": 23426,
+            "end_line": 4,
+            "end_column": 23567,
+            "start_byte": 23426,
+            "end_byte": 4
+        },
+        "_pytest.pytester.LsofFdLeakChecker.pytest_runtest_protocol": {
+            "name": "_pytest.pytester.LsofFdLeakChecker.pytest_runtest_protocol",
+            "file_path": "src/_pytest/runner.py",
+            "file_content": "ixtures:\n        tw.write(\" (fixtures used: {})\".format(\", \".join(used_fixtures)))\n    tw.flush()\n\n\ndef pytest_runtest_setup(item):\n    _update_current_test_var(item, \"setup\")\n    item.session._setupstate.prepare(item)\n\n\ndef pytest_runtest_call(item):\n    _update_current_test_var(item, \"call\")\n    try:\n        del sys.last_type\n        del sys.last_value\n        del sys.last_traceback\n    except AttributeError:\n        pass\n    try:\n        item.runtest()\n    except Exception as e:\n        # Store trace info to allow postmortem debugging\n        sys.last_type = type(e)\n        sys.last_value = e\n        assert e.__traceback__ is not None\n        # Skip *this* frame\n        sys.last_traceback = e.__traceback__.tb_next\n        raise e\n\n\ndef pytest_runtest_teardown(item, nextitem):\n    _update_current_test_var(item, \"teardown\")\n    item.session._setupstate.teardown_exact(item, nextitem)\n    _update_current_test_var(item, None)\n\n\ndef _update_curren",
+            "start_line": 138,
+            "start_column": 3722,
+            "end_line": 4,
+            "end_column": 4680,
+            "start_byte": 3722,
+            "end_byte": 4
+        },
+        "_pytest.runner.pytest_runtest_protocol": {
+            "name": "_pytest.runner.pytest_runtest_protocol",
+            "file_path": "src/_pytest/runner.py",
+            "file_content": "def pytest_runtest_protocol(item, nextitem):\n    item.ihook.pytest_runtest_logstart(nodeid=item.nodeid, location=item.location)\n    runtestprotocol(item, nextitem=nextitem)\n    item.ihook.pytest_runtest_logfinish(nodeid=item.nodeid, location=item.location)\n    return True",
+            "start_line": 86,
+            "start_column": 2435,
+            "end_line": 0,
+            "end_column": 2707,
+            "start_byte": 2435,
+            "end_byte": 0
+        },
+        "_pytest.runner.pytest_runtest_setup": {
+            "name": "_pytest.runner.pytest_runtest_setup",
+            "file_path": "src/_pytest/runner.py",
+            "file_content": "def pytest_runtest_setup(item):\n    _update_current_test_var(item, \"setup\")\n    item.session._setupstate.prepare(item)",
+            "start_line": 125,
+            "start_column": 3822,
+            "end_line": 0,
+            "end_column": 3940,
+            "start_byte": 3822,
+            "end_byte": 0
+        },
+        "_pytest.runner.CallInfo.from_call": {
+            "name": "_pytest.runner.CallInfo.from_call",
+            "file_path": "src/_pytest/runner.py",
+            "file_content": "@classmethod\n    def from_call(cls, func, when, reraise=None) -> \"CallInfo\":\n        #: context of invocation: one of \"setup\", \"call\",\n        #: \"teardown\", \"memocollect\"\n        excinfo = None\n        start = time()\n        precise_start = perf_counter()\n        try:\n            result = func()\n        except:  # noqa\n            excinfo = ExceptionInfo.from_current()\n            if reraise is not None and excinfo.errisinstance(reraise):\n                raise\n            result = None\n        # use the perf counter\n        precise_stop = perf_counter()\n        duration = precise_stop - precise_start\n        stop = time()\n        return cls(\n            start=start,\n            stop=stop,\n            duration=duration,\n            when=when,\n            result=result,\n            excinfo=excinfo,\n        )",
+            "start_line": 251,
+            "start_column": 7863,
+            "end_line": 4,
+            "end_column": 8681,
+            "start_byte": 7863,
+            "end_byte": 4
+        },
+        "_pytest.skipping.pytest_runtest_setup": {
+            "name": "_pytest.skipping.pytest_runtest_setup",
+            "file_path": "src/_pytest/runner.py",
+            "file_content": "t_protocol(item, nextitem):\n    item.ihook.pytest_runtest_logstart(nodeid=item.nodeid, location=item.location)\n    runtestprotocol(item, nextitem=nextitem)\n    item.ihook.pytest_runtest_logfinish(nodeid=item.nodeid, location=item.location)\n    return True\n\n\ndef runtestprotocol(item, log=True, nextitem=None):\n    hasrequest = hasattr(item, \"_request\")\n    if hasrequest and not item._request:\n        item._initrequest()\n    rep = call_and_report(item, \"setup\", log)\n    reports = [rep]\n    if rep.passed:\n        if item.config.getoption(\"setupshow\", False):\n            show_test_item(item)\n        if not item.config.getoption(\"setuponly\", False):\n            reports.append(call_and_report(item, \"call\", log))\n    reports.",
+            "start_line": 73,
+            "start_column": 2452,
+            "end_line": 0,
+            "end_column": 3179,
+            "start_byte": 2452,
+            "end_byte": 0
+        },
+        "_pytest.unittest.pytest_runtest_protocol": {
+            "name": "_pytest.unittest.pytest_runtest_protocol",
+            "file_path": "src/_pytest/runner.py",
+            "file_content": "ignored because unittest is loaded dynamically.\n            skip_exceptions.append(unittest.SkipTest)  # type: ignore\n        if call.excinfo.errisinstance(tuple(skip_exceptions)):\n            outcome = \"skipped\"\n            r_ = collector._repr_failure_py(call.excinfo, \"line\")\n            assert isinstance(r_, ExceptionChainRepr), repr(r_)\n            r = r_.reprcrash\n            assert r\n            longrepr = (str(r.path), r.lineno, r.message)\n        else:\n            outcome = \"failed\"\n            errorinfo = collector.repr_failure(call.excinfo)\n            if not hasattr(errorinfo, \"toterminal\"):\n                errorinfo = CollectErrorRepr(errorinfo)\n            longrepr = errorinfo\n    rep = CollectReport(\n        collector.nodeid, outcome, longrepr, getattr(call, \"result\", None)\n    )\n    rep.call = call  # type: ignore # see collect_one_node\n    return rep\n\n\nclass SetupState:\n    \"\"\" shared state for setting up/tearing down test items or collectors. \"\"\"\n\n    def __init__(self):\n        self.stack = []  #",
+            "start_line": 265,
+            "start_column": 9374,
+            "end_line": 0,
+            "end_column": 10403,
+            "start_byte": 9374,
+            "end_byte": 0
+        },
+        "_pytest.warnings.pytest_runtest_protocol": {
+            "name": "_pytest.warnings.pytest_runtest_protocol",
+            "file_path": "src/_pytest/runner.py",
+            "file_content": "      sys.last_type = type(e)\n        sys.last_value = e\n        assert e.__traceback__ is not None\n        # Skip *this* frame\n        sys.last_traceback = e.__traceback__.tb_next\n        raise e\n\n\ndef pytest_r",
+            "start_line": 130,
+            "start_column": 4268,
+            "end_line": 0,
+            "end_column": 4479,
+            "start_byte": 4268,
+            "end_byte": 0
+        },
+        "_pytest.nose.pytest_runtest_setup": {
+            "name": "_pytest.nose.pytest_runtest_setup",
+            "file_path": "src/_pytest/runner.py",
+            "file_content": "y not `import time` to avoid being\nfrom time import time  # affected by tests which monkeypatch `time` (issue #185).\nfrom typing import Callable\nfrom typing import Dict\nfrom typing import List\nfrom typing import Optional\nfrom typing import Tuple\n\nimport attr\n\nfrom .reports import CollectErrorRepr\nfrom .reports import CollectReport\nfrom .reports import TestReport\nfrom _pytest._code.code import ExceptionChainRe",
+            "start_line": 6,
+            "start_column": 136,
+            "end_line": 0,
+            "end_column": 548,
+            "start_byte": 136,
+            "end_byte": 0
+        },
+        "_pytest.setuponly._show_fixture_action": {
+            "name": "_pytest.setuponly._show_fixture_action",
+            "file_path": "src/_pytest/setuponly.py",
+            "file_content": "def _show_fixture_action(fixturedef, msg):\n    config = fixturedef._fixturemanager.config\n    capman = config.pluginmanager.getplugin(\"capturemanager\")\n    if capman:\n        capman.suspend_global_capture()\n\n    tw = config.get_terminal_writer()\n    tw.line()\n    tw.write(\" \" * 2 * fixturedef.scopenum)\n    tw.write(\n        \"{step} {scope} {fixture}\".format(\n            step=msg.ljust(8),  # align the output to TEARDOWN\n            scope=fixturedef.scope[0].upper(),\n            fixture=fixturedef.argname,\n        )\n    )\n\n    if msg == \"SETUP\":\n        deps = sorted(arg for arg in fixturedef.argnames if arg != \"request\")\n        if deps:\n            tw.write(\" (fixtures used: {})\".format(\", \".join(deps)))\n\n    if hasattr(fixturedef, \"cached_param\"):\n        tw.write(\"[{}]\".format(fixturedef.cached_param))\n\n    tw.flush()\n\n    if capman:\n        capman.resume_global_capture()",
+            "start_line": 45,
+            "start_column": 1453,
+            "end_line": 0,
+            "end_column": 2340,
+            "start_byte": 1453,
+            "end_byte": 0
+        }
+    }
+}

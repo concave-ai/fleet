@@ -1,0 +1,186 @@
+{
+    "file_paths": [
+        "src/_pytest/pathlib.py"
+    ],
+    "symbols": [
+        "_pytest.pathlib.visit"
+    ],
+    "code_spans": {
+        "_pytest.nodes.FSCollector": {
+            "name": "_pytest.nodes.FSCollector",
+            "file_path": "src/_pytest/nodes.py",
+            "file_content": "class FSCollector(Collector):\n    def __init__(\n        self,\n        fspath: py.path.local,\n        parent=None,\n        config: Optional[Config] = None,\n        session: Optional[\"Session\"] = None,\n        nodeid: Optional[str] = None,\n    ) -> None:\n        name = fspath.basename\n        if parent is not None:\n            rel = fspath.relto(parent.fspath)\n            if rel:\n                name = rel\n            name = name.replace(os.sep, SEP)\n        self.fspath = fspath\n\n        session = session or parent.session\n\n        if nodeid is None:\n            nodeid = self.fspath.relto(session.config.rootdir)\n\n            if not nodeid:\n                nodeid = _check_initialpaths_for_relpath(session, fspath)\n            if nodeid and os.sep != SEP:\n                nodeid = nodeid.replace(os.sep, SEP)\n\n        super().__init__(name, parent, config, session, nodeid=nodeid, fspath=fspath)\n\n    @classmethod\n    def from_parent(cls, parent, *, fspath, **kw):\n        \"\"\"The public constructor.\"\"\"\n        return super().from_parent(parent=parent, fspath=fspath, **kw)\n\n    def gethookproxy(self, fspath: py.path.local):\n        warnings.warn(FSCOLLECTOR_GETHOOKPROXY_ISINITPATH, stacklevel=2)\n        return self.session.gethookproxy(fspath)\n\n    def isinitpath(self, path: py.path.local) -> bool:\n        warnings.warn(FSCOLLECTOR_GETHOOKPROXY_ISINITPATH, stacklevel=2)\n        return self.session.isinitpath(path)",
+            "start_line": 485,
+            "start_column": 16238,
+            "end_line": 0,
+            "end_column": 17664,
+            "start_byte": 16238,
+            "end_byte": 0
+        },
+        "_pytest.nodes.FSCollector.__init__": {
+            "name": "_pytest.nodes.FSCollector.__init__",
+            "file_path": "src/_pytest/nodes.py",
+            "file_content": "def __init__(\n        self,\n        fspath: py.path.local,\n        parent=None,\n        config: Optional[Config] = None,\n        session: Optional[\"Session\"] = None,\n        nodeid: Optional[str] = None,\n    ) -> None:\n        name = fspath.basename\n        if parent is not None:\n            rel = fspath.relto(parent.fspath)\n            if rel:\n                name = rel\n            name = name.replace(os.sep, SEP)\n        self.fspath = fspath\n\n        session = session or parent.session\n\n        if nodeid is None:\n            nodeid = self.fspath.relto(session.config.rootdir)\n\n            if not nodeid:\n                nodeid = _check_initialpaths_for_relpath(session, fspath)\n            if nodeid and os.sep != SEP:\n                nodeid = nodeid.replace(os.sep, SEP)\n\n        super().__init__(name, parent, config, session, nodeid=nodeid, fspath=fspath)",
+            "start_line": 486,
+            "start_column": 16272,
+            "end_line": 4,
+            "end_column": 17138,
+            "start_byte": 16272,
+            "end_byte": 4
+        },
+        "_pytest.nodes.FSCollector.from_parent": {
+            "name": "_pytest.nodes.FSCollector.from_parent",
+            "file_path": "src/_pytest/nodes.py",
+            "file_content": "@classmethod\n    def from_parent(cls, parent, *, fspath, **kw):\n        \"\"\"The public constructor.\"\"\"\n        return super().from_parent(parent=parent, fspath=fspath, **kw)",
+            "start_line": 514,
+            "start_column": 17144,
+            "end_line": 4,
+            "end_column": 17316,
+            "start_byte": 17144,
+            "end_byte": 4
+        },
+        "_pytest.nodes.FSCollector.gethookproxy": {
+            "name": "_pytest.nodes.FSCollector.gethookproxy",
+            "file_path": "src/_pytest/nodes.py",
+            "file_content": "def gethookproxy(self, fspath: py.path.local):\n        warnings.warn(FSCOLLECTOR_GETHOOKPROXY_ISINITPATH, stacklevel=2)\n        return self.session.gethookproxy(fspath)",
+            "start_line": 519,
+            "start_column": 17322,
+            "end_line": 4,
+            "end_column": 17490,
+            "start_byte": 17322,
+            "end_byte": 4
+        },
+        "_pytest.nodes.FSCollector.isinitpath": {
+            "name": "_pytest.nodes.FSCollector.isinitpath",
+            "file_path": "src/_pytest/nodes.py",
+            "file_content": "def isinitpath(self, path: py.path.local) -> bool:\n        warnings.warn(FSCOLLECTOR_GETHOOKPROXY_ISINITPATH, stacklevel=2)\n        return self.session.isinitpath(path)",
+            "start_line": 523,
+            "start_column": 17496,
+            "end_line": 4,
+            "end_column": 17664,
+            "start_byte": 17496,
+            "end_byte": 4
+        },
+        "_pytest.assertion.AssertionRewriter.generic_visit": {
+            "name": "_pytest.assertion.AssertionRewriter.generic_visit",
+            "file_path": "src/_pytest/pathlib.py",
+            "file_content": "",
+            "start_line": 801,
+            "start_column": 29525,
+            "end_line": 4,
+            "end_column": 29788,
+            "start_byte": 29525,
+            "end_byte": 4
+        },
+        "_pytest.assertion.AssertionRewriter.visit_Assert": {
+            "name": "_pytest.assertion.AssertionRewriter.visit_Assert",
+            "file_path": "src/_pytest/pathlib.py",
+            "file_content": "",
+            "start_line": 807,
+            "start_column": 29794,
+            "end_line": 4,
+            "end_column": 34621,
+            "start_byte": 29794,
+            "end_byte": 4
+        },
+        "_pytest.assertion.AssertionRewriter.visit_Name": {
+            "name": "_pytest.assertion.AssertionRewriter.visit_Name",
+            "file_path": "src/_pytest/pathlib.py",
+            "file_content": "",
+            "start_line": 923,
+            "start_column": 34627,
+            "end_line": 4,
+            "end_column": 35175,
+            "start_byte": 34627,
+            "end_byte": 4
+        },
+        "_pytest.assertion.AssertionRewriter.visit_BoolOp": {
+            "name": "_pytest.assertion.AssertionRewriter.visit_BoolOp",
+            "file_path": "src/_pytest/pathlib.py",
+            "file_content": "",
+            "start_line": 933,
+            "start_column": 35181,
+            "end_line": 4,
+            "end_column": 36854,
+            "start_byte": 35181,
+            "end_byte": 4
+        },
+        "_pytest.assertion.AssertionRewriter.visit_UnaryOp": {
+            "name": "_pytest.assertion.AssertionRewriter.visit_UnaryOp",
+            "file_path": "src/_pytest/pathlib.py",
+            "file_content": "",
+            "start_line": 968,
+            "start_column": 36860,
+            "end_line": 4,
+            "end_column": 37146,
+            "start_byte": 36860,
+            "end_byte": 4
+        },
+        "_pytest.assertion.AssertionRewriter.visit_BinOp": {
+            "name": "_pytest.assertion.AssertionRewriter.visit_BinOp",
+            "file_path": "src/_pytest/pathlib.py",
+            "file_content": "",
+            "start_line": 974,
+            "start_column": 37152,
+            "end_line": 4,
+            "end_column": 37537,
+            "start_byte": 37152,
+            "end_byte": 4
+        },
+        "_pytest.assertion.AssertionRewriter.visit_Call": {
+            "name": "_pytest.assertion.AssertionRewriter.visit_Call",
+            "file_path": "src/_pytest/pathlib.py",
+            "file_content": "",
+            "start_line": 982,
+            "start_column": 37543,
+            "end_line": 4,
+            "end_column": 38529,
+            "start_byte": 37543,
+            "end_byte": 4
+        },
+        "_pytest.assertion.AssertionRewriter.visit_Starred": {
+            "name": "_pytest.assertion.AssertionRewriter.visit_Starred",
+            "file_path": "src/_pytest/pathlib.py",
+            "file_content": "",
+            "start_line": 1006,
+            "start_column": 38535,
+            "end_line": 4,
+            "end_column": 38801,
+            "start_byte": 38535,
+            "end_byte": 4
+        },
+        "_pytest.assertion.AssertionRewriter.visit_Attribute": {
+            "name": "_pytest.assertion.AssertionRewriter.visit_Attribute",
+            "file_path": "src/_pytest/pathlib.py",
+            "file_content": "",
+            "start_line": 1012,
+            "start_column": 38807,
+            "end_line": 4,
+            "end_column": 39277,
+            "start_byte": 38807,
+            "end_byte": 4
+        },
+        "_pytest.assertion.AssertionRewriter.visit_Compare": {
+            "name": "_pytest.assertion.AssertionRewriter.visit_Compare",
+            "file_path": "src/_pytest/pathlib.py",
+            "file_content": "",
+            "start_line": 1022,
+            "start_column": 39283,
+            "end_line": 4,
+            "end_column": 41035,
+            "start_byte": 39283,
+            "end_byte": 4
+        },
+        "_pytest.pathlib.visit": {
+            "name": "_pytest.pathlib.visit",
+            "file_path": "src/_pytest/pathlib.py",
+            "file_content": "def visit(\n    path: str, recurse: Callable[[\"os.DirEntry[str]\"], bool]\n) -> Iterator[\"os.DirEntry[str]\"]:\n    \"\"\"Walk a directory recursively, in breadth-first order.\n\n    Entries at each directory level are sorted.\n    \"\"\"\n    entries = sorted(os.scandir(path), key=lambda entry: entry.name)\n    yield from entries\n    for entry in entries:\n        if entry.is_dir(follow_symlinks=False) and recurse(entry):\n            yield from visit(entry.path, recurse)",
+            "start_line": 550,
+            "start_column": 18105,
+            "end_line": 0,
+            "end_column": 18564,
+            "start_byte": 18105,
+            "end_byte": 0
+        }
+    }
+}

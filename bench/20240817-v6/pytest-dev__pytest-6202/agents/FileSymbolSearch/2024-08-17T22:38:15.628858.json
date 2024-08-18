@@ -1,0 +1,116 @@
+{
+  "name": "FileSymbolSearch",
+  "model": "gpt-4o-2024-08-06",
+  "metadata": {},
+  "issue": "<description>:'.['  replaced with '[' in the headline shown of the test report\n```\r\nbug.py F                                                                 [100%]\r\n\r\n=================================== FAILURES ===================================\r\n_________________________________ test_boo[.[] _________________________________\r\n\r\na = '..['\r\n\r\n    @pytest.mark.parametrize(\"a\",[\"..[\"])\r\n    def test_boo(a):\r\n>       assert 0\r\nE       assert 0\r\n\r\nbug.py:6: AssertionError\r\n============================== 1 failed in 0.06s ===============================\r\n```\r\n\r\nThe `\"test_boo[..[]\"` replaced with `\"test_boo[.[]\"` in the headline shown with long report output.\r\n\r\n**The same problem also causing the vscode-python test discovery error.**\r\n\r\n## What causing the problem\r\n\r\nI trace back the source code.\r\n\r\n[https://github.com/pytest-dev/pytest/blob/92d6a0500b9f528a9adcd6bbcda46ebf9b6baf03/src/_pytest/reports.py#L129-L149](https://github.com/pytest-dev/pytest/blob/92d6a0500b9f528a9adcd6bbcda46ebf9b6baf03/src/_pytest/reports.py#L129-L149)\r\n\r\nThe headline comes from line 148.\r\n\r\n[https://github.com/pytest-dev/pytest/blob/92d6a0500b9f528a9adcd6bbcda46ebf9b6baf03/src/_pytest/nodes.py#L432-L441](https://github.com/pytest-dev/pytest/blob/92d6a0500b9f528a9adcd6bbcda46ebf9b6baf03/src/_pytest/nodes.py#L432-L441)\r\n\r\n`location` comes from line 437 `location = self.reportinfo()`\r\n\r\n[https://github.com/pytest-dev/pytest/blob/92d6a0500b9f528a9adcd6bbcda46ebf9b6baf03/src/_pytest/python.py#L294-L308](https://github.com/pytest-dev/pytest/blob/92d6a0500b9f528a9adcd6bbcda46ebf9b6baf03/src/_pytest/python.py#L294-L308)\r\n\r\nThe headline comes from line 306 `modpath = self.getmodpath() `\r\n\r\n[https://github.com/pytest-dev/pytest/blob/92d6a0500b9f528a9adcd6bbcda46ebf9b6baf03/src/_pytest/python.py#L274-L292](https://github.com/pytest-dev/pytest/blob/92d6a0500b9f528a9adcd6bbcda46ebf9b6baf03/src/_pytest/python.py#L274-L292)\r\n\r\nThis line of code `return s.replace(\".[\", \"[\")` causes the problem. We should replace it with `return s`. After changing this, run `tox -e linting,py37`, pass all the tests and resolve this issue. But I can't find this line of code for what purpose.\n</description>",
+  "request": {
+    "files": [
+      {
+        "file_path": "src/_pytest/python.py",
+        "relevant_symbol_keys": [
+          "PyobjMixin.getmodpath"
+        ],
+        "root_cause_symbol_keys": [
+          "PyobjMixin.getmodpath"
+        ]
+      },
+      {
+        "file_path": "src/_pytest/nodes.py",
+        "relevant_symbol_keys": [],
+        "root_cause_symbol_keys": []
+      },
+      {
+        "file_path": "src/_pytest/reports.py",
+        "relevant_symbol_keys": [
+          "BaseReport.head_line",
+          "TestReport"
+        ],
+        "root_cause_symbol_keys": []
+      }
+    ],
+    "with_content": true
+  },
+  "response": {
+    "related_symbols": [
+      {
+        "name": "_pytest.reports.BaseReport.head_line",
+        "file_path": "src/_pytest/reports.py",
+        "file_content": "@property\n    def head_line(self):\n        \"\"\"\n        **Experimental**\n\n        Returns the head line shown with longrepr output for this report, more commonly during\n        traceback representation during failures::\n\n            ________ Test.foo ________\n\n\n        In the example above, the head_line is \"Test.foo\".\n\n        .. note::\n\n            This function is considered **experimental**, so beware that it is subject to changes\n            even in patch releases.\n        \"\"\"\n        if self.location is not None:\n            fspath, lineno, domain = self.location\n            return domain",
+        "start_line": 128,
+        "start_column": 3545,
+        "end_line": 4,
+        "end_column": 4145,
+        "start_byte": 3545,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.reports.TestReport",
+        "file_path": "src/_pytest/reports.py",
+        "file_content": "class TestReport(BaseReport):\n    \"\"\" Basic test report object (also used for setup and teardown calls if\n    they fail).\n    \"\"\"\n\n    __test__ = False\n\n    def __init__(\n        self,\n        nodeid,\n        location,\n        keywords,\n        outcome,\n        longrepr,\n        when,\n        sections=(),\n        duration=0,\n        user_properties=None,\n        **extra\n    ):\n        #: normalized collection node id\n        self.nodeid = nodeid\n\n        #: a (filesystempath, lineno, domaininfo) tuple indicating the\n        #: actual location of a test item - it might be different from the\n        #: collected one e.g. if a method is inherited from a different module.\n        self.location = location\n\n        #: a name -> value dictionary containing all keywords and\n        #: markers associated with a test invocation.\n        self.keywords = keywords\n\n        #: test outcome, always one of \"passed\", \"failed\", \"skipped\".\n        self.outcome = outcome\n\n        #: None or a failure representation.\n        self.longrepr = longrepr\n\n        #: one of 'setup', 'call', 'teardown' to indicate runtest phase.\n        self.when = when\n\n        #: user properties is a list of tuples (name, value) that holds user\n        #: defined properties of the test\n        self.user_properties = list(user_properties or [])\n\n        #: list of pairs ``(str, str)`` of extra information which needs to\n        #: marshallable. Used by pytest to add captured text\n        #: from ``stdout`` and ``stderr``, but may be used by other plugins\n        #: to add arbitrary information to reports.\n        self.sections = list(sections)\n\n        #: time it took to run just the test\n        self.duration = duration\n\n        self.__dict__.update(extra)\n\n    def __repr__(self):\n        return \"<{} {!r} when={!r} outcome={!r}>\".format(\n            self.__class__.__name__, self.nodeid, self.when, self.outcome\n        )\n\n    @classmethod\n    def from_item_and_call(cls, item, call):\n        \"\"\"\n        Factory method to create and fill a TestReport with standard item and call info.\n        \"\"\"\n        when = call.when\n        duration = call.stop - call.start\n        keywords = {x: 1 for x in item.keywords}\n        excinfo = call.excinfo\n        sections = []\n        if not call.excinfo:\n            outcome = \"passed\"\n            longrepr = None\n        else:\n            if not isinstance(excinfo, ExceptionInfo):\n                outcome = \"failed\"\n                longrepr = excinfo\n            # Type ignored -- see comment where skip.Exception is defined.\n            elif excinfo.errisinstance(skip.Exception):  # type: ignore\n                outcome = \"skipped\"\n                r = excinfo._getreprcrash()\n                longrepr = (str(r.path), r.lineno, r.message)\n            else:\n                outcome = \"failed\"\n                if call.when == \"call\":\n                    longrepr = item.repr_failure(excinfo)\n                else:  # exception in setup or teardown\n                    longrepr = item._repr_failure_py(\n                        excinfo, style=item.config.getoption(\"tbstyle\", \"auto\")\n                    )\n        for rwhen, key, content in item._report_sections:\n            sections.append((\"Captured {} {}\".format(key, rwhen), content))\n        return cls(\n            item.nodeid,\n            item.location,\n            keywords,\n            outcome,\n            longrepr,\n            when,\n            sections,\n            duration,\n            user_properties=item.user_properties,\n        )",
+        "start_line": 193,
+        "start_column": 5623,
+        "end_line": 0,
+        "end_column": 9150,
+        "start_byte": 5623,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.reports.TestReport.__test__",
+        "file_path": "src/_pytest/reports.py",
+        "file_content": "__test__ = False",
+        "start_line": 198,
+        "start_column": 5758,
+        "end_line": 4,
+        "end_column": 5774,
+        "start_byte": 5758,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.reports.TestReport.__init__",
+        "file_path": "src/_pytest/reports.py",
+        "file_content": "def __init__(\n        self,\n        nodeid,\n        location,\n        keywords,\n        outcome,\n        longrepr,\n        when,\n        sections=(),\n        duration=0,\n        user_properties=None,\n        **extra\n    ):\n        #: normalized collection node id\n        self.nodeid = nodeid\n\n        #: a (filesystempath, lineno, domaininfo) tuple indicating the\n        #: actual location of a test item - it might be different from the\n        #: collected one e.g. if a method is inherited from a different module.\n        self.location = location\n\n        #: a name -> value dictionary containing all keywords and\n        #: markers associated with a test invocation.\n        self.keywords = keywords\n\n        #: test outcome, always one of \"passed\", \"failed\", \"skipped\".\n        self.outcome = outcome\n\n        #: None or a failure representation.\n        self.longrepr = longrepr\n\n        #: one of 'setup', 'call', 'teardown' to indicate runtest phase.\n        self.when = when\n\n        #: user properties is a list of tuples (name, value) that holds user\n        #: defined properties of the test\n        self.user_properties = list(user_properties or [])\n\n        #: list of pairs ``(str, str)`` of extra information which needs to\n        #: marshallable. Used by pytest to add captured text\n        #: from ``stdout`` and ``stderr``, but may be used by other plugins\n        #: to add arbitrary information to reports.\n        self.sections = list(sections)\n\n        #: time it took to run just the test\n        self.duration = duration\n\n        self.__dict__.update(extra)",
+        "start_line": 200,
+        "start_column": 5780,
+        "end_line": 4,
+        "end_column": 7366,
+        "start_byte": 5780,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.reports.TestReport.__repr__",
+        "file_path": "src/_pytest/reports.py",
+        "file_content": "def __repr__(self):\n        return \"<{} {!r} when={!r} outcome={!r}>\".format(\n            self.__class__.__name__, self.nodeid, self.when, self.outcome\n        )",
+        "start_line": 249,
+        "start_column": 7372,
+        "end_line": 4,
+        "end_column": 7533,
+        "start_byte": 7372,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.reports.TestReport.from_item_and_call",
+        "file_path": "src/_pytest/reports.py",
+        "file_content": "@classmethod\n    def from_item_and_call(cls, item, call):\n        \"\"\"\n        Factory method to create and fill a TestReport with standard item and call info.\n        \"\"\"\n        when = call.when\n        duration = call.stop - call.start\n        keywords = {x: 1 for x in item.keywords}\n        excinfo = call.excinfo\n        sections = []\n        if not call.excinfo:\n            outcome = \"passed\"\n            longrepr = None\n        else:\n            if not isinstance(excinfo, ExceptionInfo):\n                outcome = \"failed\"\n                longrepr = excinfo\n            # Type ignored -- see comment where skip.Exception is defined.\n            elif excinfo.errisinstance(skip.Exception):  # type: ignore\n                outcome = \"skipped\"\n                r = excinfo._getreprcrash()\n                longrepr = (str(r.path), r.lineno, r.message)\n            else:\n                outcome = \"failed\"\n                if call.when == \"call\":\n                    longrepr = item.repr_failure(excinfo)\n                else:  # exception in setup or teardown\n                    longrepr = item._repr_failure_py(\n                        excinfo, style=item.config.getoption(\"tbstyle\", \"auto\")\n                    )\n        for rwhen, key, content in item._report_sections:\n            sections.append((\"Captured {} {}\".format(key, rwhen), content))\n        return cls(\n            item.nodeid,\n            item.location,\n            keywords,\n            outcome,\n            longrepr,\n            when,\n            sections,\n            duration,\n            user_properties=item.user_properties,\n        )",
+        "start_line": 254,
+        "start_column": 7539,
+        "end_line": 4,
+        "end_column": 9150,
+        "start_byte": 7539,
+        "end_byte": 4
+      }
+    ],
+    "root_caused_symbols": [
+      {
+        "name": "_pytest.python.PyobjMixin.getmodpath",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "def getmodpath(self, stopatmodule=True, includemodule=False):\n        \"\"\" return python path relative to the containing module. \"\"\"\n        chain = self.listchain()\n        chain.reverse()\n        parts = []\n        for node in chain:\n            if isinstance(node, Instance):\n                continue\n            name = node.name\n            if isinstance(node, Module):\n                name = os.path.splitext(name)[0]\n                if stopatmodule:\n                    if includemodule:\n                        parts.append(name)\n                    break\n            parts.append(name)\n        parts.reverse()\n        s = \".\".join(parts)\n        return s.replace(\".[\", \"[\")",
+        "start_line": 270,
+        "start_column": 9431,
+        "end_line": 4,
+        "end_column": 10111,
+        "start_byte": 9431,
+        "end_byte": 4
+      }
+    ]
+  }
+}

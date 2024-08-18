@@ -1,0 +1,65 @@
+{
+    "file_paths": [
+        "src/_pytest/unittest.py"
+    ],
+    "symbols": [
+        "_pytest.unittest._make_xunit_fixture"
+    ],
+    "code_spans": {
+        "_pytest.unittest.UnitTestCase": {
+            "name": "_pytest.unittest.UnitTestCase",
+            "file_path": "src/_pytest/unittest.py",
+            "file_content": "class UnitTestCase(Class):\n    # Marker for fixturemanger.getfixtureinfo()\n    # to declare that our children do not support funcargs.\n    nofuncargs = True\n\n    def collect(self) -> Iterable[Union[Item, Collector]]:\n        from unittest import TestLoader\n\n        cls = self.obj\n        if not getattr(cls, \"__test__\", True):\n            return\n\n        skipped = _is_skipped(cls)\n        if not skipped:\n            self._inject_setup_teardown_fixtures(cls)\n            self._inject_setup_class_fixture()\n\n        self.session._fixturemanager.parsefactories(self, unittest=True)\n        loader = TestLoader()\n        foundsomething = False\n        for name in loader.getTestCaseNames(self.obj):\n            x = getattr(self.obj, name)\n            if not getattr(x, \"__test__\", True):\n                continue\n            funcobj = getimfunc(x)\n            yield TestCaseFunction.from_parent(self, name=name, callobj=funcobj)\n            foundsomething = True\n\n        if not foundsomething:\n            runtest = getattr(self.obj, \"runTest\", None)\n            if runtest is not None:\n                ut = sys.modules.get(\"twisted.trial.unittest\", None)\n                # Type ignored because `ut` is an opaque module.\n                if ut is None or runtest != ut.TestCase.runTest:  # type: ignore\n                    yield TestCaseFunction.from_parent(self, name=\"runTest\")\n\n    def _inject_setup_teardown_fixtures(self, cls: type) -> None:\n        \"\"\"Injects a hidden auto-use fixture to invoke setUpClass/setup_method and corresponding\n        teardown functions (#517).\"\"\"\n        class_fixture = _make_xunit_fixture(\n            cls,\n            \"setUpClass\",\n            \"tearDownClass\",\n            \"doClassCleanups\",\n            scope=\"class\",\n            pass_self=False,\n        )\n        if class_fixture:\n            cls.__pytest_class_setup = class_fixture  # type: ignore[attr-defined]\n\n        method_fixture = _make_xunit_fixture(\n            cls,\n            \"setup_method\",\n            \"teardown_method\",\n            None,\n            scope=\"function\",\n            pass_self=True,\n        )\n        if method_fixture:\n            cls.__pytest_method_setup = method_fixture  # type: ignore[attr-defined]",
+            "start_line": 60,
+            "start_column": 1716,
+            "end_line": 0,
+            "end_column": 3940,
+            "start_byte": 1716,
+            "end_byte": 0
+        },
+        "_pytest.unittest.UnitTestCase.nofuncargs": {
+            "name": "_pytest.unittest.UnitTestCase.nofuncargs",
+            "file_path": "src/_pytest/unittest.py",
+            "file_content": "nofuncargs = True",
+            "start_line": 63,
+            "start_column": 1855,
+            "end_line": 4,
+            "end_column": 1872,
+            "start_byte": 1855,
+            "end_byte": 4
+        },
+        "_pytest.unittest.UnitTestCase.collect": {
+            "name": "_pytest.unittest.UnitTestCase.collect",
+            "file_path": "src/_pytest/unittest.py",
+            "file_content": "def collect(self) -> Iterable[Union[Item, Collector]]:\n        from unittest import TestLoader\n\n        cls = self.obj\n        if not getattr(cls, \"__test__\", True):\n            return\n\n        skipped = _is_skipped(cls)\n        if not skipped:\n            self._inject_setup_teardown_fixtures(cls)\n            self._inject_setup_class_fixture()\n\n        self.session._fixturemanager.parsefactories(self, unittest=True)\n        loader = TestLoader()\n        foundsomething = False\n        for name in loader.getTestCaseNames(self.obj):\n            x = getattr(self.obj, name)\n            if not getattr(x, \"__test__\", True):\n                continue\n            funcobj = getimfunc(x)\n            yield TestCaseFunction.from_parent(self, name=name, callobj=funcobj)\n            foundsomething = True\n\n        if not foundsomething:\n            runtest = getattr(self.obj, \"runTest\", None)\n            if runtest is not None:\n                ut = sys.modules.get(\"twisted.trial.unittest\", None)\n                # Type ignored because `ut` is an opaque module.\n                if ut is None or runtest != ut.TestCase.runTest:  # type: ignore\n                    yield TestCaseFunction.from_parent(self, name=\"runTest\")",
+            "start_line": 65,
+            "start_column": 1878,
+            "end_line": 4,
+            "end_column": 3094,
+            "start_byte": 1878,
+            "end_byte": 4
+        },
+        "_pytest.unittest.UnitTestCase._inject_setup_teardown_fixtures": {
+            "name": "_pytest.unittest.UnitTestCase._inject_setup_teardown_fixtures",
+            "file_path": "src/_pytest/unittest.py",
+            "file_content": "def _inject_setup_teardown_fixtures(self, cls: type) -> None:\n        \"\"\"Injects a hidden auto-use fixture to invoke setUpClass/setup_method and corresponding\n        teardown functions (#517).\"\"\"\n        class_fixture = _make_xunit_fixture(\n            cls,\n            \"setUpClass\",\n            \"tearDownClass\",\n            \"doClassCleanups\",\n            scope=\"class\",\n            pass_self=False,\n        )\n        if class_fixture:\n            cls.__pytest_class_setup = class_fixture  # type: ignore[attr-defined]\n\n        method_fixture = _make_xunit_fixture(\n            cls,\n            \"setup_method\",\n            \"teardown_method\",\n            None,\n            scope=\"function\",\n            pass_self=True,\n        )\n        if method_fixture:\n            cls.__pytest_method_setup = method_fixture  # type: ignore[attr-defined]",
+            "start_line": 96,
+            "start_column": 3100,
+            "end_line": 4,
+            "end_column": 3940,
+            "start_byte": 3100,
+            "end_byte": 4
+        },
+        "_pytest.unittest._make_xunit_fixture": {
+            "name": "_pytest.unittest._make_xunit_fixture",
+            "file_path": "src/_pytest/unittest.py",
+            "file_content": "def _make_xunit_fixture(\n    obj: type,\n    setup_name: str,\n    teardown_name: str,\n    cleanup_name: Optional[str],\n    scope: \"_Scope\",\n    pass_self: bool,\n):\n    setup = getattr(obj, setup_name, None)\n    teardown = getattr(obj, teardown_name, None)\n    if setup is None and teardown is None:\n        return None\n\n    if cleanup_name:\n        cleanup = getattr(obj, cleanup_name, lambda *args: None)\n    else:\n\n        def cleanup(*args):\n            pass\n\n    @pytest.fixture(\n        scope=scope,\n        autouse=True,\n        # Use a unique name to speed up lookup.\n        name=f\"unittest_{setup_name}_fixture_{obj.__qualname__}\",\n    )\n    def fixture(self, request: FixtureRequest) -> Generator[None, None, None]:\n        if _is_skipped(self):\n            reason = self.__unittest_skip_why__\n            raise pytest.skip.Exception(reason, _use_item_location=True)\n        if setup is not None:\n            try:\n                if pass_self:\n                    setup(self, request.function)\n                else:\n                    setup()\n            # unittest does not call the cleanup function for every BaseException, so we\n            # follow this here.\n            except Exception:\n                if pass_self:\n                    cleanup(self)\n                else:\n                    cleanup()\n\n                raise\n        yield\n        try:\n            if teardown is not None:\n                if pass_self:\n                    teardown(self, request.function)\n                else:\n                    teardown()\n        finally:\n            if pass_self:\n                cleanup(self)\n            else:\n                cleanup()\n\n    return fixture",
+            "start_line": 122,
+            "start_column": 3943,
+            "end_line": 0,
+            "end_column": 5622,
+            "start_byte": 3943,
+            "end_byte": 0
+        }
+    }
+}

@@ -1,0 +1,412 @@
+{
+  "name": "SymbolSummary",
+  "model": "gpt-4o-2024-08-06",
+  "metadata": {},
+  "issue": "<description>:caplog fixture doesn't restore log level after test\nFrom the documentation at https://docs.pytest.org/en/6.0.0/logging.html#caplog-fixture, \"The log levels set are restored automatically at the end of the test\".\r\nIt used to work, but looks broken in new 6.0 release. Minimal example to reproduce:\r\n\r\n```\r\ndef test_foo(caplog):\r\n    caplog.set_level(42)\r\n\r\ndef test_bar(caplog):\r\n    print(caplog.handler.level)\r\n```\r\n\r\nIt prints \"0\" for pytest<6, \"42\" after.\n</description>",
+  "request": {
+    "symbols": {
+      "related_symbols": [
+        {
+          "name": "_pytest.logging.caplog_handler_key",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "caplog_handler_key = StoreKey[\"LogCaptureHandler\"]()",
+          "start_line": 36,
+          "start_column": 1081,
+          "end_line": 0,
+          "end_column": 1133,
+          "start_byte": 1081,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.logging.caplog_records_key",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "caplog_records_key = StoreKey[Dict[str, List[logging.LogRecord]]]()",
+          "start_line": 37,
+          "start_column": 1134,
+          "end_line": 0,
+          "end_column": 1201,
+          "start_byte": 1134,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.logging.LogCaptureFixture",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "class LogCaptureFixture:\n    \"\"\"Provides access and control of log capturing.\"\"\"\n\n    def __init__(self, item: nodes.Node) -> None:\n        \"\"\"Creates a new funcarg.\"\"\"\n        self._item = item\n        # dict of log name -> log level\n        self._initial_logger_levels = {}  # type: Dict[Optional[str], int]\n\n    def _finalize(self) -> None:\n        \"\"\"Finalizes the fixture.\n\n        This restores the log levels changed by :meth:`set_level`.\n        \"\"\"\n        # restore log levels\n        for logger_name, level in self._initial_logger_levels.items():\n            logger = logging.getLogger(logger_name)\n            logger.setLevel(level)\n\n    @property\n    def handler(self) -> LogCaptureHandler:\n        \"\"\"\n        :rtype: LogCaptureHandler\n        \"\"\"\n        return self._item._store[caplog_handler_key]\n\n    def get_records(self, when: str) -> List[logging.LogRecord]:\n        \"\"\"\n        Get the logging records for one of the possible test phases.\n\n        :param str when:\n            Which test phase to obtain the records from. Valid values are: \"setup\", \"call\" and \"teardown\".\n\n        :rtype: List[logging.LogRecord]\n        :return: the list of captured records at the given stage\n\n        .. versionadded:: 3.4\n        \"\"\"\n        return self._item._store[caplog_records_key].get(when, [])\n\n    @property\n    def text(self) -> str:\n        \"\"\"Returns the formatted log text.\"\"\"\n        return _remove_ansi_escape_sequences(self.handler.stream.getvalue())\n\n    @property\n    def records(self) -> List[logging.LogRecord]:\n        \"\"\"Returns the list of log records.\"\"\"\n        return self.handler.records\n\n    @property\n    def record_tuples(self) -> List[Tuple[str, int, str]]:\n        \"\"\"Returns a list of a stripped down version of log records intended\n        for use in assertion comparison.\n\n        The format of the tuple is:\n\n            (logger_name, log_level, message)\n        \"\"\"\n        return [(r.name, r.levelno, r.getMessage()) for r in self.records]\n\n    @property\n    def messages(self) -> List[str]:\n        \"\"\"Returns a list of format-interpolated log messages.\n\n        Unlike 'records', which contains the format string and parameters for interpolation, log messages in this list\n        are all interpolated.\n        Unlike 'text', which contains the output from the handler, log messages in this list are unadorned with\n        levels, timestamps, etc, making exact comparisons more reliable.\n\n        Note that traceback or stack info (from :func:`logging.exception` or the `exc_info` or `stack_info` arguments\n        to the logging functions) is not included, as this is added by the formatter in the handler.\n\n        .. versionadded:: 3.7\n        \"\"\"\n        return [r.getMessage() for r in self.records]\n\n    def clear(self) -> None:\n        \"\"\"Reset the list of log records and the captured log text.\"\"\"\n        self.handler.reset()\n\n    def set_level(self, level: Union[int, str], logger: Optional[str] = None) -> None:\n        \"\"\"Sets the level for capturing of logs. The level will be restored to its previous value at the end of\n        the test.\n\n        :param int level: the logger to level.\n        :param str logger: the logger to update the level. If not given, the root logger level is updated.\n\n        .. versionchanged:: 3.4\n            The levels of the loggers changed by this function will be restored to their initial values at the\n            end of the test.\n        \"\"\"\n        logger_obj = logging.getLogger(logger)\n        # save the original log-level to restore it during teardown\n        self._initial_logger_levels.setdefault(logger, logger_obj.level)\n        logger_obj.setLevel(level)\n        self.handler.setLevel(level)\n\n    @contextmanager\n    def at_level(\n        self, level: int, logger: Optional[str] = None\n    ) -> Generator[None, None, None]:\n        \"\"\"Context manager that sets the level for capturing of logs. After the end of the 'with' statement the\n        level is restored to its original value.\n\n        :param int level: the logger to level.\n        :param str logger: the logger to update the level. If not given, the root logger level is updated.\n        \"\"\"\n        logger_obj = logging.getLogger(logger)\n        orig_level = logger_obj.level\n        logger_obj.setLevel(level)\n        handler_orig_level = self.handler.level\n        self.handler.setLevel(level)\n        try:\n            yield\n        finally:\n            logger_obj.setLevel(orig_level)\n            self.handler.setLevel(handler_orig_level)",
+          "start_line": 340,
+          "start_column": 11698,
+          "end_line": 0,
+          "end_column": 16210,
+          "start_byte": 11698,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.logging.LogCaptureFixture.__init__",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "def __init__(self, item: nodes.Node) -> None:\n        \"\"\"Creates a new funcarg.\"\"\"\n        self._item = item\n        # dict of log name -> log level\n        self._initial_logger_levels = {}  # type: Dict[Optional[str], int]",
+          "start_line": 343,
+          "start_column": 11784,
+          "end_line": 4,
+          "end_column": 12007,
+          "start_byte": 11784,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.logging.LogCaptureFixture.handler",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "@property\n    def handler(self) -> LogCaptureHandler:\n        \"\"\"\n        :rtype: LogCaptureHandler\n        \"\"\"\n        return self._item._store[caplog_handler_key]",
+          "start_line": 359,
+          "start_column": 12348,
+          "end_line": 4,
+          "end_column": 12512,
+          "start_byte": 12348,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.logging.LogCaptureFixture.get_records",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "def get_records(self, when: str) -> List[logging.LogRecord]:\n        \"\"\"\n        Get the logging records for one of the possible test phases.\n\n        :param str when:\n            Which test phase to obtain the records from. Valid values are: \"setup\", \"call\" and \"teardown\".\n\n        :rtype: List[logging.LogRecord]\n        :return: the list of captured records at the given stage\n\n        .. versionadded:: 3.4\n        \"\"\"\n        return self._item._store[caplog_records_key].get(when, [])",
+          "start_line": 366,
+          "start_column": 12518,
+          "end_line": 4,
+          "end_column": 13008,
+          "start_byte": 12518,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.logging.LogCaptureFixture.text",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "@property\n    def text(self) -> str:\n        \"\"\"Returns the formatted log text.\"\"\"\n        return _remove_ansi_escape_sequences(self.handler.stream.getvalue())",
+          "start_line": 380,
+          "start_column": 13014,
+          "end_line": 4,
+          "end_column": 13173,
+          "start_byte": 13014,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.logging.LogCaptureFixture.records",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "@property\n    def records(self) -> List[logging.LogRecord]:\n        \"\"\"Returns the list of log records.\"\"\"\n        return self.handler.records",
+          "start_line": 385,
+          "start_column": 13179,
+          "end_line": 4,
+          "end_column": 13321,
+          "start_byte": 13179,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.logging.LogCaptureFixture.record_tuples",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "@property\n    def record_tuples(self) -> List[Tuple[str, int, str]]:\n        \"\"\"Returns a list of a stripped down version of log records intended\n        for use in assertion comparison.\n\n        The format of the tuple is:\n\n            (logger_name, log_level, message)\n        \"\"\"\n        return [(r.name, r.levelno, r.getMessage()) for r in self.records]",
+          "start_line": 390,
+          "start_column": 13327,
+          "end_line": 4,
+          "end_column": 13684,
+          "start_byte": 13327,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.logging.LogCaptureFixture.messages",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "@property\n    def messages(self) -> List[str]:\n        \"\"\"Returns a list of format-interpolated log messages.\n\n        Unlike 'records', which contains the format string and parameters for interpolation, log messages in this list\n        are all interpolated.\n        Unlike 'text', which contains the output from the handler, log messages in this list are unadorned with\n        levels, timestamps, etc, making exact comparisons more reliable.\n\n        Note that traceback or stack info (from :func:`logging.exception` or the `exc_info` or `stack_info` arguments\n        to the logging functions) is not included, as this is added by the formatter in the handler.\n\n        .. versionadded:: 3.7\n        \"\"\"\n        return [r.getMessage() for r in self.records]",
+          "start_line": 401,
+          "start_column": 13690,
+          "end_line": 4,
+          "end_column": 14451,
+          "start_byte": 13690,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.logging.LogCaptureFixture.clear",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "def clear(self) -> None:\n        \"\"\"Reset the list of log records and the captured log text.\"\"\"\n        self.handler.reset()",
+          "start_line": 417,
+          "start_column": 14457,
+          "end_line": 4,
+          "end_column": 14581,
+          "start_byte": 14457,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.logging.LogCaptureFixture.at_level",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "@contextmanager\n    def at_level(\n        self, level: int, logger: Optional[str] = None\n    ) -> Generator[None, None, None]:\n        \"\"\"Context manager that sets the level for capturing of logs. After the end of the 'with' statement the\n        level is restored to its original value.\n\n        :param int level: the logger to level.\n        :param str logger: the logger to update the level. If not given, the root logger level is updated.\n        \"\"\"\n        logger_obj = logging.getLogger(logger)\n        orig_level = logger_obj.level\n        logger_obj.setLevel(level)\n        handler_orig_level = self.handler.level\n        self.handler.setLevel(level)\n        try:\n            yield\n        finally:\n            logger_obj.setLevel(orig_level)\n            self.handler.setLevel(handler_orig_level)",
+          "start_line": 438,
+          "start_column": 15405,
+          "end_line": 4,
+          "end_column": 16210,
+          "start_byte": 15405,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.logging.caplog",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "@pytest.fixture\ndef caplog(request: FixtureRequest) -> Generator[LogCaptureFixture, None, None]:\n    \"\"\"Access and control log capturing.\n\n    Captured logs are available through the following properties/methods::\n\n    * caplog.messages        -> list of format-interpolated log messages\n    * caplog.text            -> string containing formatted log output\n    * caplog.records         -> list of logging.LogRecord instances\n    * caplog.record_tuples   -> list of (logger_name, level, message) tuples\n    * caplog.clear()         -> clear captured records and formatted log output string\n    \"\"\"\n    result = LogCaptureFixture(request.node)\n    yield result\n    result._finalize()",
+          "start_line": 460,
+          "start_column": 16213,
+          "end_line": 0,
+          "end_column": 16896,
+          "start_byte": 16213,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.reports.BaseReport.caplog",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "e(logging.PercentStyle):\n    \"\"\"A logging style with special support for multiline messages.\n\n    If the message of a record consists of multiple lines, this style\n    formats the message as if each line were logged separately.\n    \"\"\"\n\n    def __init__(self, fm",
+          "start_line": 108,
+          "start_column": 3122,
+          "end_line": 4,
+          "end_column": 3384,
+          "start_byte": 3122,
+          "end_byte": 4
+        }
+      ],
+      "root_caused_symbols": [
+        {
+          "name": "_pytest.logging.LogCaptureFixture._finalize",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "def _finalize(self) -> None:\n        \"\"\"Finalizes the fixture.\n\n        This restores the log levels changed by :meth:`set_level`.\n        \"\"\"\n        # restore log levels\n        for logger_name, level in self._initial_logger_levels.items():\n            logger = logging.getLogger(logger_name)\n            logger.setLevel(level)",
+          "start_line": 349,
+          "start_column": 12013,
+          "end_line": 4,
+          "end_column": 12342,
+          "start_byte": 12013,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.logging.LogCaptureFixture.set_level",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "def set_level(self, level: Union[int, str], logger: Optional[str] = None) -> None:\n        \"\"\"Sets the level for capturing of logs. The level will be restored to its previous value at the end of\n        the test.\n\n        :param int level: the logger to level.\n        :param str logger: the logger to update the level. If not given, the root logger level is updated.\n\n        .. versionchanged:: 3.4\n            The levels of the loggers changed by this function will be restored to their initial values at the\n            end of the test.\n        \"\"\"\n        logger_obj = logging.getLogger(logger)\n        # save the original log-level to restore it during teardown\n        self._initial_logger_levels.setdefault(logger, logger_obj.level)\n        logger_obj.setLevel(level)\n        self.handler.setLevel(level)",
+          "start_line": 421,
+          "start_column": 14587,
+          "end_line": 4,
+          "end_column": 15399,
+          "start_byte": 14587,
+          "end_byte": 4
+        }
+      ]
+    },
+    "symbols_evaluate": {
+      "scratch_pad": "1. The user is describing that after updating to pytest 6.0, the `caplog` fixture does not restore the log level after a test completes.\n   - In pytest versions before 6.0, when `caplog.set_level(42)` was set in a test, the level would reset to 0 at the end of the test. However, now the level remains at 42.\n\n2. The issue is likely due to the `_finalize` method not functioning properly.\n   - Analyzing the `_finalize` method, it should restore the levels using `_initial_logger_levels` but seems like the restoration is not occurring as expected.\n\n3. Key component to fix:\n   - Ensure `_finalize` correctly tracks and restores the levels after the test.\n   - `set_level` should ensure all state changes are captured properly for later restoration.\n\n4. Expected Result:\n   - After each test that uses `caplog.set_level`, the level should reset to its initial state.\n\n5. Checking related symbols:\n   - `_finalize` method already aims to restore log levels.\n   - `set_level` method should be capturing current levels properly.\n   - Other methods and properties like `handler`, `caplog_handler_key`, `caplog_records_key`, `caplog`, which involve log fetching or setting logic.\n\n6. Fix implementation:\n   - Focus is on `_finalize` and `set_level`.\n   - Verify if `_initial_logger_levels` captures all necessary loggers, including the root, during `set_level`.\n   - Ensure `_finalize` iterates through all necessary loggers and reassigns the original levels effectively.",
+      "symbols": [
+        {
+          "name": "_pytest.logging.LogCaptureFixture._finalize",
+          "file_path": "src/_pytest/logging.py",
+          "reason": "This method is intended to restore log levels after test finalization. It directly relates to the problem since it's expected to restore the changed log levels but didn't seem to do it for pytest>=6.0."
+        },
+        {
+          "name": "_pytest.logging.LogCaptureFixture.set_level",
+          "file_path": "src/_pytest/logging.py",
+          "reason": "This method changes the log level and saves the original level for later restoration. It should ensure that log level changes are correctly recorded so `_finalize()` can restore them."
+        }
+      ],
+      "more_info": [],
+      "is_done": true,
+      "symbols_scratch_pad": [
+        "The `_finalize` method is crucial for restoring the log level after the test ends. It uses `_initial_logger_levels` to reset the log levels. Confirming it includes all loggers in `_initial_logger_levels` during the test can solve it.",
+        "`set_level` saves the current log level before setting a new one; ensuring this captures all necessary changes (including to the root logger) is crucial. Aligning its functionality with `_finalize()` could resolve the issue.",
+        "This symbol does not actively contribute to the issue of restoring log levels. It's used for typing and customization purposes.",
+        "This symbol does not actively contribute to the issue of restoring log levels. It's used for typing and customization purposes.",
+        "`LogCaptureFixture` class houses `set_level` and `_finalize` that are central to resolving the issue. The related methods within this class should ensure restoration of initial log levels correctly.",
+        "This method is relevant as it initializes the `LogCaptureFixture` and should ensure `_initial_logger_levels` is correctly prepared for test setup.",
+        "Handler property provides handler which is used to fetch logs. It's indirectly relevant in terms of how it's levels are manipulated.",
+        "`get_records` method provides records but does not directly impact log level setting or restoration.",
+        "`text` method provides log messages and isn't directly involved in log level restoration or setting.",
+        "Returns various properties related to log records, not directly relevant to log level changes.",
+        "Returns message tuples, not directly relevant to log level restoration.",
+        "Provides text messages, not related to log level setting, though it ties into log structure workflows.",
+        "Clears records which is more about maintenance of log state rather than log level changes.",
+        "This context manager directly sets and restores log levels inline, which could show expected behavior but the main automated restoration issue in `_finalize()` remains.",
+        "This is the main fixture definition that processes finalization subsequently calling `_finalize`. Relevant to wrap up or testing potential initial setup issues.",
+        "Doesn\u2019t seem to be relevant based on its partial definition and typical naming alignment."
+      ]
+    }
+  },
+  "response": {
+    "file_paths": [
+      "src/_pytest/logging.py"
+    ],
+    "symbols": [
+      "_pytest.logging.LogCaptureFixture._finalize",
+      "_pytest.logging.LogCaptureFixture.set_level"
+    ],
+    "code_spans": {
+      "_pytest.logging.caplog_handler_key": {
+        "name": "_pytest.logging.caplog_handler_key",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "caplog_handler_key = StoreKey[\"LogCaptureHandler\"]()",
+        "start_line": 36,
+        "start_column": 1081,
+        "end_line": 0,
+        "end_column": 1133,
+        "start_byte": 1081,
+        "end_byte": 0
+      },
+      "_pytest.logging.caplog_records_key": {
+        "name": "_pytest.logging.caplog_records_key",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "caplog_records_key = StoreKey[Dict[str, List[logging.LogRecord]]]()",
+        "start_line": 37,
+        "start_column": 1134,
+        "end_line": 0,
+        "end_column": 1201,
+        "start_byte": 1134,
+        "end_byte": 0
+      },
+      "_pytest.logging.LogCaptureFixture": {
+        "name": "_pytest.logging.LogCaptureFixture",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "class LogCaptureFixture:\n    \"\"\"Provides access and control of log capturing.\"\"\"\n\n    def __init__(self, item: nodes.Node) -> None:\n        \"\"\"Creates a new funcarg.\"\"\"\n        self._item = item\n        # dict of log name -> log level\n        self._initial_logger_levels = {}  # type: Dict[Optional[str], int]\n\n    def _finalize(self) -> None:\n        \"\"\"Finalizes the fixture.\n\n        This restores the log levels changed by :meth:`set_level`.\n        \"\"\"\n        # restore log levels\n        for logger_name, level in self._initial_logger_levels.items():\n            logger = logging.getLogger(logger_name)\n            logger.setLevel(level)\n\n    @property\n    def handler(self) -> LogCaptureHandler:\n        \"\"\"\n        :rtype: LogCaptureHandler\n        \"\"\"\n        return self._item._store[caplog_handler_key]\n\n    def get_records(self, when: str) -> List[logging.LogRecord]:\n        \"\"\"\n        Get the logging records for one of the possible test phases.\n\n        :param str when:\n            Which test phase to obtain the records from. Valid values are: \"setup\", \"call\" and \"teardown\".\n\n        :rtype: List[logging.LogRecord]\n        :return: the list of captured records at the given stage\n\n        .. versionadded:: 3.4\n        \"\"\"\n        return self._item._store[caplog_records_key].get(when, [])\n\n    @property\n    def text(self) -> str:\n        \"\"\"Returns the formatted log text.\"\"\"\n        return _remove_ansi_escape_sequences(self.handler.stream.getvalue())\n\n    @property\n    def records(self) -> List[logging.LogRecord]:\n        \"\"\"Returns the list of log records.\"\"\"\n        return self.handler.records\n\n    @property\n    def record_tuples(self) -> List[Tuple[str, int, str]]:\n        \"\"\"Returns a list of a stripped down version of log records intended\n        for use in assertion comparison.\n\n        The format of the tuple is:\n\n            (logger_name, log_level, message)\n        \"\"\"\n        return [(r.name, r.levelno, r.getMessage()) for r in self.records]\n\n    @property\n    def messages(self) -> List[str]:\n        \"\"\"Returns a list of format-interpolated log messages.\n\n        Unlike 'records', which contains the format string and parameters for interpolation, log messages in this list\n        are all interpolated.\n        Unlike 'text', which contains the output from the handler, log messages in this list are unadorned with\n        levels, timestamps, etc, making exact comparisons more reliable.\n\n        Note that traceback or stack info (from :func:`logging.exception` or the `exc_info` or `stack_info` arguments\n        to the logging functions) is not included, as this is added by the formatter in the handler.\n\n        .. versionadded:: 3.7\n        \"\"\"\n        return [r.getMessage() for r in self.records]\n\n    def clear(self) -> None:\n        \"\"\"Reset the list of log records and the captured log text.\"\"\"\n        self.handler.reset()\n\n    def set_level(self, level: Union[int, str], logger: Optional[str] = None) -> None:\n        \"\"\"Sets the level for capturing of logs. The level will be restored to its previous value at the end of\n        the test.\n\n        :param int level: the logger to level.\n        :param str logger: the logger to update the level. If not given, the root logger level is updated.\n\n        .. versionchanged:: 3.4\n            The levels of the loggers changed by this function will be restored to their initial values at the\n            end of the test.\n        \"\"\"\n        logger_obj = logging.getLogger(logger)\n        # save the original log-level to restore it during teardown\n        self._initial_logger_levels.setdefault(logger, logger_obj.level)\n        logger_obj.setLevel(level)\n        self.handler.setLevel(level)\n\n    @contextmanager\n    def at_level(\n        self, level: int, logger: Optional[str] = None\n    ) -> Generator[None, None, None]:\n        \"\"\"Context manager that sets the level for capturing of logs. After the end of the 'with' statement the\n        level is restored to its original value.\n\n        :param int level: the logger to level.\n        :param str logger: the logger to update the level. If not given, the root logger level is updated.\n        \"\"\"\n        logger_obj = logging.getLogger(logger)\n        orig_level = logger_obj.level\n        logger_obj.setLevel(level)\n        handler_orig_level = self.handler.level\n        self.handler.setLevel(level)\n        try:\n            yield\n        finally:\n            logger_obj.setLevel(orig_level)\n            self.handler.setLevel(handler_orig_level)",
+        "start_line": 340,
+        "start_column": 11698,
+        "end_line": 0,
+        "end_column": 16210,
+        "start_byte": 11698,
+        "end_byte": 0
+      },
+      "_pytest.logging.LogCaptureFixture.__init__": {
+        "name": "_pytest.logging.LogCaptureFixture.__init__",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "def __init__(self, item: nodes.Node) -> None:\n        \"\"\"Creates a new funcarg.\"\"\"\n        self._item = item\n        # dict of log name -> log level\n        self._initial_logger_levels = {}  # type: Dict[Optional[str], int]",
+        "start_line": 343,
+        "start_column": 11784,
+        "end_line": 4,
+        "end_column": 12007,
+        "start_byte": 11784,
+        "end_byte": 4
+      },
+      "_pytest.logging.LogCaptureFixture.handler": {
+        "name": "_pytest.logging.LogCaptureFixture.handler",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "@property\n    def handler(self) -> LogCaptureHandler:\n        \"\"\"\n        :rtype: LogCaptureHandler\n        \"\"\"\n        return self._item._store[caplog_handler_key]",
+        "start_line": 359,
+        "start_column": 12348,
+        "end_line": 4,
+        "end_column": 12512,
+        "start_byte": 12348,
+        "end_byte": 4
+      },
+      "_pytest.logging.LogCaptureFixture.get_records": {
+        "name": "_pytest.logging.LogCaptureFixture.get_records",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "def get_records(self, when: str) -> List[logging.LogRecord]:\n        \"\"\"\n        Get the logging records for one of the possible test phases.\n\n        :param str when:\n            Which test phase to obtain the records from. Valid values are: \"setup\", \"call\" and \"teardown\".\n\n        :rtype: List[logging.LogRecord]\n        :return: the list of captured records at the given stage\n\n        .. versionadded:: 3.4\n        \"\"\"\n        return self._item._store[caplog_records_key].get(when, [])",
+        "start_line": 366,
+        "start_column": 12518,
+        "end_line": 4,
+        "end_column": 13008,
+        "start_byte": 12518,
+        "end_byte": 4
+      },
+      "_pytest.logging.LogCaptureFixture.text": {
+        "name": "_pytest.logging.LogCaptureFixture.text",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "@property\n    def text(self) -> str:\n        \"\"\"Returns the formatted log text.\"\"\"\n        return _remove_ansi_escape_sequences(self.handler.stream.getvalue())",
+        "start_line": 380,
+        "start_column": 13014,
+        "end_line": 4,
+        "end_column": 13173,
+        "start_byte": 13014,
+        "end_byte": 4
+      },
+      "_pytest.logging.LogCaptureFixture.records": {
+        "name": "_pytest.logging.LogCaptureFixture.records",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "@property\n    def records(self) -> List[logging.LogRecord]:\n        \"\"\"Returns the list of log records.\"\"\"\n        return self.handler.records",
+        "start_line": 385,
+        "start_column": 13179,
+        "end_line": 4,
+        "end_column": 13321,
+        "start_byte": 13179,
+        "end_byte": 4
+      },
+      "_pytest.logging.LogCaptureFixture.record_tuples": {
+        "name": "_pytest.logging.LogCaptureFixture.record_tuples",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "@property\n    def record_tuples(self) -> List[Tuple[str, int, str]]:\n        \"\"\"Returns a list of a stripped down version of log records intended\n        for use in assertion comparison.\n\n        The format of the tuple is:\n\n            (logger_name, log_level, message)\n        \"\"\"\n        return [(r.name, r.levelno, r.getMessage()) for r in self.records]",
+        "start_line": 390,
+        "start_column": 13327,
+        "end_line": 4,
+        "end_column": 13684,
+        "start_byte": 13327,
+        "end_byte": 4
+      },
+      "_pytest.logging.LogCaptureFixture.messages": {
+        "name": "_pytest.logging.LogCaptureFixture.messages",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "@property\n    def messages(self) -> List[str]:\n        \"\"\"Returns a list of format-interpolated log messages.\n\n        Unlike 'records', which contains the format string and parameters for interpolation, log messages in this list\n        are all interpolated.\n        Unlike 'text', which contains the output from the handler, log messages in this list are unadorned with\n        levels, timestamps, etc, making exact comparisons more reliable.\n\n        Note that traceback or stack info (from :func:`logging.exception` or the `exc_info` or `stack_info` arguments\n        to the logging functions) is not included, as this is added by the formatter in the handler.\n\n        .. versionadded:: 3.7\n        \"\"\"\n        return [r.getMessage() for r in self.records]",
+        "start_line": 401,
+        "start_column": 13690,
+        "end_line": 4,
+        "end_column": 14451,
+        "start_byte": 13690,
+        "end_byte": 4
+      },
+      "_pytest.logging.LogCaptureFixture.clear": {
+        "name": "_pytest.logging.LogCaptureFixture.clear",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "def clear(self) -> None:\n        \"\"\"Reset the list of log records and the captured log text.\"\"\"\n        self.handler.reset()",
+        "start_line": 417,
+        "start_column": 14457,
+        "end_line": 4,
+        "end_column": 14581,
+        "start_byte": 14457,
+        "end_byte": 4
+      },
+      "_pytest.logging.LogCaptureFixture.at_level": {
+        "name": "_pytest.logging.LogCaptureFixture.at_level",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "@contextmanager\n    def at_level(\n        self, level: int, logger: Optional[str] = None\n    ) -> Generator[None, None, None]:\n        \"\"\"Context manager that sets the level for capturing of logs. After the end of the 'with' statement the\n        level is restored to its original value.\n\n        :param int level: the logger to level.\n        :param str logger: the logger to update the level. If not given, the root logger level is updated.\n        \"\"\"\n        logger_obj = logging.getLogger(logger)\n        orig_level = logger_obj.level\n        logger_obj.setLevel(level)\n        handler_orig_level = self.handler.level\n        self.handler.setLevel(level)\n        try:\n            yield\n        finally:\n            logger_obj.setLevel(orig_level)\n            self.handler.setLevel(handler_orig_level)",
+        "start_line": 438,
+        "start_column": 15405,
+        "end_line": 4,
+        "end_column": 16210,
+        "start_byte": 15405,
+        "end_byte": 4
+      },
+      "_pytest.logging.caplog": {
+        "name": "_pytest.logging.caplog",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "@pytest.fixture\ndef caplog(request: FixtureRequest) -> Generator[LogCaptureFixture, None, None]:\n    \"\"\"Access and control log capturing.\n\n    Captured logs are available through the following properties/methods::\n\n    * caplog.messages        -> list of format-interpolated log messages\n    * caplog.text            -> string containing formatted log output\n    * caplog.records         -> list of logging.LogRecord instances\n    * caplog.record_tuples   -> list of (logger_name, level, message) tuples\n    * caplog.clear()         -> clear captured records and formatted log output string\n    \"\"\"\n    result = LogCaptureFixture(request.node)\n    yield result\n    result._finalize()",
+        "start_line": 460,
+        "start_column": 16213,
+        "end_line": 0,
+        "end_column": 16896,
+        "start_byte": 16213,
+        "end_byte": 0
+      },
+      "_pytest.reports.BaseReport.caplog": {
+        "name": "_pytest.reports.BaseReport.caplog",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "e(logging.PercentStyle):\n    \"\"\"A logging style with special support for multiline messages.\n\n    If the message of a record consists of multiple lines, this style\n    formats the message as if each line were logged separately.\n    \"\"\"\n\n    def __init__(self, fm",
+        "start_line": 108,
+        "start_column": 3122,
+        "end_line": 4,
+        "end_column": 3384,
+        "start_byte": 3122,
+        "end_byte": 4
+      },
+      "_pytest.logging.LogCaptureFixture._finalize": {
+        "name": "_pytest.logging.LogCaptureFixture._finalize",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "def _finalize(self) -> None:\n        \"\"\"Finalizes the fixture.\n\n        This restores the log levels changed by :meth:`set_level`.\n        \"\"\"\n        # restore log levels\n        for logger_name, level in self._initial_logger_levels.items():\n            logger = logging.getLogger(logger_name)\n            logger.setLevel(level)",
+        "start_line": 349,
+        "start_column": 12013,
+        "end_line": 4,
+        "end_column": 12342,
+        "start_byte": 12013,
+        "end_byte": 4
+      },
+      "_pytest.logging.LogCaptureFixture.set_level": {
+        "name": "_pytest.logging.LogCaptureFixture.set_level",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "def set_level(self, level: Union[int, str], logger: Optional[str] = None) -> None:\n        \"\"\"Sets the level for capturing of logs. The level will be restored to its previous value at the end of\n        the test.\n\n        :param int level: the logger to level.\n        :param str logger: the logger to update the level. If not given, the root logger level is updated.\n\n        .. versionchanged:: 3.4\n            The levels of the loggers changed by this function will be restored to their initial values at the\n            end of the test.\n        \"\"\"\n        logger_obj = logging.getLogger(logger)\n        # save the original log-level to restore it during teardown\n        self._initial_logger_levels.setdefault(logger, logger_obj.level)\n        logger_obj.setLevel(level)\n        self.handler.setLevel(level)",
+        "start_line": 421,
+        "start_column": 14587,
+        "end_line": 4,
+        "end_column": 15399,
+        "start_byte": 14587,
+        "end_byte": 4
+      }
+    }
+  }
+}

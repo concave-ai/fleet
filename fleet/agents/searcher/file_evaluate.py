@@ -19,11 +19,16 @@ symbols: functions, classes, variables that are relevant to the issue.
 
 1. Analyze User Instructions:
 Carefully read the reported issue within the <issue> tag.
+think step by step and write out your thoughts in the scratch_pad field.
 1.1 What issue is the user describing?
-1.2 How was this issue caused?
-1.3 If the user described the expected result, what should it be fixed to?
-1.4 If the user did not provide an expected result, what should the expectation be?
-1.5 How should the issue be fixed to meet the expectation?
+1.2 User give a reproduce steps?, if yes, think why this steps cause the issue.
+1.3 How was this issue caused?
+1.4 Summary the user expectation and why cause the issue.
+1.6 Some possible solutions to the issue.
+
+
+The description of the issue may only be the surface problem; please consider all possibilities carefully. Your goal is to address the root cause, not just provide a simple fix for the issue.
+
 
 2. Make file evaluation:
 2.1. Thoroughly analyze each lines in the <file_content> tag.

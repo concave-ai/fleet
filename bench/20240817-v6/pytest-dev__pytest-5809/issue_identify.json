@@ -1,0 +1,21 @@
+{
+    "file_paths": [
+        "src/_pytest/pastebin.py"
+    ],
+    "symbols": [
+        "_pytest.pastebin.create_new_paste"
+    ],
+    "code_spans": {
+        "_pytest.pastebin.create_new_paste": {
+            "name": "_pytest.pastebin.create_new_paste",
+            "file_path": "src/_pytest/pastebin.py",
+            "file_content": "def create_new_paste(contents):\n    \"\"\"\n    Creates a new paste using bpaste.net service.\n\n    :contents: paste contents as utf-8 encoded bytes\n    :returns: url to the pasted contents\n    \"\"\"\n    import re\n\n    if sys.version_info < (3, 0):\n        from urllib import urlopen, urlencode\n    else:\n        from urllib.request import urlopen\n        from urllib.parse import urlencode\n\n    params = {\n        \"code\": contents,\n        \"lexer\": \"python3\" if sys.version_info[0] >= 3 else \"python\",\n        \"expiry\": \"1week\",\n    }\n    url = \"https://bpaste.net\"\n    response = urlopen(url, data=urlencode(params).encode(\"ascii\")).read()\n    m = re.search(r'href=\"/raw/(\\w+)\"', response.decode(\"utf-8\"))\n    if m:\n        return \"%s/show/%s\" % (url, m.group(1))\n    else:\n        return \"bad response: \" + response",
+            "start_line": 64,
+            "start_column": 2040,
+            "end_line": 0,
+            "end_column": 2851,
+            "start_byte": 2040,
+            "end_byte": 0
+        }
+    }
+}
