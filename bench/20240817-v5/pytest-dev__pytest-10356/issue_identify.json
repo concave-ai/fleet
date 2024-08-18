@@ -1,0 +1,32 @@
+{
+    "file_paths": [
+        "src/_pytest/mark/structures.py"
+    ],
+    "symbols": [
+        "_pytest.mark.store_mark"
+    ],
+    "code_spans": {
+        "_pytest.mark.get_unpacked_marks": {
+            "name": "_pytest.mark.get_unpacked_marks",
+            "file_path": "src/_pytest/mark/structures.py",
+            "file_content": "def get_unpacked_marks(obj: object) -> Iterable[Mark]:\n    \"\"\"Obtain the unpacked marks that are stored on an object.\"\"\"\n    mark_list = getattr(obj, \"pytestmark\", [])\n    if not isinstance(mark_list, list):\n        mark_list = [mark_list]\n    return normalize_mark_list(mark_list)",
+            "start_line": 357,
+            "start_column": 12103,
+            "end_line": 0,
+            "end_column": 12384,
+            "start_byte": 12103,
+            "end_byte": 0
+        },
+        "_pytest.mark.store_mark": {
+            "name": "_pytest.mark.store_mark",
+            "file_path": "src/_pytest/mark/structures.py",
+            "file_content": "def store_mark(obj, mark: Mark) -> None:\n    \"\"\"Store a Mark on an object.\n\n    This is used to implement the Mark declarations/decorators correctly.\n    \"\"\"\n    assert isinstance(mark, Mark), mark\n    # Always reassign name to avoid updating pytestmark in a reference that\n    # was only borrowed.\n    obj.pytestmark = [*get_unpacked_marks(obj), mark]",
+            "start_line": 382,
+            "start_column": 12956,
+            "end_line": 0,
+            "end_column": 13308,
+            "start_byte": 12956,
+            "end_byte": 0
+        }
+    }
+}

@@ -1,0 +1,263 @@
+{
+    "file_paths": [
+        "src/_pytest/capture.py"
+    ],
+    "symbols": [
+        "_pytest.capture.CaptureIO.__init__"
+    ],
+    "code_spans": {
+        "_pytest.capture.CaptureIO": {
+            "name": "_pytest.capture.CaptureIO",
+            "file_path": "src/_pytest/capture.py",
+            "file_content": "class CaptureIO(io.TextIOWrapper):\n    def __init__(self) -> None:\n        super().__init__(io.BytesIO(), encoding=\"UTF-8\", newline=\"\", write_through=True)\n\n    def getvalue(self) -> str:\n        assert isinstance(self.buffer, io.BytesIO)\n        return self.buffer.getvalue().decode(\"UTF-8\")",
+            "start_line": 192,
+            "start_column": 6078,
+            "end_line": 0,
+            "end_column": 6370,
+            "start_byte": 6078,
+            "end_byte": 0
+        },
+        "_pytest.capture.CaptureIO.__init__": {
+            "name": "_pytest.capture.CaptureIO.__init__",
+            "file_path": "src/_pytest/capture.py",
+            "file_content": "def __init__(self) -> None:\n        super().__init__(io.BytesIO(), encoding=\"UTF-8\", newline=\"\", write_through=True)",
+            "start_line": 193,
+            "start_column": 6117,
+            "end_line": 4,
+            "end_column": 6233,
+            "start_byte": 6117,
+            "end_byte": 4
+        },
+        "_pytest.capture.CaptureIO.getvalue": {
+            "name": "_pytest.capture.CaptureIO.getvalue",
+            "file_path": "src/_pytest/capture.py",
+            "file_content": "def getvalue(self) -> str:\n        assert isinstance(self.buffer, io.BytesIO)\n        return self.buffer.getvalue().decode(\"UTF-8\")",
+            "start_line": 196,
+            "start_column": 6239,
+            "end_line": 4,
+            "end_column": 6370,
+            "start_byte": 6239,
+            "end_byte": 4
+        },
+        "_pytest.capture.TeeCaptureIO": {
+            "name": "_pytest.capture.TeeCaptureIO",
+            "file_path": "src/_pytest/capture.py",
+            "file_content": "class TeeCaptureIO(CaptureIO):\n    def __init__(self, other: TextIO) -> None:\n        self._other = other\n        super().__init__()\n\n    def write(self, s: str) -> int:\n        super().write(s)\n        return self._other.write(s)",
+            "start_line": 201,
+            "start_column": 6373,
+            "end_line": 0,
+            "end_column": 6603,
+            "start_byte": 6373,
+            "end_byte": 0
+        },
+        "_pytest.capture.TeeCaptureIO.__init__": {
+            "name": "_pytest.capture.TeeCaptureIO.__init__",
+            "file_path": "src/_pytest/capture.py",
+            "file_content": "def __init__(self, other: TextIO) -> None:\n        self._other = other\n        super().__init__()",
+            "start_line": 202,
+            "start_column": 6408,
+            "end_line": 4,
+            "end_column": 6505,
+            "start_byte": 6408,
+            "end_byte": 4
+        },
+        "_pytest.capture.TeeCaptureIO.write": {
+            "name": "_pytest.capture.TeeCaptureIO.write",
+            "file_path": "src/_pytest/capture.py",
+            "file_content": "def write(self, s: str) -> int:\n        super().write(s)\n        return self._other.write(s)",
+            "start_line": 206,
+            "start_column": 6511,
+            "end_line": 4,
+            "end_column": 6603,
+            "start_byte": 6511,
+            "end_byte": 4
+        },
+        "_pytest.capture.SysCaptureBinary": {
+            "name": "_pytest.capture.SysCaptureBinary",
+            "file_path": "src/_pytest/capture.py",
+            "file_content": "class SysCaptureBinary:\n\n    EMPTY_BUFFER = b\"\"\n\n    def __init__(self, fd: int, tmpfile=None, *, tee: bool = False) -> None:\n        name = patchsysdict[fd]\n        self._old = getattr(sys, name)\n        self.name = name\n        if tmpfile is None:\n            if name == \"stdin\":\n                tmpfile = DontReadFromInput()\n            else:\n                tmpfile = CaptureIO() if not tee else TeeCaptureIO(self._old)\n        self.tmpfile = tmpfile\n        self._state = \"initialized\"\n\n    def repr(self, class_name: str) -> str:\n        return \"<{} {} _old={} _state={!r} tmpfile={!r}>\".format(\n            class_name,\n            self.name,\n            hasattr(self, \"_old\") and repr(self._old) or \"<UNSET>\",\n            self._state,\n            self.tmpfile,\n        )\n\n    def __repr__(self) -> str:\n        return \"<{} {} _old={} _state={!r} tmpfile={!r}>\".format(\n            self.__class__.__name__,\n            self.name,\n            hasattr(self, \"_old\") and repr(self._old) or \"<UNSET>\",\n            self._state,\n            self.tmpfile,\n        )\n\n    def _assert_state(self, op: str, states: Tuple[str, ...]) -> None:\n        assert (\n            self._state in states\n        ), \"cannot {} in state {!r}: expected one of {}\".format(\n            op, self._state, \", \".join(states)\n        )\n\n    def start(self) -> None:\n        self._assert_state(\"start\", (\"initialized\",))\n        setattr(sys, self.name, self.tmpfile)\n        self._state = \"started\"\n\n    def snap(self):\n        self._assert_state(\"snap\", (\"started\", \"suspended\"))\n        self.tmpfile.seek(0)\n        res = self.tmpfile.buffer.read()\n        self.tmpfile.seek(0)\n        self.tmpfile.truncate()\n        return res\n\n    def done(self) -> None:\n        self._assert_state(\"done\", (\"initialized\", \"started\", \"suspended\", \"done\"))\n        if self._state == \"done\":\n            return\n        setattr(sys, self.name, self._old)\n        del self._old\n        self.tmpfile.close()\n        self._state = \"done\"\n\n    def suspend(self) -> None:\n        self._assert_state(\"suspend\", (\"started\", \"suspended\"))\n        setattr(sys, self.name, self._old)\n        self._state = \"suspended\"\n\n    def resume(self) -> None:\n        self._assert_state(\"resume\", (\"started\", \"suspended\"))\n        if self._state == \"started\":\n            return\n        setattr(sys, self.name, self.tmpfile)\n        self._state = \"started\"\n\n    def writeorg(self, data) -> None:\n        self._assert_state(\"writeorg\", (\"started\", \"suspended\"))\n        self._old.flush()\n        self._old.buffer.write(data)\n        self._old.buffer.flush()",
+            "start_line": 251,
+            "start_column": 7366,
+            "end_line": 0,
+            "end_column": 9959,
+            "start_byte": 7366,
+            "end_byte": 0
+        },
+        "_pytest.capture.SysCaptureBinary.EMPTY_BUFFER": {
+            "name": "_pytest.capture.SysCaptureBinary.EMPTY_BUFFER",
+            "file_path": "src/_pytest/capture.py",
+            "file_content": "EMPTY_BUFFER = b\"\"",
+            "start_line": 253,
+            "start_column": 7395,
+            "end_line": 4,
+            "end_column": 7413,
+            "start_byte": 7395,
+            "end_byte": 4
+        },
+        "_pytest.capture.SysCaptureBinary.__init__": {
+            "name": "_pytest.capture.SysCaptureBinary.__init__",
+            "file_path": "src/_pytest/capture.py",
+            "file_content": "def __init__(self, fd: int, tmpfile=None, *, tee: bool = False) -> None:\n        name = patchsysdict[fd]\n        self._old = getattr(sys, name)\n        self.name = name\n        if tmpfile is None:\n            if name == \"stdin\":\n                tmpfile = DontReadFromInput()\n            else:\n                tmpfile = CaptureIO() if not tee else TeeCaptureIO(self._old)\n        self.tmpfile = tmpfile\n        self._state = \"initialized\"",
+            "start_line": 255,
+            "start_column": 7419,
+            "end_line": 4,
+            "end_column": 7856,
+            "start_byte": 7419,
+            "end_byte": 4
+        },
+        "_pytest.capture.SysCaptureBinary.repr": {
+            "name": "_pytest.capture.SysCaptureBinary.repr",
+            "file_path": "src/_pytest/capture.py",
+            "file_content": "def repr(self, class_name: str) -> str:\n        return \"<{} {} _old={} _state={!r} tmpfile={!r}>\".format(\n            class_name,\n            self.name,\n            hasattr(self, \"_old\") and repr(self._old) or \"<UNSET>\",\n            self._state,\n            self.tmpfile,\n        )",
+            "start_line": 267,
+            "start_column": 7862,
+            "end_line": 4,
+            "end_column": 8143,
+            "start_byte": 7862,
+            "end_byte": 4
+        },
+        "_pytest.capture.SysCaptureBinary.__repr__": {
+            "name": "_pytest.capture.SysCaptureBinary.__repr__",
+            "file_path": "src/_pytest/capture.py",
+            "file_content": "def __repr__(self) -> str:\n        return \"<{} {} _old={} _state={!r} tmpfile={!r}>\".format(\n            self.__class__.__name__,\n            self.name,\n            hasattr(self, \"_old\") and repr(self._old) or \"<UNSET>\",\n            self._state,\n            self.tmpfile,\n        )",
+            "start_line": 276,
+            "start_column": 8149,
+            "end_line": 4,
+            "end_column": 8430,
+            "start_byte": 8149,
+            "end_byte": 4
+        },
+        "_pytest.capture.SysCaptureBinary._assert_state": {
+            "name": "_pytest.capture.SysCaptureBinary._assert_state",
+            "file_path": "src/_pytest/capture.py",
+            "file_content": "def _assert_state(self, op: str, states: Tuple[str, ...]) -> None:\n        assert (\n            self._state in states\n        ), \"cannot {} in state {!r}: expected one of {}\".format(\n            op, self._state, \", \".join(states)\n        )",
+            "start_line": 285,
+            "start_column": 8436,
+            "end_line": 4,
+            "end_column": 8675,
+            "start_byte": 8436,
+            "end_byte": 4
+        },
+        "_pytest.capture.SysCaptureBinary.start": {
+            "name": "_pytest.capture.SysCaptureBinary.start",
+            "file_path": "src/_pytest/capture.py",
+            "file_content": "def start(self) -> None:\n        self._assert_state(\"start\", (\"initialized\",))\n        setattr(sys, self.name, self.tmpfile)\n        self._state = \"started\"",
+            "start_line": 292,
+            "start_column": 8681,
+            "end_line": 4,
+            "end_column": 8837,
+            "start_byte": 8681,
+            "end_byte": 4
+        },
+        "_pytest.capture.SysCaptureBinary.snap": {
+            "name": "_pytest.capture.SysCaptureBinary.snap",
+            "file_path": "src/_pytest/capture.py",
+            "file_content": "def snap(self):\n        self._assert_state(\"snap\", (\"started\", \"suspended\"))\n        self.tmpfile.seek(0)\n        res = self.tmpfile.buffer.read()\n        self.tmpfile.seek(0)\n        self.tmpfile.truncate()\n        return res",
+            "start_line": 297,
+            "start_column": 8843,
+            "end_line": 4,
+            "end_column": 9069,
+            "start_byte": 8843,
+            "end_byte": 4
+        },
+        "_pytest.capture.SysCaptureBinary.done": {
+            "name": "_pytest.capture.SysCaptureBinary.done",
+            "file_path": "src/_pytest/capture.py",
+            "file_content": "def done(self) -> None:\n        self._assert_state(\"done\", (\"initialized\", \"started\", \"suspended\", \"done\"))\n        if self._state == \"done\":\n            return\n        setattr(sys, self.name, self._old)\n        del self._old\n        self.tmpfile.close()\n        self._state = \"done\"",
+            "start_line": 305,
+            "start_column": 9075,
+            "end_line": 4,
+            "end_column": 9358,
+            "start_byte": 9075,
+            "end_byte": 4
+        },
+        "_pytest.capture.SysCaptureBinary.suspend": {
+            "name": "_pytest.capture.SysCaptureBinary.suspend",
+            "file_path": "src/_pytest/capture.py",
+            "file_content": "def suspend(self) -> None:\n        self._assert_state(\"suspend\", (\"started\", \"suspended\"))\n        setattr(sys, self.name, self._old)\n        self._state = \"suspended\"",
+            "start_line": 314,
+            "start_column": 9364,
+            "end_line": 4,
+            "end_column": 9531,
+            "start_byte": 9364,
+            "end_byte": 4
+        },
+        "_pytest.capture.SysCaptureBinary.resume": {
+            "name": "_pytest.capture.SysCaptureBinary.resume",
+            "file_path": "src/_pytest/capture.py",
+            "file_content": "def resume(self) -> None:\n        self._assert_state(\"resume\", (\"started\", \"suspended\"))\n        if self._state == \"started\":\n            return\n        setattr(sys, self.name, self.tmpfile)\n        self._state = \"started\"",
+            "start_line": 319,
+            "start_column": 9537,
+            "end_line": 4,
+            "end_column": 9759,
+            "start_byte": 9537,
+            "end_byte": 4
+        },
+        "_pytest.capture.SysCaptureBinary.writeorg": {
+            "name": "_pytest.capture.SysCaptureBinary.writeorg",
+            "file_path": "src/_pytest/capture.py",
+            "file_content": "def writeorg(self, data) -> None:\n        self._assert_state(\"writeorg\", (\"started\", \"suspended\"))\n        self._old.flush()\n        self._old.buffer.write(data)\n        self._old.buffer.flush()",
+            "start_line": 326,
+            "start_column": 9765,
+            "end_line": 4,
+            "end_column": 9959,
+            "start_byte": 9765,
+            "end_byte": 4
+        },
+        "_pytest.capture.SysCapture": {
+            "name": "_pytest.capture.SysCapture",
+            "file_path": "src/_pytest/capture.py",
+            "file_content": "class SysCapture(SysCaptureBinary):\n    EMPTY_BUFFER = \"\"  # type: ignore[assignment]\n\n    def snap(self):\n        res = self.tmpfile.getvalue()\n        self.tmpfile.seek(0)\n        self.tmpfile.truncate()\n        return res\n\n    def writeorg(self, data):\n        self._assert_state(\"writeorg\", (\"started\", \"suspended\"))\n        self._old.write(data)\n        self._old.flush()",
+            "start_line": 333,
+            "start_column": 9962,
+            "end_line": 0,
+            "end_column": 10338,
+            "start_byte": 9962,
+            "end_byte": 0
+        },
+        "_pytest.capture.SysCapture.EMPTY_BUFFER": {
+            "name": "_pytest.capture.SysCapture.EMPTY_BUFFER",
+            "file_path": "src/_pytest/capture.py",
+            "file_content": "EMPTY_BUFFER = \"\"",
+            "start_line": 334,
+            "start_column": 10002,
+            "end_line": 4,
+            "end_column": 10019,
+            "start_byte": 10002,
+            "end_byte": 4
+        },
+        "_pytest.capture.SysCapture.snap": {
+            "name": "_pytest.capture.SysCapture.snap",
+            "file_path": "src/_pytest/capture.py",
+            "file_content": "def snap(self):\n        res = self.tmpfile.getvalue()\n        self.tmpfile.seek(0)\n        self.tmpfile.truncate()\n        return res",
+            "start_line": 336,
+            "start_column": 10053,
+            "end_line": 4,
+            "end_column": 10186,
+            "start_byte": 10053,
+            "end_byte": 4
+        },
+        "_pytest.capture.SysCapture.writeorg": {
+            "name": "_pytest.capture.SysCapture.writeorg",
+            "file_path": "src/_pytest/capture.py",
+            "file_content": "def writeorg(self, data):\n        self._assert_state(\"writeorg\", (\"started\", \"suspended\"))\n        self._old.write(data)\n        self._old.flush()",
+            "start_line": 342,
+            "start_column": 10192,
+            "end_line": 4,
+            "end_column": 10338,
+            "start_byte": 10192,
+            "end_byte": 4
+        },
+        "_pytest.capture.CaptureFixture.readouterr": {
+            "name": "_pytest.capture.CaptureFixture.readouterr",
+            "file_path": "src/_pytest/capture.py",
+            "file_content": "def readouterr(self):\n        \"\"\"Read and return the captured output so far, resetting the internal buffer.\n\n        :return: captured content as a namedtuple with ``out`` and ``err`` string attributes\n        \"\"\"\n        captured_out, captured_err = self._captured_out, self._captured_err\n        if self._capture is not None:\n            out, err = self._capture.readouterr()\n            captured_out += out\n            captured_err += err\n        self._captured_out = self.captureclass.EMPTY_BUFFER\n        self._captured_err = self.captureclass.EMPTY_BUFFER\n        return CaptureResult(captured_out, captured_err)",
+            "start_line": 787,
+            "start_column": 25447,
+            "end_line": 4,
+            "end_column": 26065,
+            "start_byte": 25447,
+            "end_byte": 4
+        }
+    }
+}

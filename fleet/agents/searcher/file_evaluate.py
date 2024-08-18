@@ -19,7 +19,11 @@ symbols: functions, classes, variables that are relevant to the issue.
 
 1. Analyze User Instructions:
 Carefully read the reported issue within the <issue> tag.
-
+1.1 What issue is the user describing?
+1.2 How was this issue caused?
+1.3 If the user described the expected result, what should it be fixed to?
+1.4 If the user did not provide an expected result, what should the expectation be?
+1.5 How should the issue be fixed to meet the expectation?
 
 2. Make file evaluation:
 2.1. Thoroughly analyze each lines in the <file_content> tag.
@@ -37,19 +41,19 @@ method: python method, end with three char "()."
 
 e.g. 
 # 1. bark() method of Dog class
-symbol: Dog#bark(). 
+symbol: Dog.bark
 # 2. Dog class
-symbol: Dog#
+symbol: Dog
 # 3. def fly(item)
-symbol: fly().
+symbol: fly
 # 4. method eat(item, quantity):
-symbol: eat().
+symbol: eat
 # 5. method eat(item, quantity) in Cat class
-symbol: Cat#eat().
+symbol: Cat.eat
 # 6. method eat_fish(item, quantity) in method eat(item, quantity) in Cat class
-symbol: Cat#eat().eat_fish().
+symbol: Cat.eat.eat_fish
 # 6. method eat_fish(item, quantity) in method eat(item, quantity) in method action()
-symbol: action().eat().eat_fish().
+symbol: action.eat.eat_fish
 
 
 

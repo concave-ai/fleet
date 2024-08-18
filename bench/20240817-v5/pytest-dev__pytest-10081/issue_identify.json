@@ -1,0 +1,197 @@
+{
+    "file_paths": [
+        "src/_pytest/unittest.py"
+    ],
+    "symbols": [
+        "_pytest.unittest.TestCaseFunction.runtest"
+    ],
+    "code_spans": {
+        "_pytest.unittest._is_skipped": {
+            "name": "_pytest.unittest._is_skipped",
+            "file_path": "src/_pytest/unittest.py",
+            "file_content": "def _is_skipped(obj) -> bool:\n    \"\"\"Return True if the given object has been marked with @unittest.skip.\"\"\"\n    return bool(getattr(obj, \"__unittest_skip__\", False))",
+            "start_line": 411,
+            "start_column": 14289,
+            "end_line": 0,
+            "end_column": 14455,
+            "start_byte": 14289,
+            "end_byte": 0
+        },
+        "_pytest.runner.call_and_report": {
+            "name": "_pytest.runner.call_and_report",
+            "file_path": "src/_pytest/runner.py",
+            "file_content": "def call_and_report(\n    item: Item, when: \"Literal['setup', 'call', 'teardown']\", log: bool = True, **kwds\n) -> TestReport:\n    call = call_runtest_hook(item, when, **kwds)\n    hook = item.ihook\n    report: TestReport = hook.pytest_runtest_makereport(item=item, call=call)\n    if log:\n        hook.pytest_runtest_logreport(report=report)\n    if check_interactive_exception(call, report):\n        hook.pytest_exception_interact(node=item, call=call, report=report)\n    return report",
+            "start_line": 216,
+            "start_column": 6784,
+            "end_line": 0,
+            "end_column": 7266,
+            "start_byte": 6784,
+            "end_byte": 0
+        },
+        "_pytest.debugging.pytestPDB._init_pdb": {
+            "name": "_pytest.debugging.pytestPDB._init_pdb",
+            "file_path": "src/_pytest/debugging.py",
+            "file_content": "@classmethod\n    def _init_pdb(cls, method, *args, **kwargs):\n        \"\"\"Initialize PDB debugging, dropping any IO capturing.\"\"\"\n        import _pytest.config\n\n        if cls._pluginmanager is None:\n            capman: Optional[CaptureManager] = None\n        else:\n            capman = cls._pluginmanager.getplugin(\"capturemanager\")\n        if capman:\n            capman.suspend(in_=True)\n\n        if cls._config:\n            tw = _pytest.config.create_terminal_writer(cls._config)\n            tw.line()\n\n            if cls._recursive_debug == 0:\n                # Handle header similar to pdb.set_trace in py37+.\n                header = kwargs.pop(\"header\", None)\n                if header is not None:\n                    tw.sep(\">\", header)\n                else:\n                    capturing = cls._is_capturing(capman)\n                    if capturing == \"global\":\n                        tw.sep(\">\", f\"PDB {method} (IO-capturing turned off)\")\n                    elif capturing:\n                        tw.sep(\n                            \">\",\n                            \"PDB %s (IO-capturing turned off for %s)\"\n                            % (method, capturing),\n                        )\n                    else:\n                        tw.sep(\">\", f\"PDB {method}\")\n\n        _pdb = cls._import_pdb_cls(capman)(**kwargs)\n\n        if cls._pluginmanager:\n            cls._pluginmanager.hook.pytest_enter_pdb(config=cls._config, pdb=_pdb)\n        return _pdb",
+            "start_line": 236,
+            "start_column": 7946,
+            "end_line": 4,
+            "end_column": 9411,
+            "start_byte": 7946,
+            "end_byte": 4
+        },
+        "_pytest.debugging.PdbInvoke.pytest_exception_interact": {
+            "name": "_pytest.debugging.PdbInvoke.pytest_exception_interact",
+            "file_path": "src/_pytest/debugging.py",
+            "file_content": "def pytest_exception_interact(\n        self, node: Node, call: \"CallInfo[Any]\", report: BaseReport\n    ) -> None:\n        capman = node.config.pluginmanager.getplugin(\"capturemanager\")\n        if capman:\n            capman.suspend_global_capture(in_=True)\n            out, err = capman.read_global_capture()\n            sys.stdout.write(out)\n            sys.stdout.write(err)\n        assert call.excinfo is not None\n        _enter_pdb(node, call.excinfo, report)",
+            "start_line": 285,
+            "start_column": 9711,
+            "end_line": 4,
+            "end_column": 10173,
+            "start_byte": 9711,
+            "end_byte": 4
+        },
+        "_pytest.debugging._enter_pdb": {
+            "name": "_pytest.debugging._enter_pdb",
+            "file_path": "src/_pytest/debugging.py",
+            "file_content": "def _enter_pdb(\n    node: Node, excinfo: ExceptionInfo[BaseException], rep: BaseReport\n) -> BaseReport:\n    # XXX we re-use the TerminalReporter's terminalwriter\n    # because this seems to avoid some encoding related troubles\n    # for not completely clear reasons.\n    tw = node.config.pluginmanager.getplugin(\"terminalreporter\")._tw\n    tw.line()\n\n    showcapture = node.config.option.showcapture\n\n    for sectionname, content in (\n        (\"stdout\", rep.capstdout),\n        (\"stderr\", rep.capstderr),\n        (\"log\", rep.caplog),\n    ):\n        if showcapture in (sectionname, \"all\") and content:\n            tw.sep(\">\", \"captured \" + sectionname)\n            if content[-1:] == \"\\n\":\n                content = content[:-1]\n            tw.line(content)\n\n    tw.sep(\">\", \"traceback\")\n    rep.toterminal(tw)\n    tw.sep(\">\", \"entering PDB\")\n    tb = _postmortem_traceback(excinfo)\n    rep._pdbshown = True  # type: ignore[attr-defined]\n    post_mortem(tb)\n    return rep",
+            "start_line": 335,
+            "start_column": 11583,
+            "end_line": 0,
+            "end_column": 12554,
+            "start_byte": 11583,
+            "end_byte": 0
+        },
+        "_pytest.faulthandler.pytest_enter_pdb": {
+            "name": "_pytest.faulthandler.pytest_enter_pdb",
+            "file_path": "src/_pytest/debugging.py",
+            "file_content": "config.add_cleanup(fin)\n\n\nclass pytestPDB:\n    \"\"\"Pseudo PDB that defers to the real pdb.\"\"\"\n\n    _pluginmanager: Optional[PytestPluginManager] = None\n    _config: Optional[Config] = None\n    _saved: List[\n    ",
+            "start_line": 82,
+            "start_column": 2739,
+            "end_line": 0,
+            "end_column": 2949,
+            "start_byte": 2739,
+            "end_byte": 0
+        },
+        "_pytest.hookspec.pytest_enter_pdb": {
+            "name": "_pytest.hookspec.pytest_enter_pdb",
+            "file_path": "src/_pytest/debugging.py",
+            "file_content": "",
+            "start_line": 872,
+            "start_column": 30367,
+            "end_line": 0,
+            "end_column": 30688,
+            "start_byte": 30367,
+            "end_byte": 0
+        },
+        "_pytest.unittest._make_xunit_fixture": {
+            "name": "_pytest.unittest._make_xunit_fixture",
+            "file_path": "src/_pytest/unittest.py",
+            "file_content": "def _make_xunit_fixture(\n    obj: type,\n    setup_name: str,\n    teardown_name: str,\n    cleanup_name: Optional[str],\n    scope: Scope,\n    pass_self: bool,\n):\n    setup = getattr(obj, setup_name, None)\n    teardown = getattr(obj, teardown_name, None)\n    if setup is None and teardown is None:\n        return None\n\n    if cleanup_name:\n        cleanup = getattr(obj, cleanup_name, lambda *args: None)\n    else:\n\n        def cleanup(*args):\n            pass\n\n    @pytest.fixture(\n        scope=scope.value,\n        autouse=True,\n        # Use a unique name to speed up lookup.\n        name=f\"_unittest_{setup_name}_fixture_{obj.__qualname__}\",\n    )\n    def fixture(self, request: FixtureRequest) -> Generator[None, None, None]:\n        if _is_skipped(self):\n            reason = self.__unittest_skip_why__\n            raise pytest.skip.Exception(reason, _use_item_location=True)\n        if setup is not None:\n            try:\n                if pass_self:\n                    setup(self, request.function)\n                else:\n                    setup()\n            # unittest does not call the cleanup function for every BaseException, so we\n            # follow this here.\n            except Exception:\n                if pass_self:\n                    cleanup(self)\n                else:\n                    cleanup()\n\n                raise\n        yield\n        try:\n            if teardown is not None:\n                if pass_self:\n                    teardown(self, request.function)\n                else:\n                    teardown()\n        finally:\n            if pass_self:\n                cleanup(self)\n            else:\n                cleanup()\n\n    return fixture",
+            "start_line": 121,
+            "start_column": 3946,
+            "end_line": 0,
+            "end_column": 5629,
+            "start_byte": 3946,
+            "end_byte": 0
+        },
+        "_pytest.unittest.TestCaseFunction.runtest": {
+            "name": "_pytest.unittest.TestCaseFunction.runtest",
+            "file_path": "src/_pytest/unittest.py",
+            "file_content": "def runtest(self) -> None:\n        from _pytest.debugging import maybe_wrap_pytest_function_for_tracing\n\n        assert self._testcase is not None\n\n        maybe_wrap_pytest_function_for_tracing(self)\n\n        # Let the unittest framework handle async functions.\n        if is_async_function(self.obj):\n            # Type ignored because self acts as the TestResult, but is not actually one.\n            self._testcase(result=self)  # type: ignore[arg-type]\n        else:\n            # When --pdb is given, we want to postpone calling tearDown() otherwise\n            # when entering the pdb prompt, tearDown() would have probably cleaned up\n            # instance variables, which makes it difficult to debug.\n            # Arguably we could always postpone tearDown(), but this changes the moment where the\n            # TestCase instance interacts with the results object, so better to only do it\n            # when absolutely needed.\n            if self.config.getoption(\"usepdb\") and not _is_skipped(self.obj):\n                self._explicit_tearDown = self._testcase.tearDown\n                setattr(self._testcase, \"tearDown\", lambda *args: None)\n\n            # We need to update the actual bound method with self.obj, because\n            # wrap_pytest_function_for_tracing replaces self.obj by a wrapper.\n            setattr(self._testcase, self.name, self.obj)\n            try:\n                self._testcase(result=self)  # type: ignore[arg-type]\n            finally:\n                delattr(self._testcase, self.name)",
+            "start_line": 300,
+            "start_column": 10108,
+            "end_line": 4,
+            "end_column": 11636,
+            "start_byte": 10108,
+            "end_byte": 4
+        },
+        "_pytest.capture.CaptureManager.pytest_runtest_teardown": {
+            "name": "_pytest.capture.CaptureManager.pytest_runtest_teardown",
+            "file_path": "src/_pytest/runner.py",
+            "file_content": "",
+            "start_line": 787,
+            "start_column": 25291,
+            "end_line": 4,
+            "end_column": 25468,
+            "start_byte": 25291,
+            "end_byte": 4
+        },
+        "_pytest.hookspec.pytest_runtest_teardown": {
+            "name": "_pytest.hookspec.pytest_runtest_teardown",
+            "file_path": "src/_pytest/runner.py",
+            "file_content": "item is None:\n            assert not self.stack\n\n\ndef collect_one_node(collector: Collector) -> CollectReport:\n    ihook = collector.ihook\n    ihook.pytest_collectstart(collector=collector)\n    rep: CollectReport = ihook.pytest_make_collect_report(collector=collector)\n    call = rep.__dict__.pop(\"call\", None)\n    if call and check_interactive_exception(call, rep):\n        ihook.pytest_exception_interact(node=collector, call=call, report=rep)\n    return rep\n",
+            "start_line": 504,
+            "start_column": 17597,
+            "end_line": 0,
+            "end_column": 18272,
+            "start_byte": 17597,
+            "end_byte": 0
+        },
+        "_pytest.logging.LoggingPlugin.pytest_runtest_teardown": {
+            "name": "_pytest.logging.LoggingPlugin.pytest_runtest_teardown",
+            "file_path": "src/_pytest/runner.py",
+            "file_content": "",
+            "start_line": 720,
+            "start_column": 26288,
+            "end_line": 4,
+            "end_column": 26595,
+            "start_byte": 26288,
+            "end_byte": 4
+        },
+        "_pytest.runner.runtestprotocol": {
+            "name": "_pytest.runner.runtestprotocol",
+            "file_path": "src/_pytest/runner.py",
+            "file_content": "def runtestprotocol(\n    item: Item, log: bool = True, nextitem: Optional[Item] = None\n) -> List[TestReport]:\n    hasrequest = hasattr(item, \"_request\")\n    if hasrequest and not item._request:  # type: ignore[attr-defined]\n        # This only happens if the item is re-run, as is done by\n        # pytest-rerunfailures.\n        item._initrequest()  # type: ignore[attr-defined]\n    rep = call_and_report(item, \"setup\", log)\n    reports = [rep]\n    if rep.passed:\n        if item.config.getoption(\"setupshow\", False):\n            show_test_item(item)\n        if not item.config.getoption(\"setuponly\", False):\n            reports.append(call_and_report(item, \"call\", log))\n    reports.append(call_and_report(item, \"teardown\", log, nextitem=nextitem))\n    # After all teardown hooks have been called\n    # want funcargs and request info to go away.\n    if hasrequest:\n        item._request = False  # type: ignore[attr-defined]\n        item.funcargs = None  # type: ignore[attr-defined]\n    return reports",
+            "start_line": 116,
+            "start_column": 3503,
+            "end_line": 0,
+            "end_column": 4506,
+            "start_byte": 3503,
+            "end_byte": 0
+        },
+        "_pytest.runner.pytest_runtest_teardown": {
+            "name": "_pytest.runner.pytest_runtest_teardown",
+            "file_path": "src/_pytest/runner.py",
+            "file_content": "def pytest_runtest_teardown(item: Item, nextitem: Optional[Item]) -> None:\n    _update_current_test_var(item, \"teardown\")\n    item.session._setupstate.teardown_exact(nextitem)\n    _update_current_test_var(item, None)",
+            "start_line": 177,
+            "start_column": 5576,
+            "end_line": 0,
+            "end_column": 5792,
+            "start_byte": 5576,
+            "end_byte": 0
+        },
+        "_pytest.runner.check_interactive_exception": {
+            "name": "_pytest.runner.check_interactive_exception",
+            "file_path": "src/_pytest/runner.py",
+            "file_content": "def check_interactive_exception(call: \"CallInfo[object]\", report: BaseReport) -> bool:\n    \"\"\"Check whether the call raised an exception that should be reported as\n    interactive.\"\"\"\n    if call.excinfo is None:\n        # Didn't raise.\n        return False\n    if hasattr(report, \"wasxfail\"):\n        # Exception was expected.\n        return False\n    if isinstance(call.excinfo.value, (Skipped, bdb.BdbQuit)):\n        # Special control flow exception.\n        return False\n    return True",
+            "start_line": 229,
+            "start_column": 7269,
+            "end_line": 0,
+            "end_column": 7759,
+            "start_byte": 7269,
+            "end_byte": 0
+        },
+        "_pytest.threadexception.pytest_runtest_teardown": {
+            "name": "_pytest.threadexception.pytest_runtest_teardown",
+            "file_path": "src/_pytest/runner.py",
+            "file_content": "          \"(%s durations < %gs hidden.  Use -vv to show these durations.)\"\n                % (len(dlist) - i, durations_min)\n            )\n            break\n ",
+            "start_line": 85,
+            "start_column": 2756,
+            "end_line": 0,
+            "end_column": 2914,
+            "start_byte": 2756,
+            "end_byte": 0
+        },
+        "_pytest.unraisableexception.pytest_runtest_teardown": {
+            "name": "_pytest.unraisableexception.pytest_runtest_teardown",
+            "file_path": "src/_pytest/runner.py",
+            "file_content": "ion\") -> None:\n    session._setupstate = SetupState()\n\n\ndef pytest_sessionfinish(session: \"Session\") -> None:\n    session._setupstate.teardown_exact(None)\n\n\ndef p",
+            "start_line": 90,
+            "start_column": 3028,
+            "end_line": 0,
+            "end_column": 3190,
+            "start_byte": 3028,
+            "end_byte": 0
+        }
+    }
+}

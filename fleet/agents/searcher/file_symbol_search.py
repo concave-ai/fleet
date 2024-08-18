@@ -1,5 +1,6 @@
 from concave.internal.codebase.search.symbol.searcher import SymbolSearcher, match_keys
-from pydantic import BaseModel
+from concave.internal.workspace.file import File
+from pydantic import BaseModel, Field
 
 from fleet.agents.base.base import Agent
 from fleet.utils import unique_list
@@ -20,6 +21,12 @@ class FileSymbol(BaseModel):
     name: str
     file_path: str
     file_content: str | None
+    start_line: int
+    start_column: int = 0
+    end_line: int = 0
+    end_column: int = 0
+    start_byte: int
+    end_byte: int = 0
 
 
 class FileSymbolSearchRes(BaseModel):
@@ -34,13 +41,13 @@ class CodeReader:
 
     def read(self, file_path):
         if file_path not in self._files:
-            self._files[file_path] = self.workspace.open(file_path).read()
+            f: File = self.workspace.open(file_path)
+            self._files[file_path] = f.read(binary=True)
         return self._files[file_path]
 
-    def get_content(self, file_path, start_line, end_line):
+    def get_content(self, file_path, byte_start, byte_end):
         content = self.read(file_path)
-        lines = content.split("\n")
-        return "\n".join(lines[start_line:end_line])
+        return str(content[byte_start:byte_end], encoding='utf-8')
 
 
 class FileSymbolSearch(Agent):
@@ -53,20 +60,27 @@ class FileSymbolSearch(Agent):
         self.request = req
 
     def _file_search(self, req: FileSymbolSearchReq):
+        response = FileSymbolSearchRes(related_symbols=[], root_caused_symbols=[])
 
         reader = CodeReader(self.ctx.workspace)
         keys = list(set(req.relevant_symbol_keys + req.root_cause_symbol_keys))
-        index_file = self.ctx.workspace.open("/workspace/index/scip/index.scip")
-        searcher = SymbolSearcher(index_file.read(binary=True))
-        results = searcher.search_symbols(keys, filter_path=req.file_path, filter_types=["CLASS", "METHOD"])
-        response = FileSymbolSearchRes(related_symbols=[], root_caused_symbols=[])
-        for r in results:
-            symbol = FileSymbol(name=r.name, file_path=req.file_path, file_content=None)
-            if self.request.with_content:
-                symbol.file_content = reader.get_content(req.file_path, r.enclosing_start_line,
-                                                         r.enclosing_end_line)
 
-            if match_keys(r.name, req.root_cause_symbol_keys):
+        results = self.ctx.searcher.search(keys)
+        for r in results:
+            symbol = FileSymbol(name=r.id,
+                                start_line=r.range[0],
+                                start_column=r.byte_range[0],
+                                end_line=r.range[1],
+                                end_column=r.byte_range[1],
+                                start_byte=r.byte_range[0],
+                                end_byte=r.range[1],
+                                file_path=req.file_path,
+                                file_content=None)
+            if self.request.with_content:
+                symbol.file_content = reader.get_content(req.file_path, r.byte_range[0],
+                                                         r.byte_range[1])
+
+            if match_keys(r.id, req.root_cause_symbol_keys):
                 response.root_caused_symbols.append(symbol)
             else:
                 response.related_symbols.append(symbol)

@@ -1,0 +1,21 @@
+{
+    "file_paths": [
+        "src/_pytest/unittest.py"
+    ],
+    "symbols": [
+        "_pytest.unittest._make_xunit_fixture"
+    ],
+    "code_spans": {
+        "_pytest.unittest._make_xunit_fixture": {
+            "name": "_pytest.unittest._make_xunit_fixture",
+            "file_path": "src/_pytest/unittest.py",
+            "file_content": "def _make_xunit_fixture(\n    obj: type,\n    setup_name: str,\n    teardown_name: str,\n    cleanup_name: Optional[str],\n    scope: \"_Scope\",\n    pass_self: bool,\n):\n    setup = getattr(obj, setup_name, None)\n    teardown = getattr(obj, teardown_name, None)\n    if setup is None and teardown is None:\n        return None\n\n    if cleanup_name:\n        cleanup = getattr(obj, cleanup_name, lambda *args: None)\n    else:\n\n        def cleanup(*args):\n            pass\n\n    @pytest.fixture(\n        scope=scope,\n        autouse=True,\n        # Use a unique name to speed up lookup.\n        name=f\"unittest_{setup_name}_fixture_{obj.__qualname__}\",\n    )\n    def fixture(self, request: FixtureRequest) -> Generator[None, None, None]:\n        if _is_skipped(self):\n            reason = self.__unittest_skip_why__\n            raise pytest.skip.Exception(reason, _use_item_location=True)\n        if setup is not None:\n            try:\n                if pass_self:\n                    setup(self, request.function)\n                else:\n                    setup()\n            # unittest does not call the cleanup function for every BaseException, so we\n            # follow this here.\n            except Exception:\n                if pass_self:\n                    cleanup(self)\n                else:\n                    cleanup()\n\n                raise\n        yield\n        try:\n            if teardown is not None:\n                if pass_self:\n                    teardown(self, request.function)\n                else:\n                    teardown()\n        finally:\n            if pass_self:\n                cleanup(self)\n            else:\n                cleanup()\n\n    return fixture",
+            "start_line": 122,
+            "start_column": 3943,
+            "end_line": 0,
+            "end_column": 5622,
+            "start_byte": 3943,
+            "end_byte": 0
+        }
+    }
+}

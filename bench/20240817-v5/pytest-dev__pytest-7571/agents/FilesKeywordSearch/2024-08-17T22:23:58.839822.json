@@ -1,0 +1,75 @@
+{
+  "name": "FilesKeywordSearch",
+  "model": "gpt-4o-2024-08-06",
+  "metadata": {},
+  "issue": "<description>:caplog fixture doesn't restore log level after test\nFrom the documentation at https://docs.pytest.org/en/6.0.0/logging.html#caplog-fixture, \"The log levels set are restored automatically at the end of the test\".\r\nIt used to work, but looks broken in new 6.0 release. Minimal example to reproduce:\r\n\r\n```\r\ndef test_foo(caplog):\r\n    caplog.set_level(42)\r\n\r\ndef test_bar(caplog):\r\n    print(caplog.handler.level)\r\n```\r\n\r\nIt prints \"0\" for pytest<6, \"42\" after.\n</description>",
+  "request": {
+    "tokens": [
+      "caplog",
+      "set_level",
+      "handler",
+      "restore",
+      "start_global_capturing",
+      "resume_global_capture",
+      "capture",
+      "reset",
+      "suspend_capturing",
+      "MultiCapture"
+    ]
+  },
+  "response": {
+    "results": {
+      "resume_global_capture": [
+        "src/_pytest/setuponly.py",
+        "src/_pytest/capture.py"
+      ],
+      "capture": [
+        "src/_pytest/python_api.py",
+        "src/_pytest/nodes.py",
+        "src/_pytest/logging.py",
+        "src/_pytest/config/__init__.py",
+        "src/_pytest/capture.py",
+        "src/_pytest/terminal.py",
+        "src/_pytest/debugging.py",
+        "src/_pytest/pytester.py"
+      ],
+      "reset": [
+        "src/_pytest/logging.py",
+        "src/_pytest/recwarn.py",
+        "src/_pytest/capture.py",
+        "src/_pytest/terminal.py",
+        "src/_pytest/assertion/rewrite.py",
+        "src/_pytest/debugging.py"
+      ],
+      "handler": [
+        "src/_pytest/logging.py",
+        "src/_pytest/tmpdir.py",
+        "src/_pytest/faulthandler.py"
+      ],
+      "caplog": [
+        "src/_pytest/junitxml.py",
+        "src/_pytest/reports.py",
+        "src/_pytest/logging.py",
+        "src/_pytest/debugging.py"
+      ],
+      "restore": [
+        "src/_pytest/junitxml.py",
+        "src/_pytest/capture.py",
+        "src/_pytest/logging.py",
+        "src/_pytest/pytester.py"
+      ],
+      "set_level": [
+        "src/_pytest/logging.py"
+      ],
+      "start_global_capturing": [
+        "src/_pytest/capture.py"
+      ],
+      "MultiCapture": [
+        "src/_pytest/capture.py"
+      ],
+      "suspend_capturing": [
+        "src/_pytest/capture.py"
+      ]
+    }
+  }
+}

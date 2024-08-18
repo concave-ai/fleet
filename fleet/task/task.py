@@ -32,7 +32,7 @@ class TaskTelemetry:
                 "model": self.ctx.model,
                 "spans": self.spans
             }, f, indent=2)
-        logger.info(f"Saving telemetry, {path}")
+        logger.debug(f"Saving telemetry, {path}")
 
 
 class Task:
@@ -44,6 +44,7 @@ class Task:
     def __enter__(self):
         return self
     def __exit__(self, exc_type, exc_val, exc_tb):
+        self.ctx.workspace.quit()
         self.telemetry.save()
 
     def run(self, agent_class, **kwargs):

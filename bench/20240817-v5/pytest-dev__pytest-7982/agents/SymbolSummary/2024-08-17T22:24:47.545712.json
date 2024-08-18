@@ -1,0 +1,406 @@
+{
+  "name": "SymbolSummary",
+  "model": "gpt-4o-2024-08-06",
+  "metadata": {},
+  "issue": "<description>:Symlinked directories not collected since pytest 6.1.0\nWhen there is a symlink to a directory in a test directory, is is just skipped over, but it should be followed and collected as usual.\r\n\r\nThis regressed in b473e515bc57ff1133fe650f1e7e6d7e22e5d841 (included in 6.1.0). For some reason I added a `follow_symlinks=False` in there, I don't remember why, but it does not match the previous behavior and should be removed.\r\n\r\nPR for this is coming up.\n</description>",
+  "request": {
+    "symbols": {
+      "related_symbols": [
+        {
+          "name": "_pytest.main.Session._recurse",
+          "file_path": "src/_pytest/main.py",
+          "file_content": "def _recurse(self, direntry: \"os.DirEntry[str]\") -> bool:\n        if direntry.name == \"__pycache__\":\n            return False\n        path = py.path.local(direntry.path)\n        ihook = self.gethookproxy(path.dirpath())\n        if ihook.pytest_ignore_collect(path=path, config=self.config):\n            return False\n        norecursepatterns = self.config.getini(\"norecursedirs\")\n        if any(path.check(fnmatch=pat) for pat in norecursepatterns):\n            return False\n        return True",
+          "start_line": 518,
+          "start_column": 16811,
+          "end_line": 4,
+          "end_column": 17305,
+          "start_byte": 16811,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.main.Session.collect",
+          "file_path": "src/_pytest/main.py",
+          "file_content": "def collect(self) -> Iterator[Union[nodes.Item, nodes.Collector]]:\n        from _pytest.python import Package\n\n        # Keep track of any collected nodes in here, so we don't duplicate fixtures.\n        node_cache1: Dict[py.path.local, Sequence[nodes.Collector]] = {}\n        node_cache2: Dict[\n            Tuple[Type[nodes.Collector], py.path.local], nodes.Collector\n        ] = ({})\n\n        # Keep track of any collected collectors in matchnodes paths, so they\n        # are not collected more than once.\n        matchnodes_cache: Dict[Tuple[Type[nodes.Collector], str], CollectReport] = ({})\n\n        # Dirnames of pkgs with dunder-init files.\n        pkg_roots: Dict[str, Package] = {}\n\n        for argpath, names in self._initial_parts:\n            self.trace(\"processing argument\", (argpath, names))\n            self.trace.root.indent += 1\n\n            # Start with a Session root, and delve to argpath item (dir or file)\n            # and stack all Packages found on the way.\n            # No point in finding packages when collecting doctests.\n            if not self.config.getoption(\"doctestmodules\", False):\n                pm = self.config.pluginmanager\n                for parent in reversed(argpath.parts()):\n                    if pm._confcutdir and pm._confcutdir.relto(parent):\n                        break\n\n                    if parent.isdir():\n                        pkginit = parent.join(\"__init__.py\")\n                        if pkginit.isfile() and pkginit not in node_cache1:\n                            col = self._collectfile(pkginit, handle_dupes=False)\n                            if col:\n                                if isinstance(col[0], Package):\n                                    pkg_roots[str(parent)] = col[0]\n                                node_cache1[col[0].fspath] = [col[0]]\n\n            # If it's a directory argument, recurse and look for any Subpackages.\n            # Let the Package collector deal with subnodes, don't collect here.\n            if argpath.check(dir=1):\n                assert not names, \"invalid arg {!r}\".format((argpath, names))\n\n                seen_dirs: Set[py.path.local] = set()\n                for direntry in visit(str(argpath), self._recurse):\n                    if not direntry.is_file():\n                        continue\n\n                    path = py.path.local(direntry.path)\n                    dirpath = path.dirpath()\n\n                    if dirpath not in seen_dirs:\n                        # Collect packages first.\n                        seen_dirs.add(dirpath)\n                        pkginit = dirpath.join(\"__init__.py\")\n                        if pkginit.exists():\n                            for x in self._collectfile(pkginit):\n                                yield x\n                                if isinstance(x, Package):\n                                    pkg_roots[str(dirpath)] = x\n                    if str(dirpath) in pkg_roots:\n                        # Do not collect packages here.\n                        continue\n\n                    for x in self._collectfile(path):\n                        key = (type(x), x.fspath)\n                        if key in node_cache2:\n                            yield node_cache2[key]\n                        else:\n                            node_cache2[key] = x\n                            yield x\n            else:\n                assert argpath.check(file=1)\n\n                if argpath in node_cache1:\n                    col = node_cache1[argpath]\n                else:\n                    collect_root = pkg_roots.get(argpath.dirname, self)\n                    col = collect_root._collectfile(argpath, handle_dupes=False)\n                    if col:\n                        node_cache1[argpath] = col\n\n                matching = []\n                work: List[\n                    Tuple[Sequence[Union[nodes.Item, nodes.Collector]], Sequence[str]]\n                ] = [(col, names)]\n                while work:\n                    self.trace(\"matchnodes\", col, names)\n                    self.trace.root.indent += 1\n\n                    matchnodes, matchnames = work.pop()\n                    for node in matchnodes:\n                        if not matchnames:\n                            matching.append(node)\n                            continue\n                        if not isinstance(node, nodes.Collector):\n                            continue\n                        key = (type(node), node.nodeid)\n                        if key in matchnodes_cache:\n                            rep = matchnodes_cache[key]\n                        else:\n                            rep = collect_one_node(node)\n                            matchnodes_cache[key] = rep\n                        if rep.passed:\n                            submatchnodes = []\n                            for r in rep.result:\n                                # TODO: Remove parametrized workaround once collection structure contains\n                                # parametrization.\n                                if (\n                                    r.name == matchnames[0]\n                                    or r.name.split(\"[\")[0] == matchnames[0]\n                                ):\n                                    submatchnodes.append(r)\n                            if submatchnodes:\n                                work.append((submatchnodes, matchnames[1:]))\n                            # XXX Accept IDs that don't have \"()\" for class instances.\n                            elif len(rep.result) == 1 and rep.result[0].name == \"()\":\n                                work.append((rep.result, matchnames))\n                        else:\n                            # Report collection failures here to avoid failing to run some test\n                            # specified in the command line because the module could not be\n                            # imported (#134).\n                            node.ihook.pytest_collectreport(report=rep)\n\n                    self.trace(\"matchnodes finished -> \", len(matching), \"nodes\")\n                    self.trace.root.indent -= 1\n\n                if not matching:\n                    report_arg = \"::\".join((str(argpath), *names))\n                    self._notfound.append((report_arg, col))\n                    continue\n\n                # If __init__.py was the only file requested, then the matched node will be\n                # the corresponding Package, and the first yielded item will be the __init__\n                # Module itself, so just use that. If this special case isn't taken, then all\n                # the files in the package will be yielded.\n                if argpath.basename == \"__init__.py\":\n                    assert isinstance(matching[0], nodes.Collector)\n                    try:\n                        yield next(iter(matching[0].collect()))\n                    except StopIteration:\n                        # The package collects nothing with only an __init__.py\n                        # file in it, which gets ignored by the default\n                        # \"python_files\" option.\n                        pass\n                    continue\n\n                yield from matching\n\n            self.trace.root.indent -= 1",
+          "start_line": 633,
+          "start_column": 21316,
+          "end_line": 4,
+          "end_column": 28539,
+          "start_byte": 21316,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.doctest.pytest_collect_file",
+          "file_path": "src/_pytest/python.py",
+          "file_content": "yle file patterns for Python test module discovery\",\n    )\n    parser.addini(\n        \"python_classes\",\n        type=\"args\",\n        default=[\"Test\"],\n        help=\"prefixes or glob names for Python test class discovery\",\n    )\n    parser.addini(\n        \"python_functions\",\n        type=\"args\",\n        default=[\"test\"],\n        help=\"prefixes or glob names for Python test function and method discovery\",\n    )\n    parser.addini(\n        \"disable_test_id_escaping_and_forfeit_all_rights_to_community_support",
+          "start_line": 120,
+          "start_column": 3292,
+          "end_line": 0,
+          "end_column": 3801,
+          "start_byte": 3292,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.hookspec.pytest_collect_file",
+          "file_path": "src/_pytest/python.py",
+          "file_content": "de.obj if node is not None else None\n\n    @property\n    def cls(self):\n        \"\"\"Python class object this node was collected from (can be None).\"\"\"\n        node = self.getparent(Class)\n        return node.obj if node is not None else None\n\n    @property\n    def instance(self):\n        \"\"\"Python in",
+          "start_line": 276,
+          "start_column": 9742,
+          "end_line": 0,
+          "end_column": 10041,
+          "start_byte": 9742,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.python.pytest_collect_file",
+          "file_path": "src/_pytest/python.py",
+          "file_content": "def pytest_collect_file(\n    path: py.path.local, parent: nodes.Collector\n) -> Optional[\"Module\"]:\n    ext = path.ext\n    if ext == \".py\":\n        if not parent.session.isinitpath(path):\n            if not path_matches_patterns(\n                path, parent.config.getini(\"python_files\") + [\"__init__.py\"]\n            ):\n                return None\n        ihook = parent.session.gethookproxy(path)\n        module: Module = ihook.pytest_pycollect_makemodule(path=path, parent=parent)\n        return module\n    return None",
+          "start_line": 188,
+          "start_column": 6518,
+          "end_line": 0,
+          "end_column": 7039,
+          "start_byte": 6518,
+          "end_byte": 0
+        }
+      ],
+      "root_caused_symbols": [
+        {
+          "name": "_pytest.assertion.AssertionRewriter.generic_visit",
+          "file_path": "src/_pytest/pathlib.py",
+          "file_content": "",
+          "start_line": 801,
+          "start_column": 29525,
+          "end_line": 4,
+          "end_column": 29788,
+          "start_byte": 29525,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewriter.visit_Assert",
+          "file_path": "src/_pytest/pathlib.py",
+          "file_content": "",
+          "start_line": 807,
+          "start_column": 29794,
+          "end_line": 4,
+          "end_column": 34621,
+          "start_byte": 29794,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewriter.visit_Name",
+          "file_path": "src/_pytest/pathlib.py",
+          "file_content": "",
+          "start_line": 923,
+          "start_column": 34627,
+          "end_line": 4,
+          "end_column": 35175,
+          "start_byte": 34627,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewriter.visit_BoolOp",
+          "file_path": "src/_pytest/pathlib.py",
+          "file_content": "",
+          "start_line": 933,
+          "start_column": 35181,
+          "end_line": 4,
+          "end_column": 36854,
+          "start_byte": 35181,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewriter.visit_UnaryOp",
+          "file_path": "src/_pytest/pathlib.py",
+          "file_content": "",
+          "start_line": 968,
+          "start_column": 36860,
+          "end_line": 4,
+          "end_column": 37146,
+          "start_byte": 36860,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewriter.visit_BinOp",
+          "file_path": "src/_pytest/pathlib.py",
+          "file_content": "",
+          "start_line": 974,
+          "start_column": 37152,
+          "end_line": 4,
+          "end_column": 37537,
+          "start_byte": 37152,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewriter.visit_Call",
+          "file_path": "src/_pytest/pathlib.py",
+          "file_content": "",
+          "start_line": 982,
+          "start_column": 37543,
+          "end_line": 4,
+          "end_column": 38529,
+          "start_byte": 37543,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewriter.visit_Starred",
+          "file_path": "src/_pytest/pathlib.py",
+          "file_content": "",
+          "start_line": 1006,
+          "start_column": 38535,
+          "end_line": 4,
+          "end_column": 38801,
+          "start_byte": 38535,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewriter.visit_Attribute",
+          "file_path": "src/_pytest/pathlib.py",
+          "file_content": "",
+          "start_line": 1012,
+          "start_column": 38807,
+          "end_line": 4,
+          "end_column": 39277,
+          "start_byte": 38807,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewriter.visit_Compare",
+          "file_path": "src/_pytest/pathlib.py",
+          "file_content": "",
+          "start_line": 1022,
+          "start_column": 39283,
+          "end_line": 4,
+          "end_column": 41035,
+          "start_byte": 39283,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.pathlib.visit",
+          "file_path": "src/_pytest/pathlib.py",
+          "file_content": "def visit(\n    path: str, recurse: Callable[[\"os.DirEntry[str]\"], bool]\n) -> Iterator[\"os.DirEntry[str]\"]:\n    \"\"\"Walk a directory recursively, in breadth-first order.\n\n    Entries at each directory level are sorted.\n    \"\"\"\n    entries = sorted(os.scandir(path), key=lambda entry: entry.name)\n    yield from entries\n    for entry in entries:\n        if entry.is_dir(follow_symlinks=False) and recurse(entry):\n            yield from visit(entry.path, recurse)",
+          "start_line": 550,
+          "start_column": 18105,
+          "end_line": 0,
+          "end_column": 18564,
+          "start_byte": 18105,
+          "end_byte": 0
+        }
+      ]
+    },
+    "symbols_evaluate": {
+      "scratch_pad": "1.1 The issue is that since pytest version 6.1.0, symlinked directories are not collected during tests. They are skipped, but previously, they were followed and collected.\n1.2 The issue was caused by a change in the code, where 'follow_symlinks=False' was added, which deviates from the previous behavior.\n1.3 The expected result is that pytest should follow symlinks and collect symlinked directories as it used to do before version 6.1.0.\n1.4 If not provided, the expectation is that symlinked directories should be included in the test collection process.\n1.5 The follow_symlinks argument should be set to True or removed to revert to the previous behavior.\n\n2.1-2.4 Analyzing the given symbols:\n\n- The primary suspect for the issue is the functionality related to the traversal and collection of directories.\n\n- The symbols `_pytest.pathlib.visit` and `_pytest.main.Session.collect` seem significant due to their involvement in directory traversal and collection processes.\n\n- `_pytest.pathlib.visit` directly deals with directory entries and has a `follow_symlinks=False` parameter for directories, which is a clue to the problem.\n",
+      "symbols": [
+        {
+          "name": "_pytest.pathlib.visit",
+          "file_path": "src/_pytest/pathlib.py",
+          "reason": "This function includes a parameter 'follow_symlinks=False' when checking for directories, which is a direct clue related to the described issue. It needs to be altered to 'follow_symlinks=True' or removed to follow symlinks as expected."
+        }
+      ],
+      "more_info": [],
+      "is_done": true,
+      "symbols_scratch_pad": [
+        "The description of the issue does not immediately relate to assertion rewriting, but to collection behavior involving directory traversal with symlinks.",
+        "Similarly to the prior symbol, this focuses on assertion rewriting and does not directly relate to the directory symlink collection problem.",
+        "Also relates to assertion processing, which is unrelated to the symlink directory issue.",
+        "Concerns boolean operations during assertion rewriting, not relevant to directory issues.",
+        "Relates to unary operations during assertion rewriting, not connected to symlink traversal.",
+        "Deals with binary operations, which don't relate to directory collection behavior.",
+        "Handles calls within assertion rewriting. Also unrelated to directory symlink issues.",
+        "Starred expressions in assertions, thus unrelated to symlink problems in directory handling.",
+        "Deals with attribute access during assertion rewriting, not related to directory handling.",
+        "Handles comparison expressions in assertions, not related to directory collection issues.",
+        "`_pytest.pathlib.visit` is highly relevant because it involves directory traversal and the 'follow_symlinks=False' argument aligns with the described problem.",
+        "This function deals with recursion in session collection demonstrating importance in the overall directory traversal process. It evaluates whether specific directories should be entered during collection, potentially implicating symlinks, but doesn't directly set 'follow_symlinks'.",
+        "`_pytest.main.Session.collect` facilitates an overview of the root of collection processes during testing, including directory argument handling and traversal.",
+        "The partition is closely tied to module and file collection patterns rather than directory navigation involving symlinks.",
+        "Deals with setting up plugin collections, unrelated as it doesn't deal with directory traversal or symlinks.",
+        "Involved in initiating module collection but without explicit impact on symlink following or directory traversal."
+      ]
+    }
+  },
+  "response": {
+    "file_paths": [
+      "src/_pytest/pathlib.py"
+    ],
+    "symbols": [
+      "_pytest.pathlib.visit"
+    ],
+    "code_spans": {
+      "_pytest.main.Session._recurse": {
+        "name": "_pytest.main.Session._recurse",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "def _recurse(self, direntry: \"os.DirEntry[str]\") -> bool:\n        if direntry.name == \"__pycache__\":\n            return False\n        path = py.path.local(direntry.path)\n        ihook = self.gethookproxy(path.dirpath())\n        if ihook.pytest_ignore_collect(path=path, config=self.config):\n            return False\n        norecursepatterns = self.config.getini(\"norecursedirs\")\n        if any(path.check(fnmatch=pat) for pat in norecursepatterns):\n            return False\n        return True",
+        "start_line": 518,
+        "start_column": 16811,
+        "end_line": 4,
+        "end_column": 17305,
+        "start_byte": 16811,
+        "end_byte": 4
+      },
+      "_pytest.main.Session.collect": {
+        "name": "_pytest.main.Session.collect",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "def collect(self) -> Iterator[Union[nodes.Item, nodes.Collector]]:\n        from _pytest.python import Package\n\n        # Keep track of any collected nodes in here, so we don't duplicate fixtures.\n        node_cache1: Dict[py.path.local, Sequence[nodes.Collector]] = {}\n        node_cache2: Dict[\n            Tuple[Type[nodes.Collector], py.path.local], nodes.Collector\n        ] = ({})\n\n        # Keep track of any collected collectors in matchnodes paths, so they\n        # are not collected more than once.\n        matchnodes_cache: Dict[Tuple[Type[nodes.Collector], str], CollectReport] = ({})\n\n        # Dirnames of pkgs with dunder-init files.\n        pkg_roots: Dict[str, Package] = {}\n\n        for argpath, names in self._initial_parts:\n            self.trace(\"processing argument\", (argpath, names))\n            self.trace.root.indent += 1\n\n            # Start with a Session root, and delve to argpath item (dir or file)\n            # and stack all Packages found on the way.\n            # No point in finding packages when collecting doctests.\n            if not self.config.getoption(\"doctestmodules\", False):\n                pm = self.config.pluginmanager\n                for parent in reversed(argpath.parts()):\n                    if pm._confcutdir and pm._confcutdir.relto(parent):\n                        break\n\n                    if parent.isdir():\n                        pkginit = parent.join(\"__init__.py\")\n                        if pkginit.isfile() and pkginit not in node_cache1:\n                            col = self._collectfile(pkginit, handle_dupes=False)\n                            if col:\n                                if isinstance(col[0], Package):\n                                    pkg_roots[str(parent)] = col[0]\n                                node_cache1[col[0].fspath] = [col[0]]\n\n            # If it's a directory argument, recurse and look for any Subpackages.\n            # Let the Package collector deal with subnodes, don't collect here.\n            if argpath.check(dir=1):\n                assert not names, \"invalid arg {!r}\".format((argpath, names))\n\n                seen_dirs: Set[py.path.local] = set()\n                for direntry in visit(str(argpath), self._recurse):\n                    if not direntry.is_file():\n                        continue\n\n                    path = py.path.local(direntry.path)\n                    dirpath = path.dirpath()\n\n                    if dirpath not in seen_dirs:\n                        # Collect packages first.\n                        seen_dirs.add(dirpath)\n                        pkginit = dirpath.join(\"__init__.py\")\n                        if pkginit.exists():\n                            for x in self._collectfile(pkginit):\n                                yield x\n                                if isinstance(x, Package):\n                                    pkg_roots[str(dirpath)] = x\n                    if str(dirpath) in pkg_roots:\n                        # Do not collect packages here.\n                        continue\n\n                    for x in self._collectfile(path):\n                        key = (type(x), x.fspath)\n                        if key in node_cache2:\n                            yield node_cache2[key]\n                        else:\n                            node_cache2[key] = x\n                            yield x\n            else:\n                assert argpath.check(file=1)\n\n                if argpath in node_cache1:\n                    col = node_cache1[argpath]\n                else:\n                    collect_root = pkg_roots.get(argpath.dirname, self)\n                    col = collect_root._collectfile(argpath, handle_dupes=False)\n                    if col:\n                        node_cache1[argpath] = col\n\n                matching = []\n                work: List[\n                    Tuple[Sequence[Union[nodes.Item, nodes.Collector]], Sequence[str]]\n                ] = [(col, names)]\n                while work:\n                    self.trace(\"matchnodes\", col, names)\n                    self.trace.root.indent += 1\n\n                    matchnodes, matchnames = work.pop()\n                    for node in matchnodes:\n                        if not matchnames:\n                            matching.append(node)\n                            continue\n                        if not isinstance(node, nodes.Collector):\n                            continue\n                        key = (type(node), node.nodeid)\n                        if key in matchnodes_cache:\n                            rep = matchnodes_cache[key]\n                        else:\n                            rep = collect_one_node(node)\n                            matchnodes_cache[key] = rep\n                        if rep.passed:\n                            submatchnodes = []\n                            for r in rep.result:\n                                # TODO: Remove parametrized workaround once collection structure contains\n                                # parametrization.\n                                if (\n                                    r.name == matchnames[0]\n                                    or r.name.split(\"[\")[0] == matchnames[0]\n                                ):\n                                    submatchnodes.append(r)\n                            if submatchnodes:\n                                work.append((submatchnodes, matchnames[1:]))\n                            # XXX Accept IDs that don't have \"()\" for class instances.\n                            elif len(rep.result) == 1 and rep.result[0].name == \"()\":\n                                work.append((rep.result, matchnames))\n                        else:\n                            # Report collection failures here to avoid failing to run some test\n                            # specified in the command line because the module could not be\n                            # imported (#134).\n                            node.ihook.pytest_collectreport(report=rep)\n\n                    self.trace(\"matchnodes finished -> \", len(matching), \"nodes\")\n                    self.trace.root.indent -= 1\n\n                if not matching:\n                    report_arg = \"::\".join((str(argpath), *names))\n                    self._notfound.append((report_arg, col))\n                    continue\n\n                # If __init__.py was the only file requested, then the matched node will be\n                # the corresponding Package, and the first yielded item will be the __init__\n                # Module itself, so just use that. If this special case isn't taken, then all\n                # the files in the package will be yielded.\n                if argpath.basename == \"__init__.py\":\n                    assert isinstance(matching[0], nodes.Collector)\n                    try:\n                        yield next(iter(matching[0].collect()))\n                    except StopIteration:\n                        # The package collects nothing with only an __init__.py\n                        # file in it, which gets ignored by the default\n                        # \"python_files\" option.\n                        pass\n                    continue\n\n                yield from matching\n\n            self.trace.root.indent -= 1",
+        "start_line": 633,
+        "start_column": 21316,
+        "end_line": 4,
+        "end_column": 28539,
+        "start_byte": 21316,
+        "end_byte": 4
+      },
+      "_pytest.doctest.pytest_collect_file": {
+        "name": "_pytest.doctest.pytest_collect_file",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "yle file patterns for Python test module discovery\",\n    )\n    parser.addini(\n        \"python_classes\",\n        type=\"args\",\n        default=[\"Test\"],\n        help=\"prefixes or glob names for Python test class discovery\",\n    )\n    parser.addini(\n        \"python_functions\",\n        type=\"args\",\n        default=[\"test\"],\n        help=\"prefixes or glob names for Python test function and method discovery\",\n    )\n    parser.addini(\n        \"disable_test_id_escaping_and_forfeit_all_rights_to_community_support",
+        "start_line": 120,
+        "start_column": 3292,
+        "end_line": 0,
+        "end_column": 3801,
+        "start_byte": 3292,
+        "end_byte": 0
+      },
+      "_pytest.hookspec.pytest_collect_file": {
+        "name": "_pytest.hookspec.pytest_collect_file",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "de.obj if node is not None else None\n\n    @property\n    def cls(self):\n        \"\"\"Python class object this node was collected from (can be None).\"\"\"\n        node = self.getparent(Class)\n        return node.obj if node is not None else None\n\n    @property\n    def instance(self):\n        \"\"\"Python in",
+        "start_line": 276,
+        "start_column": 9742,
+        "end_line": 0,
+        "end_column": 10041,
+        "start_byte": 9742,
+        "end_byte": 0
+      },
+      "_pytest.python.pytest_collect_file": {
+        "name": "_pytest.python.pytest_collect_file",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "def pytest_collect_file(\n    path: py.path.local, parent: nodes.Collector\n) -> Optional[\"Module\"]:\n    ext = path.ext\n    if ext == \".py\":\n        if not parent.session.isinitpath(path):\n            if not path_matches_patterns(\n                path, parent.config.getini(\"python_files\") + [\"__init__.py\"]\n            ):\n                return None\n        ihook = parent.session.gethookproxy(path)\n        module: Module = ihook.pytest_pycollect_makemodule(path=path, parent=parent)\n        return module\n    return None",
+        "start_line": 188,
+        "start_column": 6518,
+        "end_line": 0,
+        "end_column": 7039,
+        "start_byte": 6518,
+        "end_byte": 0
+      },
+      "_pytest.assertion.AssertionRewriter.generic_visit": {
+        "name": "_pytest.assertion.AssertionRewriter.generic_visit",
+        "file_path": "src/_pytest/pathlib.py",
+        "file_content": "",
+        "start_line": 801,
+        "start_column": 29525,
+        "end_line": 4,
+        "end_column": 29788,
+        "start_byte": 29525,
+        "end_byte": 4
+      },
+      "_pytest.assertion.AssertionRewriter.visit_Assert": {
+        "name": "_pytest.assertion.AssertionRewriter.visit_Assert",
+        "file_path": "src/_pytest/pathlib.py",
+        "file_content": "",
+        "start_line": 807,
+        "start_column": 29794,
+        "end_line": 4,
+        "end_column": 34621,
+        "start_byte": 29794,
+        "end_byte": 4
+      },
+      "_pytest.assertion.AssertionRewriter.visit_Name": {
+        "name": "_pytest.assertion.AssertionRewriter.visit_Name",
+        "file_path": "src/_pytest/pathlib.py",
+        "file_content": "",
+        "start_line": 923,
+        "start_column": 34627,
+        "end_line": 4,
+        "end_column": 35175,
+        "start_byte": 34627,
+        "end_byte": 4
+      },
+      "_pytest.assertion.AssertionRewriter.visit_BoolOp": {
+        "name": "_pytest.assertion.AssertionRewriter.visit_BoolOp",
+        "file_path": "src/_pytest/pathlib.py",
+        "file_content": "",
+        "start_line": 933,
+        "start_column": 35181,
+        "end_line": 4,
+        "end_column": 36854,
+        "start_byte": 35181,
+        "end_byte": 4
+      },
+      "_pytest.assertion.AssertionRewriter.visit_UnaryOp": {
+        "name": "_pytest.assertion.AssertionRewriter.visit_UnaryOp",
+        "file_path": "src/_pytest/pathlib.py",
+        "file_content": "",
+        "start_line": 968,
+        "start_column": 36860,
+        "end_line": 4,
+        "end_column": 37146,
+        "start_byte": 36860,
+        "end_byte": 4
+      },
+      "_pytest.assertion.AssertionRewriter.visit_BinOp": {
+        "name": "_pytest.assertion.AssertionRewriter.visit_BinOp",
+        "file_path": "src/_pytest/pathlib.py",
+        "file_content": "",
+        "start_line": 974,
+        "start_column": 37152,
+        "end_line": 4,
+        "end_column": 37537,
+        "start_byte": 37152,
+        "end_byte": 4
+      },
+      "_pytest.assertion.AssertionRewriter.visit_Call": {
+        "name": "_pytest.assertion.AssertionRewriter.visit_Call",
+        "file_path": "src/_pytest/pathlib.py",
+        "file_content": "",
+        "start_line": 982,
+        "start_column": 37543,
+        "end_line": 4,
+        "end_column": 38529,
+        "start_byte": 37543,
+        "end_byte": 4
+      },
+      "_pytest.assertion.AssertionRewriter.visit_Starred": {
+        "name": "_pytest.assertion.AssertionRewriter.visit_Starred",
+        "file_path": "src/_pytest/pathlib.py",
+        "file_content": "",
+        "start_line": 1006,
+        "start_column": 38535,
+        "end_line": 4,
+        "end_column": 38801,
+        "start_byte": 38535,
+        "end_byte": 4
+      },
+      "_pytest.assertion.AssertionRewriter.visit_Attribute": {
+        "name": "_pytest.assertion.AssertionRewriter.visit_Attribute",
+        "file_path": "src/_pytest/pathlib.py",
+        "file_content": "",
+        "start_line": 1012,
+        "start_column": 38807,
+        "end_line": 4,
+        "end_column": 39277,
+        "start_byte": 38807,
+        "end_byte": 4
+      },
+      "_pytest.assertion.AssertionRewriter.visit_Compare": {
+        "name": "_pytest.assertion.AssertionRewriter.visit_Compare",
+        "file_path": "src/_pytest/pathlib.py",
+        "file_content": "",
+        "start_line": 1022,
+        "start_column": 39283,
+        "end_line": 4,
+        "end_column": 41035,
+        "start_byte": 39283,
+        "end_byte": 4
+      },
+      "_pytest.pathlib.visit": {
+        "name": "_pytest.pathlib.visit",
+        "file_path": "src/_pytest/pathlib.py",
+        "file_content": "def visit(\n    path: str, recurse: Callable[[\"os.DirEntry[str]\"], bool]\n) -> Iterator[\"os.DirEntry[str]\"]:\n    \"\"\"Walk a directory recursively, in breadth-first order.\n\n    Entries at each directory level are sorted.\n    \"\"\"\n    entries = sorted(os.scandir(path), key=lambda entry: entry.name)\n    yield from entries\n    for entry in entries:\n        if entry.is_dir(follow_symlinks=False) and recurse(entry):\n            yield from visit(entry.path, recurse)",
+        "start_line": 550,
+        "start_column": 18105,
+        "end_line": 0,
+        "end_column": 18564,
+        "start_byte": 18105,
+        "end_byte": 0
+      }
+    }
+  }
+}

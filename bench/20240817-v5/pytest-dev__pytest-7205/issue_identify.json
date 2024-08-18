@@ -1,0 +1,87 @@
+{
+    "file_paths": [
+        "src/_pytest/setuponly.py"
+    ],
+    "symbols": [
+        "_pytest.setuponly._show_fixture_action"
+    ],
+    "code_spans": {
+        "_pytest._io.SafeRepr": {
+            "name": "_pytest._io.SafeRepr",
+            "file_path": "src/_pytest/_io/saferepr.py",
+            "file_content": "class SafeRepr(reprlib.Repr):\n    \"\"\"subclass of repr.Repr that limits the resulting size of repr()\n    and includes information on exceptions raised during the call.\n    \"\"\"\n\n    def __init__(self, maxsize: int) -> None:\n        super().__init__()\n        self.maxstring = maxsize\n        self.maxsize = maxsize\n\n    def repr(self, x: Any) -> str:\n        try:\n            s = super().repr(x)\n        except (KeyboardInterrupt, SystemExit):\n            raise\n        except BaseException as exc:\n            s = _format_repr_exception(exc, x)\n        return _ellipsize(s, self.maxsize)\n\n    def repr_instance(self, x: Any, level: int) -> str:\n        try:\n            s = repr(x)\n        except (KeyboardInterrupt, SystemExit):\n            raise\n        except BaseException as exc:\n            s = _format_repr_exception(exc, x)\n        return _ellipsize(s, self.maxsize)",
+            "start_line": 34,
+            "start_column": 871,
+            "end_line": 0,
+            "end_column": 1744,
+            "start_byte": 871,
+            "end_byte": 0
+        },
+        "_pytest._io.SafeRepr.__init__": {
+            "name": "_pytest._io.SafeRepr.__init__",
+            "file_path": "src/_pytest/_io/saferepr.py",
+            "file_content": "def __init__(self, maxsize: int) -> None:\n        super().__init__()\n        self.maxstring = maxsize\n        self.maxsize = maxsize",
+            "start_line": 39,
+            "start_column": 1051,
+            "end_line": 4,
+            "end_column": 1183,
+            "start_byte": 1051,
+            "end_byte": 4
+        },
+        "_pytest._io.SafeRepr.repr": {
+            "name": "_pytest._io.SafeRepr.repr",
+            "file_path": "src/_pytest/_io/saferepr.py",
+            "file_content": "def repr(self, x: Any) -> str:\n        try:\n            s = super().repr(x)\n        except (KeyboardInterrupt, SystemExit):\n            raise\n        except BaseException as exc:\n            s = _format_repr_exception(exc, x)\n        return _ellipsize(s, self.maxsize)",
+            "start_line": 44,
+            "start_column": 1189,
+            "end_line": 4,
+            "end_column": 1457,
+            "start_byte": 1189,
+            "end_byte": 4
+        },
+        "_pytest._io.SafeRepr.repr_instance": {
+            "name": "_pytest._io.SafeRepr.repr_instance",
+            "file_path": "src/_pytest/_io/saferepr.py",
+            "file_content": "def repr_instance(self, x: Any, level: int) -> str:\n        try:\n            s = repr(x)\n        except (KeyboardInterrupt, SystemExit):\n            raise\n        except BaseException as exc:\n            s = _format_repr_exception(exc, x)\n        return _ellipsize(s, self.maxsize)",
+            "start_line": 53,
+            "start_column": 1463,
+            "end_line": 4,
+            "end_column": 1744,
+            "start_byte": 1463,
+            "end_byte": 4
+        },
+        "_pytest._io.saferepr": {
+            "name": "_pytest._io.saferepr",
+            "file_path": "src/_pytest/_io/saferepr.py",
+            "file_content": "def saferepr(obj: Any, maxsize: int = 240) -> str:\n    \"\"\"return a size-limited safe repr-string for the given object.\n    Failing __repr__ functions of user instances will be represented\n    with a short exception info and 'saferepr' generally takes\n    care to never raise exceptions itself.  This function is a wrapper\n    around the Repr/reprlib functionality of the standard 2.6 lib.\n    \"\"\"\n    return SafeRepr(maxsize).repr(obj)",
+            "start_line": 74,
+            "start_column": 2073,
+            "end_line": 0,
+            "end_column": 2508,
+            "start_byte": 2073,
+            "end_byte": 0
+        },
+        "_pytest.assertion._saferepr": {
+            "name": "_pytest.assertion._saferepr",
+            "file_path": "src/_pytest/_io/saferepr.py",
+            "file_content": "",
+            "start_line": 375,
+            "start_column": 13624,
+            "end_line": 0,
+            "end_column": 14124,
+            "start_byte": 13624,
+            "end_byte": 0
+        },
+        "_pytest.setuponly._show_fixture_action": {
+            "name": "_pytest.setuponly._show_fixture_action",
+            "file_path": "src/_pytest/setuponly.py",
+            "file_content": "def _show_fixture_action(fixturedef, msg):\n    config = fixturedef._fixturemanager.config\n    capman = config.pluginmanager.getplugin(\"capturemanager\")\n    if capman:\n        capman.suspend_global_capture()\n\n    tw = config.get_terminal_writer()\n    tw.line()\n    tw.write(\" \" * 2 * fixturedef.scopenum)\n    tw.write(\n        \"{step} {scope} {fixture}\".format(\n            step=msg.ljust(8),  # align the output to TEARDOWN\n            scope=fixturedef.scope[0].upper(),\n            fixture=fixturedef.argname,\n        )\n    )\n\n    if msg == \"SETUP\":\n        deps = sorted(arg for arg in fixturedef.argnames if arg != \"request\")\n        if deps:\n            tw.write(\" (fixtures used: {})\".format(\", \".join(deps)))\n\n    if hasattr(fixturedef, \"cached_param\"):\n        tw.write(\"[{}]\".format(fixturedef.cached_param))\n\n    tw.flush()\n\n    if capman:\n        capman.resume_global_capture()",
+            "start_line": 45,
+            "start_column": 1453,
+            "end_line": 0,
+            "end_column": 2340,
+            "start_byte": 1453,
+            "end_byte": 0
+        }
+    }
+}

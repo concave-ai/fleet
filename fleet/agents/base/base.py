@@ -11,9 +11,10 @@ from fleet.context import Context
 
 # gpt-4o-2024-08-06  $2.50 / 1M input tokens
 MODAL_PRICE_PER_TOKEN = {
-    "gpt-4o-2024-08-06": 2.5/1e6,
-    "gpt-4o-mini": 0.15/1e6
+    "gpt-4o-2024-08-06": 2.5 / 1e6,
+    "gpt-4o-mini": 0.15 / 1e6
 }
+
 
 class Agent:
     request = None
@@ -27,15 +28,19 @@ class Agent:
         self.metadata = {
         }
 
-    def save_log(self):
-        d = datetime.datetime.now()
+    def get_output_dir(self):
         logs_path = os.path.abspath(f"{self.ctx.work_dir}/logs/{self.ctx.task_id}/agents/{self.name}")
         if not os.path.exists(logs_path):
             os.makedirs(logs_path)
+        return logs_path
+
+    def save_log(self):
+        d = datetime.datetime.now()
+        logs_path = self.get_output_dir()
         path = f"{logs_path}/{d.isoformat()}.json"
         with open(path, "w") as f:
             json.dump(self.dump(), f, indent=2)
-        logger.info(f"Log saved to {path}")
+        logger.debug(f"Log saved to {path}")
 
     def dump(self):
         return {
@@ -43,7 +48,7 @@ class Agent:
             "model": self.ctx.model,
             "metadata": self.metadata,
             "issue": self.ctx.issue,
-            "request": self.request.model_dump(),
+            "request": {} if self.request is None else self.request.model_dump(),
             "response": self.response.model_dump()
         }
 
@@ -97,7 +102,7 @@ class OpenAIAgent(Agent):
         res = self.set_response(completion)
         self.after_run()
         self.metadata["token_count"] = completion.usage.total_tokens
-        self.metadata["cost"] =completion.usage.total_tokens * MODAL_PRICE_PER_TOKEN[self.ctx.model]
+        self.metadata["cost"] = completion.usage.total_tokens * MODAL_PRICE_PER_TOKEN[self.ctx.model]
         return res
 
     # input {a: b, c: d}

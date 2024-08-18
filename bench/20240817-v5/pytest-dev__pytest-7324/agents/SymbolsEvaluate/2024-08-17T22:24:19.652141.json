@@ -1,0 +1,849 @@
+{
+  "name": "SymbolsEvaluate",
+  "model": "gpt-4o-2024-08-06",
+  "metadata": {
+    "token_count": 0,
+    "cost": 0
+  },
+  "issue": "<description>:Pytest crashes the interpreter on debug build for 3.8+\nShort reproducer\r\n```py\r\n>>> Expression.compile(\"False\")\r\npython: Python/compile.c:3559: compiler_nameop: Assertion `!_PyUnicode_EqualToASCIIString(name, \"None\") && !_PyUnicode_EqualToASCIIString(name, \"True\") && !_PyUnicode_EqualToASCIIString(name, \"False\")' failed.\r\n[1]    29440 abort (core dumped)  python\r\n```\r\n\r\nRelated issue for improvement of this behavior: [bpo-40870](https://bugs.python.org/issue40870)\n</description>",
+  "request": {
+    "related_symbols": [
+      {
+        "name": "_pytest.assertion.pytest_addoption",
+        "file_path": "src/_pytest/assertion/__init__.py",
+        "file_content": "def pytest_addoption(parser: Parser) -> None:\n    group = parser.getgroup(\"debugconfig\")\n    group.addoption(\n        \"--assert\",\n        action=\"store\",\n        dest=\"assertmode\",\n        choices=(\"rewrite\", \"plain\"),\n        default=\"rewrite\",\n        metavar=\"MODE\",\n        help=(\n            \"Control assertion debugging tools.\\n\"\n            \"'plain' performs no assertion debugging.\\n\"\n            \"'rewrite' (the default) rewrites assert statements in test modules\"\n            \" on import to provide assert expression information.\"\n        ),\n    )\n    parser.addini(\n        \"enable_assertion_pass_hook\",\n        type=\"bool\",\n        default=False,\n        help=\"Enables the pytest_assertion_pass hook.\"\n        \"Make sure to delete any previously generated pyc cache files.\",\n    )",
+        "start_line": 23,
+        "start_column": 602,
+        "end_line": 0,
+        "end_column": 1394,
+        "start_byte": 602,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.assertion.register_assert_rewrite",
+        "file_path": "src/_pytest/assertion/__init__.py",
+        "file_content": "def register_assert_rewrite(*names: str) -> None:\n    \"\"\"Register one or more module names to be rewritten on import.\n\n    This function will make sure that this module or all modules inside\n    the package will get their assert statements rewritten.\n    Thus you should make sure to call this before the module is\n    actually imported, usually in your __init__.py if you are a plugin\n    using a package.\n\n    :raise TypeError: if the given module names are not strings.\n    \"\"\"\n    for name in names:\n        if not isinstance(name, str):\n            msg = \"expected module names as *args, got {0} instead\"\n            raise TypeError(msg.format(repr(names)))\n    for hook in sys.meta_path:\n        if isinstance(hook, rewrite.AssertionRewritingHook):\n            importhook = hook\n            break\n    else:\n        # TODO(typing): Add a protocol for mark_rewrite() and use it\n        # for importhook and for PytestPluginManager.rewrite_hook.\n        importhook = DummyRewriteHook()  # type: ignore\n    importhook.mark_rewrite(*names)",
+        "start_line": 48,
+        "start_column": 1397,
+        "end_line": 0,
+        "end_column": 2437,
+        "start_byte": 1397,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.assertion.install_importhook",
+        "file_path": "src/_pytest/assertion/__init__.py",
+        "file_content": "def install_importhook(config: Config) -> rewrite.AssertionRewritingHook:\n    \"\"\"Try to install the rewrite hook, raise SystemError if it fails.\"\"\"\n    config._store[assertstate_key] = AssertionState(config, \"rewrite\")\n    config._store[assertstate_key].hook = hook = rewrite.AssertionRewritingHook(config)\n    sys.meta_path.insert(0, hook)\n    config._store[assertstate_key].trace(\"installed rewrite import hook\")\n\n    def undo() -> None:\n        hook = config._store[assertstate_key].hook\n        if hook is not None and hook in sys.meta_path:\n            sys.meta_path.remove(hook)\n\n    config.add_cleanup(undo)\n    return hook",
+        "start_line": 90,
+        "start_column": 2868,
+        "end_line": 0,
+        "end_column": 3498,
+        "start_byte": 2868,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.cacheprovider.pytest_addoption",
+        "file_path": "src/_pytest/assertion/__init__.py",
+        "file_content": "",
+        "start_line": 398,
+        "start_column": 14885,
+        "end_line": 0,
+        "end_column": 16668,
+        "start_byte": 14885,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.capture.pytest_addoption",
+        "file_path": "src/_pytest/assertion/__init__.py",
+        "file_content": "\n    group.addoption(\n        \"--assert\",\n        action=\"store\",\n        dest=\"assertmode\",\n        choices=(\"rewrite\", \"plain\"),\n        default=\"rewrite\",\n        metavar=\"MODE\",\n        help=(\n            \"Control assertion debugging tools.\\n\"\n            \"'plain' performs no assertion debugging.\\n\"\n            \"'rewrite' (the default) rewrites assert statements in test modules\"\n            \" on import to provide assert expression information.\"\n        ),\n    )\n    parser.",
+        "start_line": 31,
+        "start_column": 690,
+        "end_line": 0,
+        "end_column": 1171,
+        "start_byte": 690,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.debugging.pytest_addoption",
+        "file_path": "src/_pytest/assertion/__init__.py",
+        "file_content": "writes assert statements in test modules\"\n            \" on import to provide assert expression information.\"\n        ),\n    )\n    parser.addini(\n        \"enable_assertion_pass_hook\",\n        type=\"bool\",\n        default=False,\n        help=\"Enables the pytest_assertion_pass hook.\"\n        \"Make sure to delete any previously generated pyc cache files.\",\n    )\n\n\ndef register_assert_rewrite(*names: str) -> None:\n    \"\"\"Register one or more module names to be rewritten on import.\n\n    This function will make sure that this module or all modules inside\n    the package will get their assert statements rewritten.\n    Thus you should make sure to call this before the module is\n    actually imported, usually in yo",
+        "start_line": 35,
+        "start_column": 1034,
+        "end_line": 0,
+        "end_column": 1748,
+        "start_byte": 1034,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.doctest.pytest_addoption",
+        "file_path": "src/_pytest/assertion/__init__.py",
+        "file_content": "   actually imported, usually in your __init__.py if you are a plugin\n    using a package.\n\n    :raise TypeError: if the given module names are not strings.\n    \"\"\"\n    for name in names:\n        if not isinstance(name, str):\n            msg = \"expected module names as *args, got {0} instead\"\n            raise TypeError(msg.format(repr(names)))\n    for hook in sys.meta_path:\n        if isinstance(hook, rewrite.AssertionRewritingHook):\n            importhook = hook\n            break\n    else:\n        # TODO(typing): Add a protocol for mark_rewrite() and use it\n        # for importhook and for PytestPluginManager.rewrite_hook.\n        importhook = DummyRewriteHook()  # type: ignore\n    importhook.mark_rewrite(*names)\n\n\nclass DummyRewriteHook:\n    \"\"\"A no-op import hook for when rewriting is disabled.\"\"\"\n\n    def mark_rewrite(self, *names: str) -> None:\n        pass\n\n\nclass AssertionState:\n    \"\"\"State for the assertion plugin.\"\"\"\n\n    def __init__(self, config: Config, mode) -> None:\n        self.mode = mode\n        self.trace = config.trace.root.get(\"assertion\")\n        self.hook = None  # type: Optional[rewrite.AssertionRewritingHook]\n\n\ndef install_importhook(config: Config) -> rewrite.AssertionRewritingHook:\n    \"\"\"Try to install the rewrite hook, raise SystemError if it fails.\"\"\"\n    config._store[assertstate_key] = AssertionState(config, \"rewrite\")\n    config._store[assertstate_key].hook = hook = rewrite.Ass",
+        "start_line": 62,
+        "start_column": 1713,
+        "end_line": 0,
+        "end_column": 3147,
+        "start_byte": 1713,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.faulthandler.pytest_addoption",
+        "file_path": "src/_pytest/assertion/__init__.py",
+        "file_content": "t util\nfrom _pytest.assertion.rewrite import assertstate_key\nfrom _pytest.compat import TYPE_CHECKING\nfrom _pytest.config import Config\nfrom _pytest.config import hookimpl\nfrom _pytest.config.argparsing import Parser\nfrom _pytest.nod",
+        "start_line": 16,
+        "start_column": 296,
+        "end_line": 0,
+        "end_column": 529,
+        "start_byte": 296,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.fixtures.pytest_addoption",
+        "file_path": "src/_pytest/assertion/__init__.py",
+        "file_content": "",
+        "start_line": 1404,
+        "start_column": 54010,
+        "end_line": 0,
+        "end_column": 54214,
+        "start_byte": 54010,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.helpconfig.pytest_addoption",
+        "file_path": "src/_pytest/assertion/__init__.py",
+        "file_content": "generated pyc cache files.\",\n    )\n\n\ndef register_assert_rewrite(*names: str) -> None:\n    \"\"\"Register one or more module names to be rewritten on import.\n\n    This function will make sure that this module or all modules inside\n    the package will get their assert statements rewritten.\n    Thus you should make sure to call this before the module is\n    actually imported, usually in your __init__.py if you are a plugin\n    using a package.\n\n    :raise TypeError: if the given module names are not strings.\n    \"\"\"\n    for name in names:\n        if not isinstance(name, str):\n            msg = \"expected module names as *args, got {0} instead\"\n            raise TypeError(msg.format(repr(names)))\n    for hook in sys.meta_path:\n        if isinstance(hook, rewrite.AssertionRewritingHook):\n            importhook = hook\n            break\n    else:\n        # TODO(typing): Add a protocol for mark_rewrite() and use it\n        # for importhook and for PytestPluginManager.rewrite_hook.\n        importhook = DummyRewriteHook()  # type: ignore\n    importhook.mark_rewrite(*names)\n\n\nclass DummyRewriteHook:\n    \"\"\"A no-op import hook for when rewriting is disabled.\"\"\"\n\n    def mark_rewrite(self, *names: str) -> None:\n        pass\n\n\nclass AssertionState:\n    \"\"\"State for the assertion plugin.\"\"\"\n\n    def __init__(self, config: Config, mode) -> None:\n        self.mode = mode\n        self.trace = config.trace.root.get(\"assertion\")\n        self.hook = No",
+        "start_line": 44,
+        "start_column": 1360,
+        "end_line": 0,
+        "end_column": 2813,
+        "start_byte": 1360,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.hookspec.pytest_addoption",
+        "file_path": "src/_pytest/assertion/__init__.py",
+        "file_content": "write(*names)\n\n\nclass DummyRewriteHook:\n    \"\"\"A no-op import hook for when rewriting is disabled.\"\"\"\n\n    def mark_rewrite(self, *names: str) -> None:\n        pass\n\n\nclass AssertionState:\n    \"\"\"State for the assertion plugin.\"\"\"\n\n    def __init__(self, config: Config, mode) -> None:\n        self.mode = mode\n        self.trace = config.trace.root.get(\"assertion\")\n        self.hook = None  # type: Optional[rewrite.AssertionRewritingHook]\n\n\ndef install_importhook(config: Config) -> rewrite.AssertionRewritingHook:\n    \"\"\"Try to install the rewrite hook, raise SystemError if it fails.\"\"\"\n    config._store[assertstate_key] = AssertionState(config, \"rewrite\")\n    config._store[assertstate_key].hook = hook = rewrite.AssertionRewritingHook(config)\n    sys.meta_path.insert(0, hook)\n    config._store[assertstate_key].trace(\"installed rewrite import hook\")\n\n    def undo() -> None:\n        hook = config._store[assertstate_key].hook\n        if hook is not None and hook in sys.meta_path:\n            sys.meta_path.remove(hook)\n\n    config.add_cleanup(undo)\n    return hook\n\n\ndef pytest_collection(session: \"Session\") -> None:\n    # this hook is only called when test modules are collected\n    # so for example not in the master process of pytest-xdist\n    # (which does not collect test modules)\n    assertstate = session.config._store.get(assertstate_key, None)\n    if assertstate:\n        if assertstate.hook is not None:\n            assertstate.hook.set_session(session)\n\n\n@hookimpl(tryfirst=True, hookwrapper=True)\ndef pytest_runtest_protocol(item: Item) -> Generator[None, None, None]:\n    \"\"\"Setup the pytest_assertrepr_",
+        "start_line": 77,
+        "start_column": 2424,
+        "end_line": 0,
+        "end_column": 4052,
+        "start_byte": 2424,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.junitxml.pytest_addoption",
+        "file_path": "src/_pytest/assertion/__init__.py",
+        "file_content": "",
+        "start_line": 382,
+        "start_column": 13364,
+        "end_line": 0,
+        "end_column": 14719,
+        "start_byte": 13364,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.logging.pytest_addoption",
+        "file_path": "src/_pytest/assertion/__init__.py",
+        "file_content": "",
+        "start_line": 194,
+        "start_column": 7008,
+        "end_line": 0,
+        "end_column": 9638,
+        "start_byte": 7008,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.main.pytest_addoption",
+        "file_path": "src/_pytest/assertion/__init__.py",
+        "file_content": "    parser.addini(\n        \"enable_assertion_pass_hook\",\n        type=\"bool\",\n        default=False,\n        help=\"Enables the pytest_assertion_pass hook.\"\n        \"Make sure to delete any previously generated pyc cache files.\",\n    )\n\n\ndef register_assert_rewrite(*names: str) -> None:\n    \"\"\"Register one or more module names to be rewritten on import.\n\n    This function will make sure that this module or all modules inside\n    the package will get their assert statements rewritten.\n    Thus you should make sure to call this before the module is\n    actually imported, usually in your __init__.py if you are a plugin\n    using a package.\n\n    :raise TypeError: if the given module names are not strings.\n    \"\"\"\n    for name in names:\n        if not isinstance(name, str):\n            msg = \"expected module names as *args, got {0} instead\"\n            raise TypeError(msg.format(repr(names)))\n    for hook in sys.meta_path:\n        if isinstance(hook, rewrite.AssertionRewritingHook):\n            importhook = hook\n            break\n    else:\n        # TODO(typing): Add a protocol for mark_rewrite() and use it\n        # for importhook and for PytestPluginManager.rewrite_hook.\n        importhook = DummyRewriteHook()  # type: ignore\n    importhook.mark_rewrite(*names)\n\n\nclass DummyRewriteHook:\n    \"\"\"A no-op import hook for when rewriting is disabled.\"\"\"\n\n    def mark_rewrite(self, *names: str) -> None:\n        pass\n\n\nclass AssertionState:\n    \"\"\"State for the assertion plugin.\"\"\"\n\n    def __init__(self, config: Config, mode) -> None:\n        self.mode = mode\n        self.trace = config.trace.root.get(\"assertion\")\n        self.hook = None  # type: Optional[rewrite.AssertionRewritingHook]\n\n\ndef install_importhook(config: Config) -> rewrite.AssertionRewritingHook:\n    \"\"\"Try to install the rewrite hook, raise SystemError if it fails.\"\"\"\n    config._store[assertstate_key] = AssertionState(config, \"rewrite\")\n    config._store[assertstate_key].hook = hook = rewrite.AssertionRewritingHook(config)\n    sys.meta_path.insert(0, hook)\n    config._store[assertstate_key].trace(\"installed rewrite import hook\")\n\n    def undo() -> None:\n        hook = config._store[assertstate_key].hook\n        if hook is not None and hook in sys.meta_path:\n            sys.meta_path.remove(hook)\n\n    config.add_cleanup(undo)\n    return hook\n\n\ndef pytest_collection(session: \"Session\") -> None:\n    # this hook is only called when test modules are collected\n    # so for example not in the master process of pytest-xdist\n    # (which does not collect test modules)\n    assertstate = session.config._store.get(assertstate_key, None)\n    if assertstate:\n        if assertstate.hook is not None:\n            assertstate.hook.set_session(session)\n\n\n@hookimpl(tryfirst=True, hookwrapper=True)\ndef pytest_runtest_protocol(item: Item) -> Generator[None, None, None]:\n    \"\"\"Setup the pytest_assertrepr_compare and pytest_assertion_pass hooks\n\n    The rewrite module will use util._reprcompare if\n    it exists to use custom reporting via the\n    pytest_assertrepr_compare hook.  This sets up this custom\n    comparison for the test.\n    \"\"\"\n\n    def callbinrepr(op, left: object, right: object) -> Optional[str]:\n        \"\"\"Call the pytest_assertrepr_compare hook and prepare the result\n\n        This uses the first result from the hook and then ensures the\n        following:\n        * Overly verbose explanations are truncated unless configured otherwise\n          (eg. if running in verbose mode).\n        * Embedded newlines are escaped to help util.format_explanation()\n          later.\n        * If the rewrite mode is used embedded %-characters are replaced\n          to protect later % formatting.\n\n        The result can be formatted by util.format_explanation() for\n        pretty printing.\n        \"\"\"\n        hook_result = item.ihook.pytest_assertrepr_compare(\n            config=item.config, op=op, left=left, right=right\n        )\n        for new_expl in hook_result:\n            if new_expl:\n                new_expl = truncate.truncate_if_required(new_expl, item)\n                new_expl = [line.replace(\"\\n\", \"\\\\n\") for line in new_expl]\n                res = \"\\n~\".join(new_expl)\n                if item.config.getvalue(\"assertmode\") == ",
+        "start_line": 45,
+        "start_column": 1160,
+        "end_line": 0,
+        "end_column": 5406,
+        "start_byte": 1160,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.mark.pytest_addoption",
+        "file_path": "src/_pytest/assertion/__init__.py",
+        "file_content": "{0} instead\"\n            raise TypeError(msg.format(repr(names)))\n    for hook in sys.meta_path:\n        if isinstance(hook, rewrite.AssertionRewritingHook):\n            importhook = hook\n            break\n    else:\n        # TODO(typing): Add a protocol for mark_rewrite() and use it\n        # for importhook and for PytestPluginManager.rewrite_hook.\n        importhook = DummyRewriteHook()  # type: ignore\n    importhook.mark_rewrite(*names)\n\n\nclass DummyRewriteHook:\n    \"\"\"A no-op import hook for when rewriting is disabled.\"\"\"\n\n    def mark_rewrite(self, *names: str) -> None:\n        pass\n\n\nclass AssertionState:\n    \"\"\"State for the assertion plugin.\"\"\"\n\n    def __init__(self, config: Config, mode) -> None:\n        self.mode = mode\n        self.trace = config.trace.root.get(\"assertion\")\n        self.hook = None  # type: Optional[rewrite.AssertionRewritingHook]\n\n\ndef install_importhook(config: Config) -> rewrite.AssertionRewritingHook:\n    \"\"\"Try to install the rewrite hook, raise SystemError if it fails.\"\"\"\n    config._store[assertstate_key] = AssertionState(config, \"rewrite\")\n    config._store[assertstate_key].hook = hook = rewrite.AssertionRewritingHook(config)\n    sys.meta_path.insert(0, hook)\n    config._store[assertstate_key].trace(\"installed rewrite import hook\")\n\n    def undo() -> None:\n        hook = config._store[assertstate_key].hook\n        if hook is not None and hook in sys.meta_path:\n            sys.meta_path.remove(hook)\n\n    config.add_cleanup(undo)\n    return hook\n\n\ndef pytest_collection(session: \"Session\") -> None:\n    # this hook is only called when test modules are collecte",
+        "start_line": 63,
+        "start_column": 1994,
+        "end_line": 0,
+        "end_column": 3613,
+        "start_byte": 1994,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.pastebin.pytest_addoption",
+        "file_path": "src/_pytest/assertion/__init__.py",
+        "file_content": "\nfrom _pytest.config import hookimpl\nfrom _pytest.config.argparsing import Parser\nfrom _pytest.nodes import Item\n\nif TYPE_CHECKING:\n    from _pytest.main import Session\n\n\ndef pytest_addoption(parser: Parser) -> None:\n    group = parser.getgroup(\"debugconfig\")\n    group.addoption(\n        \"--assert\",\n        action=\"store\",\n        dest=\"asser",
+        "start_line": 17,
+        "start_column": 431,
+        "end_line": 0,
+        "end_column": 775,
+        "start_byte": 431,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.pytester.pytest_addoption",
+        "file_path": "src/_pytest/assertion/__init__.py",
+        "file_content": "r one or more module names to be rewritten on import.\n\n    This function will make sure that this module or all modules inside\n    the package will get their assert statements rewritten.\n    Thus you should make sure to call this before the module is\n    actually imported, usually in your __init__.py if you are a plugin\n    using a package.\n\n    :raise TypeError: if the given module names are not strings.\n    \"\"\"\n    for name in names:\n        if not isinstance(name, str):\n            msg = \"expected module names as *args, got {0} instead\"\n            raise TypeError(msg.format(repr(names)))\n    for hook in sys.meta_pat",
+        "start_line": 57,
+        "start_column": 1461,
+        "end_line": 0,
+        "end_column": 2088,
+        "start_byte": 1461,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.python.pytest_addoption",
+        "file_path": "src/_pytest/assertion/__init__.py",
+        "file_content": "ook and for PytestPluginManager.rewrite_hook.\n        importhook = DummyRewriteHook()  # type: ignore\n    importhook.mark_rewrite(*names)\n\n\nclass DummyRewriteHook:\n    \"\"\"A no-op import hook for when rewriting is disabled.\"\"\"\n\n    def mark_rewrite(self, *names: str) -> None:\n        pass\n\n\nclass AssertionState:\n    \"\"\"State for the assertion plugin.\"\"\"\n\n    def __init__(self, config: Config, mode) -> None:\n        self.mode = mode\n        self.trace = config.trace.root.get(\"assertion\")\n        self.hook = None  # type: Optional[rewrite.AssertionRewritingHook]\n\n\ndef install_importhook(config: Config) -> rewrite.AssertionRewritingHook:\n    \"\"\"Try to install the rewrite hook, raise SystemError if it fails.\"\"\"\n    config._store[assertstate_key] = AssertionState(config, \"rewrite\")\n    config._store[assertstate_key].hook = hook = rewrite.AssertionRewritingHook(config)\n    sys.meta_path.insert(0, hook)\n    config._store[assertstate_key].trace(\"installed rewrite import hook\")\n\n    def undo() -> None:\n        hook = config._store[assertstate_key].hook\n        if hook is not None and hook in sys.meta_path:\n            sys.meta_path.remove(hook)\n\n    config.add_cleanup(undo)\n    return hook\n\n\ndef pytest_collection(session: \"Session\") -> None:\n    # this hook is only called when test modules are collected\n    # so for example not in the master process of pytest-xdist\n    # (which does not collect test modules)\n    assertstate = session.config._store.get(assertstate_key, None)\n    if assertstate:\n        if assertstate.hook is not None:\n            assertstate.hook.set_session(session)\n\n\n@hookimpl(tryfirst=True, hookwrapper=True)\ndef pytest_runtest_protocol(item: Item) -> Gen",
+        "start_line": 72,
+        "start_column": 2300,
+        "end_line": 0,
+        "end_column": 3991,
+        "start_byte": 2300,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.runner.pytest_addoption",
+        "file_path": "src/_pytest/assertion/__init__.py",
+        "file_content": "pression information.\"\n        ),\n    )\n    parser.addini(\n        \"enable_assertion_pass_hook\",\n        type=\"bool\",\n        default=False,\n        help=\"Enables the pytest_assertion_pass hook.\"\n        \"Make sure to delete any previously generated pyc cache files.\",\n    )\n\n\ndef register_assert_rewrite(*names: str) -> None:\n",
+        "start_line": 44,
+        "start_column": 1120,
+        "end_line": 0,
+        "end_column": 1447,
+        "start_byte": 1120,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.setuponly.pytest_addoption",
+        "file_path": "src/_pytest/assertion/__init__.py",
+        "file_content": "port assertstate_key\nfrom _pytest.compat import TYPE_CHECKING\nfrom _pytest.config import Config\nfrom _pytest.config import hookimpl\nfrom _pytest.config.argparsing import Parser\nfrom _pytest.nodes import Item\n\nif TYPE_CHECKING:\n    from _pytest.main import Session\n\n\ndef pytest_addoption(parser: Parser) -> None:\n    group = parser.getgroup(\"debugconfig\")\n    group.addoption(\n        \"--assert\",\n        action=\"sto",
+        "start_line": 13,
+        "start_column": 336,
+        "end_line": 0,
+        "end_column": 751,
+        "start_byte": 336,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.setupplan.pytest_addoption",
+        "file_path": "src/_pytest/assertion/__init__.py",
+        "file_content": "te\nfrom _pytest.assertion import util\nfrom _pytest.assertion.rewrite import assertstate_key\nfrom _pytest.compat import TYPE_CHECKING\nfrom _pytest.config import Config\nfrom _pytest.config import hookimpl\nfrom _pytest.config.argparsing import Parser\nfrom _pytest.nodes import Item\n\nif TYPE_CHECK",
+        "start_line": 11,
+        "start_column": 265,
+        "end_line": 0,
+        "end_column": 558,
+        "start_byte": 265,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.skipping.pytest_addoption",
+        "file_path": "src/_pytest/assertion/__init__.py",
+        "file_content": "\"debugconfig\")\n    group.addoption(\n        \"--assert\",\n        action=\"store\",\n        dest=\"assertmode\",\n        choices=(\"rewrite\", \"plain\"),\n        default=\"rewrite\",\n        metavar=\"MODE\",\n        help=(\n            \"Control assertion debugging tools.\\n\"\n            \"'plain' performs no assertion debugging.\\n\"\n            \"'rewrite' (the default) rewrites assert statements in test modules\"\n            \" on import to provide assert expression information.\"\n        ),\n    )\n    parser.a",
+        "start_line": 23,
+        "start_column": 676,
+        "end_line": 0,
+        "end_column": 1172,
+        "start_byte": 676,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.stepwise.pytest_addoption",
+        "file_path": "src/_pytest/assertion/__init__.py",
+        "file_content": "rtion import truncate\nfrom _pytest.assertion import util\nfrom _pytest.assertion.rewrite import assertstate_key\nfrom _pytest.compat import TYPE_CHECKING\nfrom _pytest.config import Config\nfrom _pytest.config import hookimpl\nfrom _pytest.config.argparsing import Parser\nfrom _pytest.nodes import Item\n\nif TYPE_CHECKING:\n    from _pytest.main import Session\n\n\ndef pytest_addoption(parser: Parser) -> None:\n    group = parser.getgroup(\"debugconfig\")\n    group.addoption(\n        \"--as",
+        "start_line": 11,
+        "start_column": 246,
+        "end_line": 0,
+        "end_column": 725,
+        "start_byte": 246,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.terminal.pytest_addoption",
+        "file_path": "src/_pytest/assertion/__init__.py",
+        "file_content": "for the assertion plugin.\"\"\"\n\n    def __init__(self, config: Config, mode) -> None:\n        self.mode = mode\n        self.trace = config.trace.root.get(\"assertion\")\n        self.hook = None  # type: Optional[rewrite.AssertionRewritingHook]\n\n\ndef install_importhook(config: Config) -> rewrite.AssertionRewritingHook:\n    \"\"\"Try to install the rewrite hook, raise SystemError if it fails.\"\"\"\n    config._store[assertstate_key] = AssertionState(config, \"rewrite\")\n    config._store[assertstate_key].hook = hook = rewrite.AssertionRewritingHook(config)\n    sys.meta_path.insert(0, hook)\n    config._store[assertstate_key].trace(\"installed rewrite import hook\")\n\n    def undo() -> None:\n        hook = config._store[assertstate_key].hook\n        if hook is not None and hook in sys.meta_path:\n            sys.meta_path.remove(hook)\n\n    config.add_cleanup(undo)\n    return hook\n\n\ndef pytest_collection(session: \"Session\") -> None:\n    # this hook is only called when test modules are collected\n    # so for example not in the master process of pytest-xdist\n    # (which does not collect test modules)\n    assertstate = session.config._store.get(assertstate_key, None)\n    if assertstate:\n        if assertstate.hook is not None:\n            assertstate.hook.set_session(session)\n\n\n@hookimpl(tryfirst=True, hookwrapper=True)\ndef pytest_runtest_protocol(item: Item) -> Generator[None, None, None]:\n    \"\"\"Setup the pytest_assertrepr_compare and pytest_assertion_pass hooks\n\n    The rewrite module will use util._reprcompare if\n    it exists to use custom reporting via the\n    pytest_assertrepr_compare hook.  This sets up this custom\n    comparison for the test.\n    \"\"\"\n\n    def callbinrepr(op, left: object, right: object) -> Optional[str]:\n        \"\"\"Call the pytest_assertrepr_compare hook and prepare the result\n\n        This uses the first result from the hook and then ensures the\n        following:\n        * Overly verbose explanations are truncated unless configured otherwise\n          (eg. if running in verbose mode).\n        * Embedded newlines are escaped to help util.format_explanation()\n          later.\n        * If the rewrite mode is used embedded %-characters are replaced\n          to protect later % formatting.\n\n        The result can be formatted by util.format_explanation() for\n        pretty printing.\n        \"\"\"\n        hook_result = item.ihook.pytest_assertrepr_compare(\n            config=item.config, op=op, left=left, right=right\n        )\n        for new_expl in hook_result:\n            if new_expl:\n                new_expl = truncate.truncate_if_required(new_expl, item)\n                new_expl = [line.replace(\"\\n\", \"\\\\n\") for line in new_expl]\n                res = \"\\n~\".join(new_expl)\n                if item.config.getva",
+        "start_line": 107,
+        "start_column": 2626,
+        "end_line": 0,
+        "end_column": 5385,
+        "start_byte": 2626,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.warnings.pytest_addoption",
+        "file_path": "src/_pytest/assertion/__init__.py",
+        "file_content": "your __init__.py if you are a plugin\n    using a package.\n\n    :raise TypeError: if the given module names are not strings.\n    \"\"\"\n    for name in names:\n        if not isinstance(name, str):\n            msg = \"expected module names as *args, got {0} instead\"\n            raise TypeError(msg.format(repr(names)))\n    for hook in sys.meta_path:\n        if isinstance(hook, rewrite.AssertionRewritingHook):\n            importhook = hook\n            break\n    else:\n        # ",
+        "start_line": 57,
+        "start_column": 1746,
+        "end_line": 0,
+        "end_column": 2220,
+        "start_byte": 1746,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.resultlog.pytest_addoption",
+        "file_path": "src/_pytest/assertion/__init__.py",
+        "file_content": "rtstate_key\nfrom _pytest.compat import TYPE_CHECKING\nfrom _pytest.config import Config\nfrom _pytest.config import hookimpl\nfrom _pytest.config.argparsing import Parser\nfrom _pytest.nodes import Item\n\nif TYPE_CHECKING:\n    from _pytest.main import Session\n\n\ndef pytest_addoption(parser: Parser) -> None:\n    group = parser.getgroup(\"",
+        "start_line": 17,
+        "start_column": 345,
+        "end_line": 0,
+        "end_column": 677,
+        "start_byte": 345,
+        "end_byte": 0
+      }
+    ],
+    "root_caused_symbols": [
+      {
+        "name": "_pytest.mark.Expression.compile",
+        "file_path": "src/_pytest/mark/expression.py",
+        "file_content": "@classmethod\n    def compile(self, input: str) -> \"Expression\":\n        \"\"\"Compile a match expression.\n\n        :param input: The input expression - one line.\n        \"\"\"\n        astexpr = expression(Scanner(input))\n        code = compile(\n            astexpr, filename=\"<pytest match expression>\", mode=\"eval\",\n        )  # type: types.CodeType\n        return Expression(code)",
+        "start_line": 194,
+        "start_column": 5342,
+        "end_line": 4,
+        "end_column": 5719,
+        "start_byte": 5342,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.Source",
+        "file_path": "src/_pytest/_code/source.py",
+        "file_content": "class Source:\n    \"\"\" an immutable object holding a source code fragment,\n        possibly deindenting it.\n    \"\"\"\n\n    _compilecounter = 0\n\n    def __init__(self, *parts, **kwargs) -> None:\n        self.lines = lines = []  # type: List[str]\n        de = kwargs.get(\"deindent\", True)\n        for part in parts:\n            if not part:\n                partlines = []  # type: List[str]\n            elif isinstance(part, Source):\n                partlines = part.lines\n            elif isinstance(part, (tuple, list)):\n                partlines = [x.rstrip(\"\\n\") for x in part]\n            elif isinstance(part, str):\n                partlines = part.split(\"\\n\")\n            else:\n                partlines = getsource(part, deindent=de).lines\n            if de:\n                partlines = deindent(partlines)\n            lines.extend(partlines)\n\n    def __eq__(self, other):\n        try:\n            return self.lines == other.lines\n        except AttributeError:\n            if isinstance(other, str):\n                return str(self) == other\n            return False\n\n    # Ignore type because of https://github.com/python/mypy/issues/4266.\n    __hash__ = None  # type: ignore\n\n    @overload\n    def __getitem__(self, key: int) -> str:\n        raise NotImplementedError()\n\n    @overload  # noqa: F811\n    def __getitem__(self, key: slice) -> \"Source\":  # noqa: F811\n        raise NotImplementedError()\n\n    def __getitem__(self, key: Union[int, slice]) -> Union[str, \"Source\"]:  # noqa: F811\n        if isinstance(key, int):\n            return self.lines[key]\n        else:\n            if key.step not in (None, 1):\n                raise IndexError(\"cannot slice a Source with a step\")\n            newsource = Source()\n            newsource.lines = self.lines[key.start : key.stop]\n            return newsource\n\n    def __iter__(self) -> Iterator[str]:\n        return iter(self.lines)\n\n    def __len__(self) -> int:\n        return len(self.lines)\n\n    def strip(self) -> \"Source\":\n        \"\"\" return new source object with trailing\n            and leading blank lines removed.\n        \"\"\"\n        start, end = 0, len(self)\n        while start < end and not self.lines[start].strip():\n            start += 1\n        while end > start and not self.lines[end - 1].strip():\n            end -= 1\n        source = Source()\n        source.lines[:] = self.lines[start:end]\n        return source\n\n    def putaround(\n        self, before: str = \"\", after: str = \"\", indent: str = \" \" * 4\n    ) -> \"Source\":\n        \"\"\" return a copy of the source object with\n            'before' and 'after' wrapped around it.\n        \"\"\"\n        beforesource = Source(before)\n        aftersource = Source(after)\n        newsource = Source()\n        lines = [(indent + line) for line in self.lines]\n        newsource.lines = beforesource.lines + lines + aftersource.lines\n        return newsource\n\n    def indent(self, indent: str = \" \" * 4) -> \"Source\":\n        \"\"\" return a copy of the source object with\n            all lines indented by the given indent-string.\n        \"\"\"\n        newsource = Source()\n        newsource.lines = [(indent + line) for line in self.lines]\n        return newsource\n\n    def getstatement(self, lineno: int) -> \"Source\":\n        \"\"\" return Source statement which contains the\n            given linenumber (counted from 0).\n        \"\"\"\n        start, end = self.getstatementrange(lineno)\n        return self[start:end]\n\n    def getstatementrange(self, lineno: int) -> Tuple[int, int]:\n        \"\"\" return (start, end) tuple which spans the minimal\n            statement region which containing the given lineno.\n        \"\"\"\n        if not (0 <= lineno < len(self)):\n            raise IndexError(\"lineno out of range\")\n        ast, start, end = getstatementrange_ast(lineno, self)\n        return start, end\n\n    def deindent(self) -> \"Source\":\n        \"\"\"return a new source object deindented.\"\"\"\n        newsource = Source()\n        newsource.lines[:] = deindent(self.lines)\n        return newsource\n\n    def isparseable(self, deindent: bool = True) -> bool:\n        \"\"\" return True if source is parseable, heuristically\n            deindenting it by default.\n        \"\"\"\n        if deindent:\n            source = str(self.deindent())\n        else:\n            source = str(self)\n        try:\n            ast.parse(source)\n        except (SyntaxError, ValueError, TypeError):\n            return False\n        else:\n            return True\n\n    def __str__(self) -> str:\n        return \"\\n\".join(self.lines)\n\n    @overload\n    def compile(\n        self,\n        filename: Optional[str] = ...,\n        mode: str = ...,\n        flag: \"Literal[0]\" = ...,\n        dont_inherit: int = ...,\n        _genframe: Optional[FrameType] = ...,\n    ) -> CodeType:\n        raise NotImplementedError()\n\n    @overload  # noqa: F811\n    def compile(  # noqa: F811\n        self,\n        filename: Optional[str] = ...,\n        mode: str = ...,\n        flag: int = ...,\n        dont_inherit: int = ...,\n        _genframe: Optional[FrameType] = ...,\n    ) -> Union[CodeType, ast.AST]:\n        raise NotImplementedError()\n\n    def compile(  # noqa: F811\n        self,\n        filename: Optional[str] = None,\n        mode: str = \"exec\",\n        flag: int = 0,\n        dont_inherit: int = 0,\n        _genframe: Optional[FrameType] = None,\n    ) -> Union[CodeType, ast.AST]:\n        \"\"\" return compiled code object. if filename is None\n            invent an artificial filename which displays\n            the source/line position of the caller frame.\n        \"\"\"\n        if not filename or py.path.local(filename).check(file=0):\n            if _genframe is None:\n                _genframe = sys._getframe(1)  # the caller\n            fn, lineno = _genframe.f_code.co_filename, _genframe.f_lineno\n            base = \"<%d-codegen \" % self._compilecounter\n            self.__class__._compilecounter += 1\n            if not filename:\n                filename = base + \"%s:%d>\" % (fn, lineno)\n            else:\n                filename = base + \"%r %s:%d>\" % (filename, fn, lineno)\n        source = \"\\n\".join(self.lines) + \"\\n\"\n        try:\n            co = compile(source, filename, mode, flag)\n        except SyntaxError as ex:\n            # re-represent syntax errors from parsing python strings\n            msglines = self.lines[: ex.lineno]\n            if ex.offset:\n                msglines.append(\" \" * ex.offset + \"^\")\n            msglines.append(\"(code was compiled probably from here: %s)\" % filename)\n            newex = SyntaxError(\"\\n\".join(msglines))\n            newex.offset = ex.offset\n            newex.lineno = ex.lineno\n            newex.text = ex.text\n            raise newex\n        else:\n            if flag & ast.PyCF_ONLY_AST:\n                assert isinstance(co, ast.AST)\n                return co\n            assert isinstance(co, CodeType)\n            lines = [(x + \"\\n\") for x in self.lines]\n            # Type ignored because linecache.cache is private.\n            linecache.cache[filename] = (1, None, lines, filename)  # type: ignore\n            return co",
+        "start_line": 26,
+        "start_column": 499,
+        "end_line": 0,
+        "end_column": 7563,
+        "start_byte": 499,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest._code.Source._compilecounter",
+        "file_path": "src/_pytest/_code/source.py",
+        "file_content": "_compilecounter = 0",
+        "start_line": 31,
+        "start_column": 619,
+        "end_line": 4,
+        "end_column": 638,
+        "start_byte": 619,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.Source.__init__",
+        "file_path": "src/_pytest/_code/source.py",
+        "file_content": "def __init__(self, *parts, **kwargs) -> None:\n        self.lines = lines = []  # type: List[str]\n        de = kwargs.get(\"deindent\", True)\n        for part in parts:\n            if not part:\n                partlines = []  # type: List[str]\n            elif isinstance(part, Source):\n                partlines = part.lines\n            elif isinstance(part, (tuple, list)):\n                partlines = [x.rstrip(\"\\n\") for x in part]\n            elif isinstance(part, str):\n                partlines = part.split(\"\\n\")\n            else:\n                partlines = getsource(part, deindent=de).lines\n            if de:\n                partlines = deindent(partlines)\n            lines.extend(partlines)",
+        "start_line": 33,
+        "start_column": 644,
+        "end_line": 4,
+        "end_column": 1344,
+        "start_byte": 644,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.Source.__eq__",
+        "file_path": "src/_pytest/_code/source.py",
+        "file_content": "def __eq__(self, other):\n        try:\n            return self.lines == other.lines\n        except AttributeError:\n            if isinstance(other, str):\n                return str(self) == other\n            return False",
+        "start_line": 51,
+        "start_column": 1350,
+        "end_line": 4,
+        "end_column": 1569,
+        "start_byte": 1350,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.Source.__hash__",
+        "file_path": "src/_pytest/_code/source.py",
+        "file_content": "__hash__ = None",
+        "start_line": 60,
+        "start_column": 1648,
+        "end_line": 4,
+        "end_column": 1663,
+        "start_byte": 1648,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.Source.__getitem__",
+        "file_path": "src/_pytest/_code/source.py",
+        "file_content": "@overload\n    def __getitem__(self, key: int) -> str:\n        raise NotImplementedError()",
+        "start_line": 62,
+        "start_column": 1685,
+        "end_line": 4,
+        "end_column": 1774,
+        "start_byte": 1685,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.Source.__getitem__",
+        "file_path": "src/_pytest/_code/source.py",
+        "file_content": "@overload  # noqa: F811\n    def __getitem__(self, key: slice) -> \"Source\":  # noqa: F811\n        raise NotImplementedError()",
+        "start_line": 66,
+        "start_column": 1780,
+        "end_line": 4,
+        "end_column": 1904,
+        "start_byte": 1780,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.Source.__getitem__",
+        "file_path": "src/_pytest/_code/source.py",
+        "file_content": "def __getitem__(self, key: Union[int, slice]) -> Union[str, \"Source\"]:  # noqa: F811\n        if isinstance(key, int):\n            return self.lines[key]\n        else:\n            if key.step not in (None, 1):\n                raise IndexError(\"cannot slice a Source with a step\")\n            newsource = Source()\n            newsource.lines = self.lines[key.start : key.stop]\n            return newsource",
+        "start_line": 70,
+        "start_column": 1910,
+        "end_line": 4,
+        "end_column": 2313,
+        "start_byte": 1910,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.Source.__iter__",
+        "file_path": "src/_pytest/_code/source.py",
+        "file_content": "def __iter__(self) -> Iterator[str]:\n        return iter(self.lines)",
+        "start_line": 80,
+        "start_column": 2319,
+        "end_line": 4,
+        "end_column": 2387,
+        "start_byte": 2319,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.Source.__len__",
+        "file_path": "src/_pytest/_code/source.py",
+        "file_content": "def __len__(self) -> int:\n        return len(self.lines)",
+        "start_line": 83,
+        "start_column": 2393,
+        "end_line": 4,
+        "end_column": 2449,
+        "start_byte": 2393,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.Source.strip",
+        "file_path": "src/_pytest/_code/source.py",
+        "file_content": "def strip(self) -> \"Source\":\n        \"\"\" return new source object with trailing\n            and leading blank lines removed.\n        \"\"\"\n        start, end = 0, len(self)\n        while start < end and not self.lines[start].strip():\n            start += 1\n        while end > start and not self.lines[end - 1].strip():\n            end -= 1\n        source = Source()\n        source.lines[:] = self.lines[start:end]\n        return source",
+        "start_line": 86,
+        "start_column": 2455,
+        "end_line": 4,
+        "end_column": 2889,
+        "start_byte": 2455,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.Source.putaround",
+        "file_path": "src/_pytest/_code/source.py",
+        "file_content": "def putaround(\n        self, before: str = \"\", after: str = \"\", indent: str = \" \" * 4\n    ) -> \"Source\":\n        \"\"\" return a copy of the source object with\n            'before' and 'after' wrapped around it.\n        \"\"\"\n        beforesource = Source(before)\n        aftersource = Source(after)\n        newsource = Source()\n        lines = [(indent + line) for line in self.lines]\n        newsource.lines = beforesource.lines + lines + aftersource.lines\n        return newsource",
+        "start_line": 99,
+        "start_column": 2895,
+        "end_line": 4,
+        "end_column": 3373,
+        "start_byte": 2895,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.Source.indent",
+        "file_path": "src/_pytest/_code/source.py",
+        "file_content": "def indent(self, indent: str = \" \" * 4) -> \"Source\":\n        \"\"\" return a copy of the source object with\n            all lines indented by the given indent-string.\n        \"\"\"\n        newsource = Source()\n        newsource.lines = [(indent + line) for line in self.lines]\n        return newsource",
+        "start_line": 112,
+        "start_column": 3379,
+        "end_line": 4,
+        "end_column": 3675,
+        "start_byte": 3379,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.Source.getstatement",
+        "file_path": "src/_pytest/_code/source.py",
+        "file_content": "def getstatement(self, lineno: int) -> \"Source\":\n        \"\"\" return Source statement which contains the\n            given linenumber (counted from 0).\n        \"\"\"\n        start, end = self.getstatementrange(lineno)\n        return self[start:end]",
+        "start_line": 120,
+        "start_column": 3681,
+        "end_line": 4,
+        "end_column": 3926,
+        "start_byte": 3681,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.Source.getstatementrange",
+        "file_path": "src/_pytest/_code/source.py",
+        "file_content": "def getstatementrange(self, lineno: int) -> Tuple[int, int]:\n        \"\"\" return (start, end) tuple which spans the minimal\n            statement region which containing the given lineno.\n        \"\"\"\n        if not (0 <= lineno < len(self)):\n            raise IndexError(\"lineno out of range\")\n        ast, start, end = getstatementrange_ast(lineno, self)\n        return start, end",
+        "start_line": 127,
+        "start_column": 3932,
+        "end_line": 4,
+        "end_column": 4312,
+        "start_byte": 3932,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.Source.deindent",
+        "file_path": "src/_pytest/_code/source.py",
+        "file_content": "def deindent(self) -> \"Source\":\n        \"\"\"return a new source object deindented.\"\"\"\n        newsource = Source()\n        newsource.lines[:] = deindent(self.lines)\n        return newsource",
+        "start_line": 136,
+        "start_column": 4318,
+        "end_line": 4,
+        "end_column": 4506,
+        "start_byte": 4318,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.Source.isparseable",
+        "file_path": "src/_pytest/_code/source.py",
+        "file_content": "def isparseable(self, deindent: bool = True) -> bool:\n        \"\"\" return True if source is parseable, heuristically\n            deindenting it by default.\n        \"\"\"\n        if deindent:\n            source = str(self.deindent())\n        else:\n            source = str(self)\n        try:\n            ast.parse(source)\n        except (SyntaxError, ValueError, TypeError):\n            return False\n        else:\n            return True",
+        "start_line": 142,
+        "start_column": 4512,
+        "end_line": 4,
+        "end_column": 4945,
+        "start_byte": 4512,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.Source.__str__",
+        "file_path": "src/_pytest/_code/source.py",
+        "file_content": "def __str__(self) -> str:\n        return \"\\n\".join(self.lines)",
+        "start_line": 157,
+        "start_column": 4951,
+        "end_line": 4,
+        "end_column": 5013,
+        "start_byte": 4951,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.Source.compile",
+        "file_path": "src/_pytest/_code/source.py",
+        "file_content": "@overload\n    def compile(\n        self,\n        filename: Optional[str] = ...,\n        mode: str = ...,\n        flag: \"Literal[0]\" = ...,\n        dont_inherit: int = ...,\n        _genframe: Optional[FrameType] = ...,\n    ) -> CodeType:\n        raise NotImplementedError()",
+        "start_line": 160,
+        "start_column": 5019,
+        "end_line": 4,
+        "end_column": 5291,
+        "start_byte": 5019,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.Source.compile",
+        "file_path": "src/_pytest/_code/source.py",
+        "file_content": "@overload  # noqa: F811\n    def compile(  # noqa: F811\n        self,\n        filename: Optional[str] = ...,\n        mode: str = ...,\n        flag: int = ...,\n        dont_inherit: int = ...,\n        _genframe: Optional[FrameType] = ...,\n    ) -> Union[CodeType, ast.AST]:\n        raise NotImplementedError()",
+        "start_line": 171,
+        "start_column": 5297,
+        "end_line": 4,
+        "end_column": 5604,
+        "start_byte": 5297,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.Source.compile",
+        "file_path": "src/_pytest/_code/source.py",
+        "file_content": "def compile(  # noqa: F811\n        self,\n        filename: Optional[str] = None,\n        mode: str = \"exec\",\n        flag: int = 0,\n        dont_inherit: int = 0,\n        _genframe: Optional[FrameType] = None,\n    ) -> Union[CodeType, ast.AST]:\n        \"\"\" return compiled code object. if filename is None\n            invent an artificial filename which displays\n            the source/line position of the caller frame.\n        \"\"\"\n        if not filename or py.path.local(filename).check(file=0):\n            if _genframe is None:\n                _genframe = sys._getframe(1)  # the caller\n            fn, lineno = _genframe.f_code.co_filename, _genframe.f_lineno\n            base = \"<%d-codegen \" % self._compilecounter\n            self.__class__._compilecounter += 1\n            if not filename:\n                filename = base + \"%s:%d>\" % (fn, lineno)\n            else:\n                filename = base + \"%r %s:%d>\" % (filename, fn, lineno)\n        source = \"\\n\".join(self.lines) + \"\\n\"\n        try:\n            co = compile(source, filename, mode, flag)\n        except SyntaxError as ex:\n            # re-represent syntax errors from parsing python strings\n            msglines = self.lines[: ex.lineno]\n            if ex.offset:\n                msglines.append(\" \" * ex.offset + \"^\")\n            msglines.append(\"(code was compiled probably from here: %s)\" % filename)\n            newex = SyntaxError(\"\\n\".join(msglines))\n            newex.offset = ex.offset\n            newex.lineno = ex.lineno\n            newex.text = ex.text\n            raise newex\n        else:\n            if flag & ast.PyCF_ONLY_AST:\n                assert isinstance(co, ast.AST)\n                return co\n            assert isinstance(co, CodeType)\n            lines = [(x + \"\\n\") for x in self.lines]\n            # Type ignored because linecache.cache is private.\n            linecache.cache[filename] = (1, None, lines, filename)  # type: ignore\n            return co",
+        "start_line": 182,
+        "start_column": 5610,
+        "end_line": 4,
+        "end_column": 7563,
+        "start_byte": 5610,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.compile_",
+        "file_path": "src/_pytest/_code/source.py",
+        "file_content": "@overload\ndef compile_(\n    source: Union[str, bytes, ast.mod, ast.AST],\n    filename: Optional[str] = ...,\n    mode: str = ...,\n    flags: \"Literal[0]\" = ...,\n    dont_inherit: int = ...,\n) -> CodeType:\n    raise NotImplementedError()",
+        "start_line": 234,
+        "start_column": 7604,
+        "end_line": 0,
+        "end_column": 7839,
+        "start_byte": 7604,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest._code.compile_",
+        "file_path": "src/_pytest/_code/source.py",
+        "file_content": "@overload  # noqa: F811\ndef compile_(  # noqa: F811\n    source: Union[str, bytes, ast.mod, ast.AST],\n    filename: Optional[str] = ...,\n    mode: str = ...,\n    flags: int = ...,\n    dont_inherit: int = ...,\n) -> Union[CodeType, ast.AST]:\n    raise NotImplementedError()",
+        "start_line": 245,
+        "start_column": 7842,
+        "end_line": 0,
+        "end_column": 8112,
+        "start_byte": 7842,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest._code.compile_",
+        "file_path": "src/_pytest/_code/source.py",
+        "file_content": "def compile_(  # noqa: F811\n    source: Union[str, bytes, ast.mod, ast.AST],\n    filename: Optional[str] = None,\n    mode: str = \"exec\",\n    flags: int = 0,\n    dont_inherit: int = 0,\n) -> Union[CodeType, ast.AST]:\n    \"\"\" compile the given source to a raw code object,\n        and maintain an internal cache which allows later\n        retrieval of the source code for the code object\n        and any recursively created code objects.\n    \"\"\"\n    if isinstance(source, ast.AST):\n        # XXX should Source support having AST?\n        assert filename is not None\n        co = compile(source, filename, mode, flags, dont_inherit)\n        assert isinstance(co, (CodeType, ast.AST))\n        return co\n    _genframe = sys._getframe(1)  # the caller\n    s = Source(source)\n    return s.compile(filename, mode, flags, _genframe=_genframe)",
+        "start_line": 256,
+        "start_column": 8115,
+        "end_line": 0,
+        "end_column": 8947,
+        "start_byte": 8115,
+        "end_byte": 0
+      }
+    ]
+  },
+  "response": {
+    "scratch_pad": "Analyzing the issue...\n1. The issue described is related to Python crashing when using `Expression.compile(\"False\")`. This is due to an assertion in the Python compiler that certain names should not be present in expressions being compiled.\n2. The crash happens because this code path is being hit in a way that Python doesn't expect, possibly due to Pytest's handling of expressions/leverage of Python's built-in compile.\n3. The expected behavior is that the code should handle expressions like \"False\" without triggering an assertion error in the Python runtime.\n4. If not stated explicitly, the expectation is that the compile method should handle expressions in a way that respects Python's internal rules without crashing.\n5. The resolution involves ensuring that forbidden names like \"False\" are handled upfront before passing to Python's compile.\n\nEvaluating the symbols provided:\n- `_pytest.mark.Expression.compile`:\n  - The primary suspect for needing change, as it is the entry point where the incorrect compile invocation happens.\n  - Would need to inspect/check the input expression and reject or modify as appropriate before handing it off to compile.\n\nOther symbols provided seem to have less relevance as they deal with other aspects of pytest's functionality like assertion handling, logging, or helper utilities. The issue is specific to expression compilation, so they might not require changes directly related to this bug.",
+    "symbols": [
+      {
+        "name": "_pytest.mark.Expression.compile",
+        "file_path": "src/_pytest/mark/expression.py",
+        "reason": "`Expression.compile` directly uses Python's compile, which triggers the assertion. This function needs to handle or sanitize the input expression to prevent forbidden names from reaching the raw compile call."
+      }
+    ],
+    "more_info": [],
+    "is_done": true,
+    "symbols_scratch_pad": [
+      "The `_pytest.mark.Expression.compile` method is critically related to the reported issue, as it is directly calling Python's `compile` with an input that triggers the assertion error about special constant names. It may need to filter or handle `input` to prevent invalid constants usage.",
+      "The rest of the symbols appear to be unrelated to direct issue at hand, as they concern other utilities or functionalities in pytest unrelated to the `Expression.compile`. Their modification seems unnecessary unless found to specifically process expression strings given to `compile` in some indirect manner."
+    ]
+  },
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are an autonomous AI assistant tasked with finding relevant code in an existing \ncodebase based on a reported issue. \nYour task is base on the symbol code to identify how many symbols need to be change to resolve the issue. \n#Input Structure:\n\n* <issue>: Contains the reported issue.\n* <symbol>: the code might to be relevant to the issue.\n\n# Your Task:\n\n1. Analyze User Instructions:\nCarefully read the reported issue within the <issue> tag.\nthink step by step and write out your thoughts in the scratch_pad field.\n1.1 What issue is the user describing?\n1.2 How was this issue caused?\n1.3 If the user described the expected result, what should it be fixed to?\n1.4 If the user did not provide an expected result, what should the expectation be?\n1.5 How should the issue be fixed to meet the expectation?\n\n2. Make the evaluate:\n2.1. Thoroughly analyze each lines in the <symbol> and <symbol> tags.\n2.2. Match the symbol/code/pattern with the key elements, functions, variables, or patterns identified in the reported issue.\n2.3. Evaluate the relevance of each symbol based on how well it aligns with the reported issue and current file context.\n2.4. make the decision how many symbols need to be change to resolve the issue.\n2.5. if you need more file content or symbol information, you can ask the user for more information.\n2.6. relative symbol means, He might be the root cause of the problem, or he could be a part of the process that reproduces the issue.\n\nThink step by step and write out your thoughts in the scratch_pad field.  \n"
+    },
+    {
+      "role": "user",
+      "content": "<issue><description>:Pytest crashes the interpreter on debug build for 3.8+\nShort reproducer\r\n```py\r\n>>> Expression.compile(\"False\")\r\npython: Python/compile.c:3559: compiler_nameop: Assertion `!_PyUnicode_EqualToASCIIString(name, \"None\") && !_PyUnicode_EqualToASCIIString(name, \"True\") && !_PyUnicode_EqualToASCIIString(name, \"False\")' failed.\r\n[1]    29440 abort (core dumped)  python\r\n```\r\n\r\nRelated issue for improvement of this behavior: [bpo-40870](https://bugs.python.org/issue40870)\n</description></issue>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.mark.Expression.compile</name><path>src/_pytest/mark/expression.py</path><content>@classmethod\n    def compile(self, input: str) -> \"Expression\":\n        \"\"\"Compile a match expression.\n\n        :param input: The input expression - one line.\n        \"\"\"\n        astexpr = expression(Scanner(input))\n        code = compile(\n            astexpr, filename=\"<pytest match expression>\", mode=\"eval\",\n        )  # type: types.CodeType\n        return Expression(code)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.Source</name><path>src/_pytest/_code/source.py</path><content>class Source:\n    \"\"\" an immutable object holding a source code fragment,\n        possibly deindenting it.\n    \"\"\"\n\n    _compilecounter = 0\n\n    def __init__(self, *parts, **kwargs) -> None:\n        self.lines = lines = []  # type: List[str]\n        de = kwargs.get(\"deindent\", True)\n        for part in parts:\n            if not part:\n                partlines = []  # type: List[str]\n            elif isinstance(part, Source):\n                partlines = part.lines\n            elif isinstance(part, (tuple, list)):\n                partlines = [x.rstrip(\"\\n\") for x in part]\n            elif isinstance(part, str):\n                partlines = part.split(\"\\n\")\n            else:\n                partlines = getsource(part, deindent=de).lines\n            if de:\n                partlines = deindent(partlines)\n            lines.extend(partlines)\n\n    def __eq__(self, other):\n        try:\n            return self.lines == other.lines\n        except AttributeError:\n            if isinstance(other, str):\n                return str(self) == other\n            return False\n\n    # Ignore type because of https://github.com/python/mypy/issues/4266.\n    __hash__ = None  # type: ignore\n\n    @overload\n    def __getitem__(self, key: int) -> str:\n        raise NotImplementedError()\n\n    @overload  # noqa: F811\n    def __getitem__(self, key: slice) -> \"Source\":  # noqa: F811\n        raise NotImplementedError()\n\n    def __getitem__(self, key: Union[int, slice]) -> Union[str, \"Source\"]:  # noqa: F811\n        if isinstance(key, int):\n            return self.lines[key]\n        else:\n            if key.step not in (None, 1):\n                raise IndexError(\"cannot slice a Source with a step\")\n            newsource = Source()\n            newsource.lines = self.lines[key.start : key.stop]\n            return newsource\n\n    def __iter__(self) -> Iterator[str]:\n        return iter(self.lines)\n\n    def __len__(self) -> int:\n        return len(self.lines)\n\n    def strip(self) -> \"Source\":\n        \"\"\" return new source object with trailing\n            and leading blank lines removed.\n        \"\"\"\n        start, end = 0, len(self)\n        while start < end and not self.lines[start].strip():\n            start += 1\n        while end > start and not self.lines[end - 1].strip():\n            end -= 1\n        source = Source()\n        source.lines[:] = self.lines[start:end]\n        return source\n\n    def putaround(\n        self, before: str = \"\", after: str = \"\", indent: str = \" \" * 4\n    ) -> \"Source\":\n        \"\"\" return a copy of the source object with\n            'before' and 'after' wrapped around it.\n        \"\"\"\n        beforesource = Source(before)\n        aftersource = Source(after)\n        newsource = Source()\n        lines = [(indent + line) for line in self.lines]\n        newsource.lines = beforesource.lines + lines + aftersource.lines\n        return newsource\n\n    def indent(self, indent: str = \" \" * 4) -> \"Source\":\n        \"\"\" return a copy of the source object with\n            all lines indented by the given indent-string.\n        \"\"\"\n        newsource = Source()\n        newsource.lines = [(indent + line) for line in self.lines]\n        return newsource\n\n    def getstatement(self, lineno: int) -> \"Source\":\n        \"\"\" return Source statement which contains the\n            given linenumber (counted from 0).\n        \"\"\"\n        start, end = self.getstatementrange(lineno)\n        return self[start:end]\n\n    def getstatementrange(self, lineno: int) -> Tuple[int, int]:\n        \"\"\" return (start, end) tuple which spans the minimal\n            statement region which containing the given lineno.\n        \"\"\"\n        if not (0 <= lineno < len(self)):\n            raise IndexError(\"lineno out of range\")\n        ast, start, end = getstatementrange_ast(lineno, self)\n        return start, end\n\n    def deindent(self) -> \"Source\":\n        \"\"\"return a new source object deindented.\"\"\"\n        newsource = Source()\n        newsource.lines[:] = deindent(self.lines)\n        return newsource\n\n    def isparseable(self, deindent: bool = True) -> bool:\n        \"\"\" return True if source is parseable, heuristically\n            deindenting it by default.\n        \"\"\"\n        if deindent:\n            source = str(self.deindent())\n        else:\n            source = str(self)\n        try:\n            ast.parse(source)\n        except (SyntaxError, ValueError, TypeError):\n            return False\n        else:\n            return True\n\n    def __str__(self) -> str:\n        return \"\\n\".join(self.lines)\n\n    @overload\n    def compile(\n        self,\n        filename: Optional[str] = ...,\n        mode: str = ...,\n        flag: \"Literal[0]\" = ...,\n        dont_inherit: int = ...,\n        _genframe: Optional[FrameType] = ...,\n    ) -> CodeType:\n        raise NotImplementedError()\n\n    @overload  # noqa: F811\n    def compile(  # noqa: F811\n        self,\n        filename: Optional[str] = ...,\n        mode: str = ...,\n        flag: int = ...,\n        dont_inherit: int = ...,\n        _genframe: Optional[FrameType] = ...,\n    ) -> Union[CodeType, ast.AST]:\n        raise NotImplementedError()\n\n    def compile(  # noqa: F811\n        self,\n        filename: Optional[str] = None,\n        mode: str = \"exec\",\n        flag: int = 0,\n        dont_inherit: int = 0,\n        _genframe: Optional[FrameType] = None,\n    ) -> Union[CodeType, ast.AST]:\n        \"\"\" return compiled code object. if filename is None\n            invent an artificial filename which displays\n            the source/line position of the caller frame.\n        \"\"\"\n        if not filename or py.path.local(filename).check(file=0):\n            if _genframe is None:\n                _genframe = sys._getframe(1)  # the caller\n            fn, lineno = _genframe.f_code.co_filename, _genframe.f_lineno\n            base = \"<%d-codegen \" % self._compilecounter\n            self.__class__._compilecounter += 1\n            if not filename:\n                filename = base + \"%s:%d>\" % (fn, lineno)\n            else:\n                filename = base + \"%r %s:%d>\" % (filename, fn, lineno)\n        source = \"\\n\".join(self.lines) + \"\\n\"\n        try:\n            co = compile(source, filename, mode, flag)\n        except SyntaxError as ex:\n            # re-represent syntax errors from parsing python strings\n            msglines = self.lines[: ex.lineno]\n            if ex.offset:\n                msglines.append(\" \" * ex.offset + \"^\")\n            msglines.append(\"(code was compiled probably from here: %s)\" % filename)\n            newex = SyntaxError(\"\\n\".join(msglines))\n            newex.offset = ex.offset\n            newex.lineno = ex.lineno\n            newex.text = ex.text\n            raise newex\n        else:\n            if flag & ast.PyCF_ONLY_AST:\n                assert isinstance(co, ast.AST)\n                return co\n            assert isinstance(co, CodeType)\n            lines = [(x + \"\\n\") for x in self.lines]\n            # Type ignored because linecache.cache is private.\n            linecache.cache[filename] = (1, None, lines, filename)  # type: ignore\n            return co</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.Source._compilecounter</name><path>src/_pytest/_code/source.py</path><content>_compilecounter = 0</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.Source.__init__</name><path>src/_pytest/_code/source.py</path><content>def __init__(self, *parts, **kwargs) -> None:\n        self.lines = lines = []  # type: List[str]\n        de = kwargs.get(\"deindent\", True)\n        for part in parts:\n            if not part:\n                partlines = []  # type: List[str]\n            elif isinstance(part, Source):\n                partlines = part.lines\n            elif isinstance(part, (tuple, list)):\n                partlines = [x.rstrip(\"\\n\") for x in part]\n            elif isinstance(part, str):\n                partlines = part.split(\"\\n\")\n            else:\n                partlines = getsource(part, deindent=de).lines\n            if de:\n                partlines = deindent(partlines)\n            lines.extend(partlines)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.Source.__eq__</name><path>src/_pytest/_code/source.py</path><content>def __eq__(self, other):\n        try:\n            return self.lines == other.lines\n        except AttributeError:\n            if isinstance(other, str):\n                return str(self) == other\n            return False</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.Source.__hash__</name><path>src/_pytest/_code/source.py</path><content>__hash__ = None</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.Source.__getitem__</name><path>src/_pytest/_code/source.py</path><content>@overload\n    def __getitem__(self, key: int) -> str:\n        raise NotImplementedError()</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.Source.__getitem__</name><path>src/_pytest/_code/source.py</path><content>@overload  # noqa: F811\n    def __getitem__(self, key: slice) -> \"Source\":  # noqa: F811\n        raise NotImplementedError()</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.Source.__getitem__</name><path>src/_pytest/_code/source.py</path><content>def __getitem__(self, key: Union[int, slice]) -> Union[str, \"Source\"]:  # noqa: F811\n        if isinstance(key, int):\n            return self.lines[key]\n        else:\n            if key.step not in (None, 1):\n                raise IndexError(\"cannot slice a Source with a step\")\n            newsource = Source()\n            newsource.lines = self.lines[key.start : key.stop]\n            return newsource</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.Source.__iter__</name><path>src/_pytest/_code/source.py</path><content>def __iter__(self) -> Iterator[str]:\n        return iter(self.lines)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.Source.__len__</name><path>src/_pytest/_code/source.py</path><content>def __len__(self) -> int:\n        return len(self.lines)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.Source.strip</name><path>src/_pytest/_code/source.py</path><content>def strip(self) -> \"Source\":\n        \"\"\" return new source object with trailing\n            and leading blank lines removed.\n        \"\"\"\n        start, end = 0, len(self)\n        while start < end and not self.lines[start].strip():\n            start += 1\n        while end > start and not self.lines[end - 1].strip():\n            end -= 1\n        source = Source()\n        source.lines[:] = self.lines[start:end]\n        return source</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.Source.putaround</name><path>src/_pytest/_code/source.py</path><content>def putaround(\n        self, before: str = \"\", after: str = \"\", indent: str = \" \" * 4\n    ) -> \"Source\":\n        \"\"\" return a copy of the source object with\n            'before' and 'after' wrapped around it.\n        \"\"\"\n        beforesource = Source(before)\n        aftersource = Source(after)\n        newsource = Source()\n        lines = [(indent + line) for line in self.lines]\n        newsource.lines = beforesource.lines + lines + aftersource.lines\n        return newsource</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.Source.indent</name><path>src/_pytest/_code/source.py</path><content>def indent(self, indent: str = \" \" * 4) -> \"Source\":\n        \"\"\" return a copy of the source object with\n            all lines indented by the given indent-string.\n        \"\"\"\n        newsource = Source()\n        newsource.lines = [(indent + line) for line in self.lines]\n        return newsource</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.Source.getstatement</name><path>src/_pytest/_code/source.py</path><content>def getstatement(self, lineno: int) -> \"Source\":\n        \"\"\" return Source statement which contains the\n            given linenumber (counted from 0).\n        \"\"\"\n        start, end = self.getstatementrange(lineno)\n        return self[start:end]</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.Source.getstatementrange</name><path>src/_pytest/_code/source.py</path><content>def getstatementrange(self, lineno: int) -> Tuple[int, int]:\n        \"\"\" return (start, end) tuple which spans the minimal\n            statement region which containing the given lineno.\n        \"\"\"\n        if not (0 <= lineno < len(self)):\n            raise IndexError(\"lineno out of range\")\n        ast, start, end = getstatementrange_ast(lineno, self)\n        return start, end</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.Source.deindent</name><path>src/_pytest/_code/source.py</path><content>def deindent(self) -> \"Source\":\n        \"\"\"return a new source object deindented.\"\"\"\n        newsource = Source()\n        newsource.lines[:] = deindent(self.lines)\n        return newsource</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.Source.isparseable</name><path>src/_pytest/_code/source.py</path><content>def isparseable(self, deindent: bool = True) -> bool:\n        \"\"\" return True if source is parseable, heuristically\n            deindenting it by default.\n        \"\"\"\n        if deindent:\n            source = str(self.deindent())\n        else:\n            source = str(self)\n        try:\n            ast.parse(source)\n        except (SyntaxError, ValueError, TypeError):\n            return False\n        else:\n            return True</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.Source.__str__</name><path>src/_pytest/_code/source.py</path><content>def __str__(self) -> str:\n        return \"\\n\".join(self.lines)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.Source.compile</name><path>src/_pytest/_code/source.py</path><content>@overload\n    def compile(\n        self,\n        filename: Optional[str] = ...,\n        mode: str = ...,\n        flag: \"Literal[0]\" = ...,\n        dont_inherit: int = ...,\n        _genframe: Optional[FrameType] = ...,\n    ) -> CodeType:\n        raise NotImplementedError()</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.Source.compile</name><path>src/_pytest/_code/source.py</path><content>@overload  # noqa: F811\n    def compile(  # noqa: F811\n        self,\n        filename: Optional[str] = ...,\n        mode: str = ...,\n        flag: int = ...,\n        dont_inherit: int = ...,\n        _genframe: Optional[FrameType] = ...,\n    ) -> Union[CodeType, ast.AST]:\n        raise NotImplementedError()</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.Source.compile</name><path>src/_pytest/_code/source.py</path><content>def compile(  # noqa: F811\n        self,\n        filename: Optional[str] = None,\n        mode: str = \"exec\",\n        flag: int = 0,\n        dont_inherit: int = 0,\n        _genframe: Optional[FrameType] = None,\n    ) -> Union[CodeType, ast.AST]:\n        \"\"\" return compiled code object. if filename is None\n            invent an artificial filename which displays\n            the source/line position of the caller frame.\n        \"\"\"\n        if not filename or py.path.local(filename).check(file=0):\n            if _genframe is None:\n                _genframe = sys._getframe(1)  # the caller\n            fn, lineno = _genframe.f_code.co_filename, _genframe.f_lineno\n            base = \"<%d-codegen \" % self._compilecounter\n            self.__class__._compilecounter += 1\n            if not filename:\n                filename = base + \"%s:%d>\" % (fn, lineno)\n            else:\n                filename = base + \"%r %s:%d>\" % (filename, fn, lineno)\n        source = \"\\n\".join(self.lines) + \"\\n\"\n        try:\n            co = compile(source, filename, mode, flag)\n        except SyntaxError as ex:\n            # re-represent syntax errors from parsing python strings\n            msglines = self.lines[: ex.lineno]\n            if ex.offset:\n                msglines.append(\" \" * ex.offset + \"^\")\n            msglines.append(\"(code was compiled probably from here: %s)\" % filename)\n            newex = SyntaxError(\"\\n\".join(msglines))\n            newex.offset = ex.offset\n            newex.lineno = ex.lineno\n            newex.text = ex.text\n            raise newex\n        else:\n            if flag & ast.PyCF_ONLY_AST:\n                assert isinstance(co, ast.AST)\n                return co\n            assert isinstance(co, CodeType)\n            lines = [(x + \"\\n\") for x in self.lines]\n            # Type ignored because linecache.cache is private.\n            linecache.cache[filename] = (1, None, lines, filename)  # type: ignore\n            return co</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.compile_</name><path>src/_pytest/_code/source.py</path><content>@overload\ndef compile_(\n    source: Union[str, bytes, ast.mod, ast.AST],\n    filename: Optional[str] = ...,\n    mode: str = ...,\n    flags: \"Literal[0]\" = ...,\n    dont_inherit: int = ...,\n) -> CodeType:\n    raise NotImplementedError()</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.compile_</name><path>src/_pytest/_code/source.py</path><content>@overload  # noqa: F811\ndef compile_(  # noqa: F811\n    source: Union[str, bytes, ast.mod, ast.AST],\n    filename: Optional[str] = ...,\n    mode: str = ...,\n    flags: int = ...,\n    dont_inherit: int = ...,\n) -> Union[CodeType, ast.AST]:\n    raise NotImplementedError()</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.compile_</name><path>src/_pytest/_code/source.py</path><content>def compile_(  # noqa: F811\n    source: Union[str, bytes, ast.mod, ast.AST],\n    filename: Optional[str] = None,\n    mode: str = \"exec\",\n    flags: int = 0,\n    dont_inherit: int = 0,\n) -> Union[CodeType, ast.AST]:\n    \"\"\" compile the given source to a raw code object,\n        and maintain an internal cache which allows later\n        retrieval of the source code for the code object\n        and any recursively created code objects.\n    \"\"\"\n    if isinstance(source, ast.AST):\n        # XXX should Source support having AST?\n        assert filename is not None\n        co = compile(source, filename, mode, flags, dont_inherit)\n        assert isinstance(co, (CodeType, ast.AST))\n        return co\n    _genframe = sys._getframe(1)  # the caller\n    s = Source(source)\n    return s.compile(filename, mode, flags, _genframe=_genframe)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.assertion.pytest_addoption</name><path>src/_pytest/assertion/__init__.py</path><content>def pytest_addoption(parser: Parser) -> None:\n    group = parser.getgroup(\"debugconfig\")\n    group.addoption(\n        \"--assert\",\n        action=\"store\",\n        dest=\"assertmode\",\n        choices=(\"rewrite\", \"plain\"),\n        default=\"rewrite\",\n        metavar=\"MODE\",\n        help=(\n            \"Control assertion debugging tools.\\n\"\n            \"'plain' performs no assertion debugging.\\n\"\n            \"'rewrite' (the default) rewrites assert statements in test modules\"\n            \" on import to provide assert expression information.\"\n        ),\n    )\n    parser.addini(\n        \"enable_assertion_pass_hook\",\n        type=\"bool\",\n        default=False,\n        help=\"Enables the pytest_assertion_pass hook.\"\n        \"Make sure to delete any previously generated pyc cache files.\",\n    )</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.assertion.register_assert_rewrite</name><path>src/_pytest/assertion/__init__.py</path><content>def register_assert_rewrite(*names: str) -> None:\n    \"\"\"Register one or more module names to be rewritten on import.\n\n    This function will make sure that this module or all modules inside\n    the package will get their assert statements rewritten.\n    Thus you should make sure to call this before the module is\n    actually imported, usually in your __init__.py if you are a plugin\n    using a package.\n\n    :raise TypeError: if the given module names are not strings.\n    \"\"\"\n    for name in names:\n        if not isinstance(name, str):\n            msg = \"expected module names as *args, got {0} instead\"\n            raise TypeError(msg.format(repr(names)))\n    for hook in sys.meta_path:\n        if isinstance(hook, rewrite.AssertionRewritingHook):\n            importhook = hook\n            break\n    else:\n        # TODO(typing): Add a protocol for mark_rewrite() and use it\n        # for importhook and for PytestPluginManager.rewrite_hook.\n        importhook = DummyRewriteHook()  # type: ignore\n    importhook.mark_rewrite(*names)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.assertion.install_importhook</name><path>src/_pytest/assertion/__init__.py</path><content>def install_importhook(config: Config) -> rewrite.AssertionRewritingHook:\n    \"\"\"Try to install the rewrite hook, raise SystemError if it fails.\"\"\"\n    config._store[assertstate_key] = AssertionState(config, \"rewrite\")\n    config._store[assertstate_key].hook = hook = rewrite.AssertionRewritingHook(config)\n    sys.meta_path.insert(0, hook)\n    config._store[assertstate_key].trace(\"installed rewrite import hook\")\n\n    def undo() -> None:\n        hook = config._store[assertstate_key].hook\n        if hook is not None and hook in sys.meta_path:\n            sys.meta_path.remove(hook)\n\n    config.add_cleanup(undo)\n    return hook</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.cacheprovider.pytest_addoption</name><path>src/_pytest/assertion/__init__.py</path><content></content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.capture.pytest_addoption</name><path>src/_pytest/assertion/__init__.py</path><content>\n    group.addoption(\n        \"--assert\",\n        action=\"store\",\n        dest=\"assertmode\",\n        choices=(\"rewrite\", \"plain\"),\n        default=\"rewrite\",\n        metavar=\"MODE\",\n        help=(\n            \"Control assertion debugging tools.\\n\"\n            \"'plain' performs no assertion debugging.\\n\"\n            \"'rewrite' (the default) rewrites assert statements in test modules\"\n            \" on import to provide assert expression information.\"\n        ),\n    )\n    parser.</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.debugging.pytest_addoption</name><path>src/_pytest/assertion/__init__.py</path><content>writes assert statements in test modules\"\n            \" on import to provide assert expression information.\"\n        ),\n    )\n    parser.addini(\n        \"enable_assertion_pass_hook\",\n        type=\"bool\",\n        default=False,\n        help=\"Enables the pytest_assertion_pass hook.\"\n        \"Make sure to delete any previously generated pyc cache files.\",\n    )\n\n\ndef register_assert_rewrite(*names: str) -> None:\n    \"\"\"Register one or more module names to be rewritten on import.\n\n    This function will make sure that this module or all modules inside\n    the package will get their assert statements rewritten.\n    Thus you should make sure to call this before the module is\n    actually imported, usually in yo</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.doctest.pytest_addoption</name><path>src/_pytest/assertion/__init__.py</path><content>   actually imported, usually in your __init__.py if you are a plugin\n    using a package.\n\n    :raise TypeError: if the given module names are not strings.\n    \"\"\"\n    for name in names:\n        if not isinstance(name, str):\n            msg = \"expected module names as *args, got {0} instead\"\n            raise TypeError(msg.format(repr(names)))\n    for hook in sys.meta_path:\n        if isinstance(hook, rewrite.AssertionRewritingHook):\n            importhook = hook\n            break\n    else:\n        # TODO(typing): Add a protocol for mark_rewrite() and use it\n        # for importhook and for PytestPluginManager.rewrite_hook.\n        importhook = DummyRewriteHook()  # type: ignore\n    importhook.mark_rewrite(*names)\n\n\nclass DummyRewriteHook:\n    \"\"\"A no-op import hook for when rewriting is disabled.\"\"\"\n\n    def mark_rewrite(self, *names: str) -> None:\n        pass\n\n\nclass AssertionState:\n    \"\"\"State for the assertion plugin.\"\"\"\n\n    def __init__(self, config: Config, mode) -> None:\n        self.mode = mode\n        self.trace = config.trace.root.get(\"assertion\")\n        self.hook = None  # type: Optional[rewrite.AssertionRewritingHook]\n\n\ndef install_importhook(config: Config) -> rewrite.AssertionRewritingHook:\n    \"\"\"Try to install the rewrite hook, raise SystemError if it fails.\"\"\"\n    config._store[assertstate_key] = AssertionState(config, \"rewrite\")\n    config._store[assertstate_key].hook = hook = rewrite.Ass</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.faulthandler.pytest_addoption</name><path>src/_pytest/assertion/__init__.py</path><content>t util\nfrom _pytest.assertion.rewrite import assertstate_key\nfrom _pytest.compat import TYPE_CHECKING\nfrom _pytest.config import Config\nfrom _pytest.config import hookimpl\nfrom _pytest.config.argparsing import Parser\nfrom _pytest.nod</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.fixtures.pytest_addoption</name><path>src/_pytest/assertion/__init__.py</path><content></content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.helpconfig.pytest_addoption</name><path>src/_pytest/assertion/__init__.py</path><content>generated pyc cache files.\",\n    )\n\n\ndef register_assert_rewrite(*names: str) -> None:\n    \"\"\"Register one or more module names to be rewritten on import.\n\n    This function will make sure that this module or all modules inside\n    the package will get their assert statements rewritten.\n    Thus you should make sure to call this before the module is\n    actually imported, usually in your __init__.py if you are a plugin\n    using a package.\n\n    :raise TypeError: if the given module names are not strings.\n    \"\"\"\n    for name in names:\n        if not isinstance(name, str):\n            msg = \"expected module names as *args, got {0} instead\"\n            raise TypeError(msg.format(repr(names)))\n    for hook in sys.meta_path:\n        if isinstance(hook, rewrite.AssertionRewritingHook):\n            importhook = hook\n            break\n    else:\n        # TODO(typing): Add a protocol for mark_rewrite() and use it\n        # for importhook and for PytestPluginManager.rewrite_hook.\n        importhook = DummyRewriteHook()  # type: ignore\n    importhook.mark_rewrite(*names)\n\n\nclass DummyRewriteHook:\n    \"\"\"A no-op import hook for when rewriting is disabled.\"\"\"\n\n    def mark_rewrite(self, *names: str) -> None:\n        pass\n\n\nclass AssertionState:\n    \"\"\"State for the assertion plugin.\"\"\"\n\n    def __init__(self, config: Config, mode) -> None:\n        self.mode = mode\n        self.trace = config.trace.root.get(\"assertion\")\n        self.hook = No</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.hookspec.pytest_addoption</name><path>src/_pytest/assertion/__init__.py</path><content>write(*names)\n\n\nclass DummyRewriteHook:\n    \"\"\"A no-op import hook for when rewriting is disabled.\"\"\"\n\n    def mark_rewrite(self, *names: str) -> None:\n        pass\n\n\nclass AssertionState:\n    \"\"\"State for the assertion plugin.\"\"\"\n\n    def __init__(self, config: Config, mode) -> None:\n        self.mode = mode\n        self.trace = config.trace.root.get(\"assertion\")\n        self.hook = None  # type: Optional[rewrite.AssertionRewritingHook]\n\n\ndef install_importhook(config: Config) -> rewrite.AssertionRewritingHook:\n    \"\"\"Try to install the rewrite hook, raise SystemError if it fails.\"\"\"\n    config._store[assertstate_key] = AssertionState(config, \"rewrite\")\n    config._store[assertstate_key].hook = hook = rewrite.AssertionRewritingHook(config)\n    sys.meta_path.insert(0, hook)\n    config._store[assertstate_key].trace(\"installed rewrite import hook\")\n\n    def undo() -> None:\n        hook = config._store[assertstate_key].hook\n        if hook is not None and hook in sys.meta_path:\n            sys.meta_path.remove(hook)\n\n    config.add_cleanup(undo)\n    return hook\n\n\ndef pytest_collection(session: \"Session\") -> None:\n    # this hook is only called when test modules are collected\n    # so for example not in the master process of pytest-xdist\n    # (which does not collect test modules)\n    assertstate = session.config._store.get(assertstate_key, None)\n    if assertstate:\n        if assertstate.hook is not None:\n            assertstate.hook.set_session(session)\n\n\n@hookimpl(tryfirst=True, hookwrapper=True)\ndef pytest_runtest_protocol(item: Item) -> Generator[None, None, None]:\n    \"\"\"Setup the pytest_assertrepr_</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.junitxml.pytest_addoption</name><path>src/_pytest/assertion/__init__.py</path><content></content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.logging.pytest_addoption</name><path>src/_pytest/assertion/__init__.py</path><content></content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.main.pytest_addoption</name><path>src/_pytest/assertion/__init__.py</path><content>    parser.addini(\n        \"enable_assertion_pass_hook\",\n        type=\"bool\",\n        default=False,\n        help=\"Enables the pytest_assertion_pass hook.\"\n        \"Make sure to delete any previously generated pyc cache files.\",\n    )\n\n\ndef register_assert_rewrite(*names: str) -> None:\n    \"\"\"Register one or more module names to be rewritten on import.\n\n    This function will make sure that this module or all modules inside\n    the package will get their assert statements rewritten.\n    Thus you should make sure to call this before the module is\n    actually imported, usually in your __init__.py if you are a plugin\n    using a package.\n\n    :raise TypeError: if the given module names are not strings.\n    \"\"\"\n    for name in names:\n        if not isinstance(name, str):\n            msg = \"expected module names as *args, got {0} instead\"\n            raise TypeError(msg.format(repr(names)))\n    for hook in sys.meta_path:\n        if isinstance(hook, rewrite.AssertionRewritingHook):\n            importhook = hook\n            break\n    else:\n        # TODO(typing): Add a protocol for mark_rewrite() and use it\n        # for importhook and for PytestPluginManager.rewrite_hook.\n        importhook = DummyRewriteHook()  # type: ignore\n    importhook.mark_rewrite(*names)\n\n\nclass DummyRewriteHook:\n    \"\"\"A no-op import hook for when rewriting is disabled.\"\"\"\n\n    def mark_rewrite(self, *names: str) -> None:\n        pass\n\n\nclass AssertionState:\n    \"\"\"State for the assertion plugin.\"\"\"\n\n    def __init__(self, config: Config, mode) -> None:\n        self.mode = mode\n        self.trace = config.trace.root.get(\"assertion\")\n        self.hook = None  # type: Optional[rewrite.AssertionRewritingHook]\n\n\ndef install_importhook(config: Config) -> rewrite.AssertionRewritingHook:\n    \"\"\"Try to install the rewrite hook, raise SystemError if it fails.\"\"\"\n    config._store[assertstate_key] = AssertionState(config, \"rewrite\")\n    config._store[assertstate_key].hook = hook = rewrite.AssertionRewritingHook(config)\n    sys.meta_path.insert(0, hook)\n    config._store[assertstate_key].trace(\"installed rewrite import hook\")\n\n    def undo() -> None:\n        hook = config._store[assertstate_key].hook\n        if hook is not None and hook in sys.meta_path:\n            sys.meta_path.remove(hook)\n\n    config.add_cleanup(undo)\n    return hook\n\n\ndef pytest_collection(session: \"Session\") -> None:\n    # this hook is only called when test modules are collected\n    # so for example not in the master process of pytest-xdist\n    # (which does not collect test modules)\n    assertstate = session.config._store.get(assertstate_key, None)\n    if assertstate:\n        if assertstate.hook is not None:\n            assertstate.hook.set_session(session)\n\n\n@hookimpl(tryfirst=True, hookwrapper=True)\ndef pytest_runtest_protocol(item: Item) -> Generator[None, None, None]:\n    \"\"\"Setup the pytest_assertrepr_compare and pytest_assertion_pass hooks\n\n    The rewrite module will use util._reprcompare if\n    it exists to use custom reporting via the\n    pytest_assertrepr_compare hook.  This sets up this custom\n    comparison for the test.\n    \"\"\"\n\n    def callbinrepr(op, left: object, right: object) -> Optional[str]:\n        \"\"\"Call the pytest_assertrepr_compare hook and prepare the result\n\n        This uses the first result from the hook and then ensures the\n        following:\n        * Overly verbose explanations are truncated unless configured otherwise\n          (eg. if running in verbose mode).\n        * Embedded newlines are escaped to help util.format_explanation()\n          later.\n        * If the rewrite mode is used embedded %-characters are replaced\n          to protect later % formatting.\n\n        The result can be formatted by util.format_explanation() for\n        pretty printing.\n        \"\"\"\n        hook_result = item.ihook.pytest_assertrepr_compare(\n            config=item.config, op=op, left=left, right=right\n        )\n        for new_expl in hook_result:\n            if new_expl:\n                new_expl = truncate.truncate_if_required(new_expl, item)\n                new_expl = [line.replace(\"\\n\", \"\\\\n\") for line in new_expl]\n                res = \"\\n~\".join(new_expl)\n                if item.config.getvalue(\"assertmode\") == </content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.mark.pytest_addoption</name><path>src/_pytest/assertion/__init__.py</path><content>{0} instead\"\n            raise TypeError(msg.format(repr(names)))\n    for hook in sys.meta_path:\n        if isinstance(hook, rewrite.AssertionRewritingHook):\n            importhook = hook\n            break\n    else:\n        # TODO(typing): Add a protocol for mark_rewrite() and use it\n        # for importhook and for PytestPluginManager.rewrite_hook.\n        importhook = DummyRewriteHook()  # type: ignore\n    importhook.mark_rewrite(*names)\n\n\nclass DummyRewriteHook:\n    \"\"\"A no-op import hook for when rewriting is disabled.\"\"\"\n\n    def mark_rewrite(self, *names: str) -> None:\n        pass\n\n\nclass AssertionState:\n    \"\"\"State for the assertion plugin.\"\"\"\n\n    def __init__(self, config: Config, mode) -> None:\n        self.mode = mode\n        self.trace = config.trace.root.get(\"assertion\")\n        self.hook = None  # type: Optional[rewrite.AssertionRewritingHook]\n\n\ndef install_importhook(config: Config) -> rewrite.AssertionRewritingHook:\n    \"\"\"Try to install the rewrite hook, raise SystemError if it fails.\"\"\"\n    config._store[assertstate_key] = AssertionState(config, \"rewrite\")\n    config._store[assertstate_key].hook = hook = rewrite.AssertionRewritingHook(config)\n    sys.meta_path.insert(0, hook)\n    config._store[assertstate_key].trace(\"installed rewrite import hook\")\n\n    def undo() -> None:\n        hook = config._store[assertstate_key].hook\n        if hook is not None and hook in sys.meta_path:\n            sys.meta_path.remove(hook)\n\n    config.add_cleanup(undo)\n    return hook\n\n\ndef pytest_collection(session: \"Session\") -> None:\n    # this hook is only called when test modules are collecte</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.pastebin.pytest_addoption</name><path>src/_pytest/assertion/__init__.py</path><content>\nfrom _pytest.config import hookimpl\nfrom _pytest.config.argparsing import Parser\nfrom _pytest.nodes import Item\n\nif TYPE_CHECKING:\n    from _pytest.main import Session\n\n\ndef pytest_addoption(parser: Parser) -> None:\n    group = parser.getgroup(\"debugconfig\")\n    group.addoption(\n        \"--assert\",\n        action=\"store\",\n        dest=\"asser</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.pytester.pytest_addoption</name><path>src/_pytest/assertion/__init__.py</path><content>r one or more module names to be rewritten on import.\n\n    This function will make sure that this module or all modules inside\n    the package will get their assert statements rewritten.\n    Thus you should make sure to call this before the module is\n    actually imported, usually in your __init__.py if you are a plugin\n    using a package.\n\n    :raise TypeError: if the given module names are not strings.\n    \"\"\"\n    for name in names:\n        if not isinstance(name, str):\n            msg = \"expected module names as *args, got {0} instead\"\n            raise TypeError(msg.format(repr(names)))\n    for hook in sys.meta_pat</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python.pytest_addoption</name><path>src/_pytest/assertion/__init__.py</path><content>ook and for PytestPluginManager.rewrite_hook.\n        importhook = DummyRewriteHook()  # type: ignore\n    importhook.mark_rewrite(*names)\n\n\nclass DummyRewriteHook:\n    \"\"\"A no-op import hook for when rewriting is disabled.\"\"\"\n\n    def mark_rewrite(self, *names: str) -> None:\n        pass\n\n\nclass AssertionState:\n    \"\"\"State for the assertion plugin.\"\"\"\n\n    def __init__(self, config: Config, mode) -> None:\n        self.mode = mode\n        self.trace = config.trace.root.get(\"assertion\")\n        self.hook = None  # type: Optional[rewrite.AssertionRewritingHook]\n\n\ndef install_importhook(config: Config) -> rewrite.AssertionRewritingHook:\n    \"\"\"Try to install the rewrite hook, raise SystemError if it fails.\"\"\"\n    config._store[assertstate_key] = AssertionState(config, \"rewrite\")\n    config._store[assertstate_key].hook = hook = rewrite.AssertionRewritingHook(config)\n    sys.meta_path.insert(0, hook)\n    config._store[assertstate_key].trace(\"installed rewrite import hook\")\n\n    def undo() -> None:\n        hook = config._store[assertstate_key].hook\n        if hook is not None and hook in sys.meta_path:\n            sys.meta_path.remove(hook)\n\n    config.add_cleanup(undo)\n    return hook\n\n\ndef pytest_collection(session: \"Session\") -> None:\n    # this hook is only called when test modules are collected\n    # so for example not in the master process of pytest-xdist\n    # (which does not collect test modules)\n    assertstate = session.config._store.get(assertstate_key, None)\n    if assertstate:\n        if assertstate.hook is not None:\n            assertstate.hook.set_session(session)\n\n\n@hookimpl(tryfirst=True, hookwrapper=True)\ndef pytest_runtest_protocol(item: Item) -> Gen</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.runner.pytest_addoption</name><path>src/_pytest/assertion/__init__.py</path><content>pression information.\"\n        ),\n    )\n    parser.addini(\n        \"enable_assertion_pass_hook\",\n        type=\"bool\",\n        default=False,\n        help=\"Enables the pytest_assertion_pass hook.\"\n        \"Make sure to delete any previously generated pyc cache files.\",\n    )\n\n\ndef register_assert_rewrite(*names: str) -> None:\n</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.setuponly.pytest_addoption</name><path>src/_pytest/assertion/__init__.py</path><content>port assertstate_key\nfrom _pytest.compat import TYPE_CHECKING\nfrom _pytest.config import Config\nfrom _pytest.config import hookimpl\nfrom _pytest.config.argparsing import Parser\nfrom _pytest.nodes import Item\n\nif TYPE_CHECKING:\n    from _pytest.main import Session\n\n\ndef pytest_addoption(parser: Parser) -> None:\n    group = parser.getgroup(\"debugconfig\")\n    group.addoption(\n        \"--assert\",\n        action=\"sto</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.setupplan.pytest_addoption</name><path>src/_pytest/assertion/__init__.py</path><content>te\nfrom _pytest.assertion import util\nfrom _pytest.assertion.rewrite import assertstate_key\nfrom _pytest.compat import TYPE_CHECKING\nfrom _pytest.config import Config\nfrom _pytest.config import hookimpl\nfrom _pytest.config.argparsing import Parser\nfrom _pytest.nodes import Item\n\nif TYPE_CHECK</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.skipping.pytest_addoption</name><path>src/_pytest/assertion/__init__.py</path><content>\"debugconfig\")\n    group.addoption(\n        \"--assert\",\n        action=\"store\",\n        dest=\"assertmode\",\n        choices=(\"rewrite\", \"plain\"),\n        default=\"rewrite\",\n        metavar=\"MODE\",\n        help=(\n            \"Control assertion debugging tools.\\n\"\n            \"'plain' performs no assertion debugging.\\n\"\n            \"'rewrite' (the default) rewrites assert statements in test modules\"\n            \" on import to provide assert expression information.\"\n        ),\n    )\n    parser.a</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.stepwise.pytest_addoption</name><path>src/_pytest/assertion/__init__.py</path><content>rtion import truncate\nfrom _pytest.assertion import util\nfrom _pytest.assertion.rewrite import assertstate_key\nfrom _pytest.compat import TYPE_CHECKING\nfrom _pytest.config import Config\nfrom _pytest.config import hookimpl\nfrom _pytest.config.argparsing import Parser\nfrom _pytest.nodes import Item\n\nif TYPE_CHECKING:\n    from _pytest.main import Session\n\n\ndef pytest_addoption(parser: Parser) -> None:\n    group = parser.getgroup(\"debugconfig\")\n    group.addoption(\n        \"--as</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.terminal.pytest_addoption</name><path>src/_pytest/assertion/__init__.py</path><content>for the assertion plugin.\"\"\"\n\n    def __init__(self, config: Config, mode) -> None:\n        self.mode = mode\n        self.trace = config.trace.root.get(\"assertion\")\n        self.hook = None  # type: Optional[rewrite.AssertionRewritingHook]\n\n\ndef install_importhook(config: Config) -> rewrite.AssertionRewritingHook:\n    \"\"\"Try to install the rewrite hook, raise SystemError if it fails.\"\"\"\n    config._store[assertstate_key] = AssertionState(config, \"rewrite\")\n    config._store[assertstate_key].hook = hook = rewrite.AssertionRewritingHook(config)\n    sys.meta_path.insert(0, hook)\n    config._store[assertstate_key].trace(\"installed rewrite import hook\")\n\n    def undo() -> None:\n        hook = config._store[assertstate_key].hook\n        if hook is not None and hook in sys.meta_path:\n            sys.meta_path.remove(hook)\n\n    config.add_cleanup(undo)\n    return hook\n\n\ndef pytest_collection(session: \"Session\") -> None:\n    # this hook is only called when test modules are collected\n    # so for example not in the master process of pytest-xdist\n    # (which does not collect test modules)\n    assertstate = session.config._store.get(assertstate_key, None)\n    if assertstate:\n        if assertstate.hook is not None:\n            assertstate.hook.set_session(session)\n\n\n@hookimpl(tryfirst=True, hookwrapper=True)\ndef pytest_runtest_protocol(item: Item) -> Generator[None, None, None]:\n    \"\"\"Setup the pytest_assertrepr_compare and pytest_assertion_pass hooks\n\n    The rewrite module will use util._reprcompare if\n    it exists to use custom reporting via the\n    pytest_assertrepr_compare hook.  This sets up this custom\n    comparison for the test.\n    \"\"\"\n\n    def callbinrepr(op, left: object, right: object) -> Optional[str]:\n        \"\"\"Call the pytest_assertrepr_compare hook and prepare the result\n\n        This uses the first result from the hook and then ensures the\n        following:\n        * Overly verbose explanations are truncated unless configured otherwise\n          (eg. if running in verbose mode).\n        * Embedded newlines are escaped to help util.format_explanation()\n          later.\n        * If the rewrite mode is used embedded %-characters are replaced\n          to protect later % formatting.\n\n        The result can be formatted by util.format_explanation() for\n        pretty printing.\n        \"\"\"\n        hook_result = item.ihook.pytest_assertrepr_compare(\n            config=item.config, op=op, left=left, right=right\n        )\n        for new_expl in hook_result:\n            if new_expl:\n                new_expl = truncate.truncate_if_required(new_expl, item)\n                new_expl = [line.replace(\"\\n\", \"\\\\n\") for line in new_expl]\n                res = \"\\n~\".join(new_expl)\n                if item.config.getva</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.warnings.pytest_addoption</name><path>src/_pytest/assertion/__init__.py</path><content>your __init__.py if you are a plugin\n    using a package.\n\n    :raise TypeError: if the given module names are not strings.\n    \"\"\"\n    for name in names:\n        if not isinstance(name, str):\n            msg = \"expected module names as *args, got {0} instead\"\n            raise TypeError(msg.format(repr(names)))\n    for hook in sys.meta_path:\n        if isinstance(hook, rewrite.AssertionRewritingHook):\n            importhook = hook\n            break\n    else:\n        # </content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.resultlog.pytest_addoption</name><path>src/_pytest/assertion/__init__.py</path><content>rtstate_key\nfrom _pytest.compat import TYPE_CHECKING\nfrom _pytest.config import Config\nfrom _pytest.config import hookimpl\nfrom _pytest.config.argparsing import Parser\nfrom _pytest.nodes import Item\n\nif TYPE_CHECKING:\n    from _pytest.main import Session\n\n\ndef pytest_addoption(parser: Parser) -> None:\n    group = parser.getgroup(\"</content></symbol>"
+    }
+  ],
+  "completion": {
+    "id": "chatcmpl-9xSgfglmkJF1MU2lhfmxb4uN4i16V",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\"scratch_pad\":\"Analyzing the issue...\\n1. The issue described is related to Python crashing when using `Expression.compile(\\\"False\\\")`. This is due to an assertion in the Python compiler that certain names should not be present in expressions being compiled.\\n2. The crash happens because this code path is being hit in a way that Python doesn't expect, possibly due to Pytest's handling of expressions/leverage of Python's built-in compile.\\n3. The expected behavior is that the code should handle expressions like \\\"False\\\" without triggering an assertion error in the Python runtime.\\n4. If not stated explicitly, the expectation is that the compile method should handle expressions in a way that respects Python's internal rules without crashing.\\n5. The resolution involves ensuring that forbidden names like \\\"False\\\" are handled upfront before passing to Python's compile.\\n\\nEvaluating the symbols provided:\\n- `_pytest.mark.Expression.compile`:\\n  - The primary suspect for needing change, as it is the entry point where the incorrect compile invocation happens.\\n  - Would need to inspect/check the input expression and reject or modify as appropriate before handing it off to compile.\\n\\nOther symbols provided seem to have less relevance as they deal with other aspects of pytest's functionality like assertion handling, logging, or helper utilities. The issue is specific to expression compilation, so they might not require changes directly related to this bug.\",\"symbols\":[{\"name\":\"_pytest.mark.Expression.compile\",\"file_path\":\"src/_pytest/mark/expression.py\",\"reason\":\"`Expression.compile` directly uses Python's compile, which triggers the assertion. This function needs to handle or sanitize the input expression to prevent forbidden names from reaching the raw compile call.\"}],\"more_info\":[],\"is_done\":true,\"symbols_scratch_pad\":[\"The `_pytest.mark.Expression.compile` method is critically related to the reported issue, as it is directly calling Python's `compile` with an input that triggers the assertion error about special constant names. It may need to filter or handle `input` to prevent invalid constants usage.\",\"The rest of the symbols appear to be unrelated to direct issue at hand, as they concern other utilities or functionalities in pytest unrelated to the `Expression.compile`. Their modification seems unnecessary unless found to specifically process expression strings given to `compile` in some indirect manner.\"]}",
+          "refusal": null,
+          "role": "assistant",
+          "function_call": null,
+          "tool_calls": [],
+          "parsed": {
+            "scratch_pad": "Analyzing the issue...\n1. The issue described is related to Python crashing when using `Expression.compile(\"False\")`. This is due to an assertion in the Python compiler that certain names should not be present in expressions being compiled.\n2. The crash happens because this code path is being hit in a way that Python doesn't expect, possibly due to Pytest's handling of expressions/leverage of Python's built-in compile.\n3. The expected behavior is that the code should handle expressions like \"False\" without triggering an assertion error in the Python runtime.\n4. If not stated explicitly, the expectation is that the compile method should handle expressions in a way that respects Python's internal rules without crashing.\n5. The resolution involves ensuring that forbidden names like \"False\" are handled upfront before passing to Python's compile.\n\nEvaluating the symbols provided:\n- `_pytest.mark.Expression.compile`:\n  - The primary suspect for needing change, as it is the entry point where the incorrect compile invocation happens.\n  - Would need to inspect/check the input expression and reject or modify as appropriate before handing it off to compile.\n\nOther symbols provided seem to have less relevance as they deal with other aspects of pytest's functionality like assertion handling, logging, or helper utilities. The issue is specific to expression compilation, so they might not require changes directly related to this bug.",
+            "symbols": [
+              {
+                "name": "_pytest.mark.Expression.compile",
+                "file_path": "src/_pytest/mark/expression.py",
+                "reason": "`Expression.compile` directly uses Python's compile, which triggers the assertion. This function needs to handle or sanitize the input expression to prevent forbidden names from reaching the raw compile call."
+              }
+            ],
+            "more_info": [],
+            "is_done": true,
+            "symbols_scratch_pad": [
+              "The `_pytest.mark.Expression.compile` method is critically related to the reported issue, as it is directly calling Python's `compile` with an input that triggers the assertion error about special constant names. It may need to filter or handle `input` to prevent invalid constants usage.",
+              "The rest of the symbols appear to be unrelated to direct issue at hand, as they concern other utilities or functionalities in pytest unrelated to the `Expression.compile`. Their modification seems unnecessary unless found to specifically process expression strings given to `compile` in some indirect manner."
+            ]
+          }
+        }
+      }
+    ],
+    "created": 1723958653,
+    "model": "gpt-4o-2024-08-06",
+    "object": "chat.completion",
+    "service_tier": null,
+    "system_fingerprint": "fp_2a322c9ffc",
+    "usage": {
+      "completion_tokens": 471,
+      "prompt_tokens": 11237,
+      "total_tokens": 11708
+    }
+  }
+}
