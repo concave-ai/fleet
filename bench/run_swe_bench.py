@@ -5,6 +5,7 @@ import traceback
 
 from concave.internal.datasets.config import get_config_from_swe_bench
 from concave.internal.workspace.manager import WorkspaceManager
+from concave.internal.workspace.tools import build_base_images, build_env_images
 from datasets import load_dataset
 
 from fleet.agents.code_gen.symbol_evaluate import SymbolsEvaluate
@@ -43,12 +44,7 @@ class SweBenchTask:
 
     def prepare_ctx(self):
         rule = self.get_test_rule_from_dataset()
-        config = get_config_from_swe_bench(
-            name=rule["instance_id"],
-            repo=rule["repo"],
-            version=rule["version"],
-            base_commit=rule["base_commit"]
-        )
+        config = get_config_from_swe_bench(rule)
 
         manager = WorkspaceManager()
 
@@ -130,8 +126,20 @@ def run_swe_bench_task(task_id):
         print(traceback.format_exc())
 
 
+def prebuild_images():
+    configs = []
+    ds = load_dataset("princeton-nlp/SWE-bench_Verified")
+    rows = ds.get("test")
+    for row in rows:
+        if "pytest" in row["instance_id"]:
+            config = get_config_from_swe_bench(row)
+            configs.append(config)
+    build_base_images(configs, False)
+    build_env_images(configs, False)
+
 def run_all_task():
-    pool = ThreadPool(16)
+    prebuild_images()
+    pool = ThreadPool(4)
     pool.map(run_swe_bench_task, get_all_pytest_ids())
     pool.close()
     pool.join()
