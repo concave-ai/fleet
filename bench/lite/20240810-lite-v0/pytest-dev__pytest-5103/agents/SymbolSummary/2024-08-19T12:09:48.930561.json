@@ -1,0 +1,730 @@
+{
+  "name": "SymbolSummary",
+  "model": "gpt-4o-2024-08-06",
+  "metadata": {},
+  "issue": "<description>:Unroll the iterable for all/any calls to get better reports\nSometime I need to assert some predicate on all of an iterable, and for that the builtin functions `all`/`any` are great - but the failure messages aren't useful at all!\r\nFor example - the same test written in three ways:\r\n\r\n- A generator expression\r\n```sh                                                                                                                                                                                                                         \r\n    def test_all_even():\r\n        even_stevens = list(range(1,100,2))\r\n>       assert all(is_even(number) for number in even_stevens)\r\nE       assert False\r\nE        +  where False = all(<generator object test_all_even.<locals>.<genexpr> at 0x101f82ed0>)\r\n```\r\n- A list comprehension\r\n```sh\r\n    def test_all_even():\r\n        even_stevens = list(range(1,100,2))\r\n>       assert all([is_even(number) for number in even_stevens])\r\nE       assert False\r\nE        +  where False = all([False, False, False, False, False, False, ...])\r\n```\r\n- A for loop\r\n```sh\r\n    def test_all_even():\r\n        even_stevens = list(range(1,100,2))\r\n        for number in even_stevens:\r\n>           assert is_even(number)\r\nE           assert False\r\nE            +  where False = is_even(1)\r\n\r\ntest_all_any.py:7: AssertionError\r\n```\r\nThe only one that gives a meaningful report is the for loop - but it's way more wordy, and `all` asserts don't translate to a for loop nicely (I'll have to write a `break` or a helper function - yuck)\r\nI propose the assertion re-writer \"unrolls\" the iterator to the third form, and then uses the already existing reports.\r\n\r\n- [x] Include a detailed description of the bug or suggestion\r\n- [x] `pip list` of the virtual environment you are using\r\n```\r\nPackage        Version\r\n-------------- -------\r\natomicwrites   1.3.0  \r\nattrs          19.1.0 \r\nmore-itertools 7.0.0  \r\npip            19.0.3 \r\npluggy         0.9.0  \r\npy             1.8.0  \r\npytest         4.4.0  \r\nsetuptools     40.8.0 \r\nsix            1.12.0 \r\n```\r\n- [x] pytest and operating system versions\r\n`platform darwin -- Python 3.7.3, pytest-4.4.0, py-1.8.0, pluggy-0.9.0`\r\n- [x] Minimal example if possible\r\n\n</description>",
+  "request": {
+    "symbols": {
+      "related_symbols": [
+        {
+          "name": "_pytest.assertion.pytest_assertrepr_compare",
+          "file_path": "src/_pytest/assertion/util.py",
+          "file_content": "n is not None:\n                        explanation.",
+          "start_line": 154,
+          "start_column": 5119,
+          "end_line": 0,
+          "end_column": 5170,
+          "start_byte": 5119,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.assertion.isiterable",
+          "file_path": "src/_pytest/assertion/util.py",
+          "file_content": "def isiterable(obj):\n    try:\n        iter(obj)\n        return not istext(obj)\n    except TypeError:\n        return False",
+          "start_line": 129,
+          "start_column": 3518,
+          "end_line": 0,
+          "end_column": 3639,
+          "start_byte": 3518,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.assertion.assertrepr_compare",
+          "file_path": "src/_pytest/assertion/util.py",
+          "file_content": "def assertrepr_compare(config, op, left, right):\n    \"\"\"Return specialised explanations for some operators/operands\"\"\"\n    width = 80 - 15 - len(op) - 2  # 15 chars indentation, 1 space around op\n    left_repr = saferepr(left, maxsize=int(width // 2))\n    right_repr = saferepr(right, maxsize=width - len(left_repr))\n\n    summary = u\"%s %s %s\" % (ecu(left_repr), op, ecu(right_repr))\n\n    verbose = config.getoption(\"verbose\")\n    explanation = None\n    try:\n        if op == \"==\":\n            if istext(left) and istext(right):\n                explanation = _diff_text(left, right, verbose)\n            else:\n                if issequence(left) and issequence(right):\n                    explanation = _compare_eq_sequence(left, right, verbose)\n                elif isset(left) and isset(right):\n                    explanation = _compare_eq_set(left, right, verbose)\n                elif isdict(left) and isdict(right):\n                    explanation = _compare_eq_dict(left, right, verbose)\n                elif type(left) == type(right) and (isdatacls(left) or isattrs(left)):\n                    type_fn = (isdatacls, isattrs)\n                    explanation = _compare_eq_cls(left, right, verbose, type_fn)\n                elif verbose > 0:\n                    explanation = _compare_eq_verbose(left, right)\n                if isiterable(left) and isiterable(right):\n                    expl = _compare_eq_iterable(left, right, verbose)\n                    if explanation is not None:\n                        explanation.extend(expl)\n                    else:\n                        explanation = expl\n        elif op == \"not in\":\n            if istext(left) and istext(right):\n                explanation = _notin_text(left, right, verbose)\n    except outcomes.Exit:\n        raise\n    except Exception:\n        explanation = [\n            u\"(pytest_assertion plugin: representation of details failed.  \"\n            u\"Probably an object has a faulty __repr__.)\",\n            six.text_type(_pytest._code.ExceptionInfo.from_current()),\n        ]\n\n    if not explanation:\n        return None\n\n    return [summary] + explanation",
+          "start_line": 137,
+          "start_column": 3642,
+          "end_line": 0,
+          "end_column": 5775,
+          "start_byte": 3642,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.assertion._compare_eq_iterable",
+          "file_path": "src/_pytest/assertion/util.py",
+          "file_content": "def _compare_eq_iterable(left, right, verbose=0):\n    if not verbose:\n        return [u\"Use -v to get the full diff\"]\n    # dynamic import to speedup pytest\n    import difflib\n\n    try:\n        left_formatting = pprint.pformat(left).splitlines()\n        right_formatting = pprint.pformat(right).splitlines()\n        explanation = [u\"Full diff:\"]\n    except Exception:\n        # hack: PrettyPrinter.pformat() in python 2 fails when formatting items that can't be sorted(), ie, calling\n        # sorted() on a list would raise. See issue #718.\n        # As a workaround, the full diff is generated by using the repr() string of each item of each container.\n        left_formatting = sorted(repr(x) for x in left)\n        right_formatting = sorted(repr(x) for x in right)\n        explanation = [u\"Full diff (fallback to calling repr on each item):\"]\n    explanation.extend(\n        line.strip() for line in difflib.ndiff(left_formatting, right_formatting)\n    )\n    return explanation",
+          "start_line": 262,
+          "start_column": 8366,
+          "end_line": 0,
+          "end_column": 9347,
+          "start_byte": 8366,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.hookspec.pytest_assertrepr_compare",
+          "file_path": "src/_pytest/assertion/util.py",
+          "file_content": "",
+          "start_line": 475,
+          "start_column": 15508,
+          "end_line": 0,
+          "end_column": 16001,
+          "start_byte": 15508,
+          "end_byte": 0
+        }
+      ],
+      "root_caused_symbols": [
+        {
+          "name": "_pytest.assertion.rewrite_asserts",
+          "file_path": "src/_pytest/assertion/rewrite.py",
+          "file_content": "def rewrite_asserts(mod, module_path=None, config=None):\n    \"\"\"Rewrite the assert statements in mod.\"\"\"\n    AssertionRewriter(module_path, config).run(mod)",
+          "start_line": 465,
+          "start_column": 17515,
+          "end_line": 0,
+          "end_column": 17671,
+          "start_byte": 17515,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewriter",
+          "file_path": "src/_pytest/assertion/rewrite.py",
+          "file_content": "class AssertionRewriter(ast.NodeVisitor):\n    \"\"\"Assertion rewriting implementation.\n\n    The main entrypoint is to call .run() with an ast.Module instance,\n    this will then find all the assert statements and rewrite them to\n    provide intermediate values and a detailed assertion error.  See\n    http://pybites.blogspot.be/2011/07/behind-scenes-of-pytests-new-assertion.html\n    for an overview of how this works.\n\n    The entry point here is .run() which will iterate over all the\n    statements in an ast.Module and for each ast.Assert statement it\n    finds call .visit() with it.  Then .visit_Assert() takes over and\n    is responsible for creating new ast statements to replace the\n    original assert statement: it rewrites the test of an assertion\n    to provide intermediate values and replace it with an if statement\n    which raises an assertion error with a detailed explanation in\n    case the expression is false.\n\n    For this .visit_Assert() uses the visitor pattern to visit all the\n    AST nodes of the ast.Assert.test field, each visit call returning\n    an AST node and the corresponding explanation string.  During this\n    state is kept in several instance attributes:\n\n    :statements: All the AST statements which will replace the assert\n       statement.\n\n    :variables: This is populated by .variable() with each variable\n       used by the statements so that they can all be set to None at\n       the end of the statements.\n\n    :variable_counter: Counter to create new unique variables needed\n       by statements.  Variables are created using .variable() and\n       have the form of \"@py_assert0\".\n\n    :on_failure: The AST statements which will be executed if the\n       assertion test fails.  This is the code which will construct\n       the failure message and raises the AssertionError.\n\n    :explanation_specifiers: A dict filled by .explanation_param()\n       with %-formatting placeholders and their corresponding\n       expressions to use in the building of an assertion message.\n       This is used by .pop_format_context() to build a message.\n\n    :stack: A stack of the explanation_specifiers dicts maintained by\n       .push_format_context() and .pop_format_context() which allows\n       to build another %-formatted string while already building one.\n\n    This state is reset on every new assert statement visited and used\n    by the other visitors.\n\n    \"\"\"\n\n    def __init__(self, module_path, config):\n        super(AssertionRewriter, self).__init__()\n        self.module_path = module_path\n        self.config = config\n\n    def run(self, mod):\n        \"\"\"Find all assert statements in *mod* and rewrite them.\"\"\"\n        if not mod.body:\n            # Nothing to do.\n            return\n        # Insert some special imports at the top of the module but after any\n        # docstrings and __future__ imports.\n        aliases = [\n            ast.alias(six.moves.builtins.__name__, \"@py_builtins\"),\n            ast.alias(\"_pytest.assertion.rewrite\", \"@pytest_ar\"),\n        ]\n        doc = getattr(mod, \"docstring\", None)\n        expect_docstring = doc is None\n        if doc is not None and self.is_rewrite_disabled(doc):\n            return\n        pos = 0\n        lineno = 1\n        for item in mod.body:\n            if (\n                expect_docstring\n                and isinstance(item, ast.Expr)\n                and isinstance(item.value, ast.Str)\n            ):\n                doc = item.value.s\n                if self.is_rewrite_disabled(doc):\n                    return\n                expect_docstring = False\n            elif (\n                not isinstance(item, ast.ImportFrom)\n                or item.level > 0\n                or item.module != \"__future__\"\n            ):\n                lineno = item.lineno\n                break\n            pos += 1\n        else:\n            lineno = item.lineno\n        imports = [\n            ast.Import([alias], lineno=lineno, col_offset=0) for alias in aliases\n        ]\n        mod.body[pos:pos] = imports\n        # Collect asserts.\n        nodes = [mod]\n        while nodes:\n            node = nodes.pop()\n            for name, field in ast.iter_fields(node):\n                if isinstance(field, list):\n                    new = []\n                    for i, child in enumerate(field):\n                        if isinstance(child, ast.Assert):\n                            # Transform assert.\n                            new.extend(self.visit(child))\n                        else:\n                            new.append(child)\n                            if isinstance(child, ast.AST):\n                                nodes.append(child)\n                    setattr(node, name, new)\n                elif (\n                    isinstance(field, ast.AST)\n                    # Don't recurse into expressions as they can't contain\n                    # asserts.\n                    and not isinstance(field, ast.expr)\n                ):\n                    nodes.append(field)\n\n    @staticmethod\n    def is_rewrite_disabled(docstring):\n        return \"PYTEST_DONT_REWRITE\" in docstring\n\n    def variable(self):\n        \"\"\"Get a new variable.\"\"\"\n        # Use a character invalid in python identifiers to avoid clashing.\n        name = \"@py_assert\" + str(next(self.variable_counter))\n        self.variables.append(name)\n        return name\n\n    def assign(self, expr):\n        \"\"\"Give *expr* a name.\"\"\"\n        name = self.variable()\n        self.statements.append(ast.Assign([ast.Name(name, ast.Store())], expr))\n        return ast.Name(name, ast.Load())\n\n    def display(self, expr):\n        \"\"\"Call saferepr on the expression.\"\"\"\n        return self.helper(\"_saferepr\", expr)\n\n    def helper(self, name, *args):\n        \"\"\"Call a helper in this module.\"\"\"\n        py_name = ast.Name(\"@pytest_ar\", ast.Load())\n        attr = ast.Attribute(py_name, name, ast.Load())\n        return ast_Call(attr, list(args), [])\n\n    def builtin(self, name):\n        \"\"\"Return the builtin called *name*.\"\"\"\n        builtin_name = ast.Name(\"@py_builtins\", ast.Load())\n        return ast.Attribute(builtin_name, name, ast.Load())\n\n    def explanation_param(self, expr):\n        \"\"\"Return a new named %-formatting placeholder for expr.\n\n        This creates a %-formatting placeholder for expr in the\n        current formatting context, e.g. ``%(py0)s``.  The placeholder\n        and expr are placed in the current format context so that it\n        can be used on the next call to .pop_format_context().\n\n        \"\"\"\n        specifier = \"py\" + str(next(self.variable_counter))\n        self.explanation_specifiers[specifier] = expr\n        return \"%(\" + specifier + \")s\"\n\n    def push_format_context(self):\n        \"\"\"Create a new formatting context.\n\n        The format context is used for when an explanation wants to\n        have a variable value formatted in the assertion message.  In\n        this case the value required can be added using\n        .explanation_param().  Finally .pop_format_context() is used\n        to format a string of %-formatted values as added by\n        .explanation_param().\n\n        \"\"\"\n        self.explanation_specifiers = {}\n        self.stack.append(self.explanation_specifiers)\n\n    def pop_format_context(self, expl_expr):\n        \"\"\"Format the %-formatted string with current format context.\n\n        The expl_expr should be an ast.Str instance constructed from\n        the %-placeholders created by .explanation_param().  This will\n        add the required code to format said string to .on_failure and\n        return the ast.Name instance of the formatted string.\n\n        \"\"\"\n        current = self.stack.pop()\n        if self.stack:\n            self.explanation_specifiers = self.stack[-1]\n        keys = [ast.Str(key) for key in current.keys()]\n        format_dict = ast.Dict(keys, list(current.values()))\n        form = ast.BinOp(expl_expr, ast.Mod(), format_dict)\n        name = \"@py_format\" + str(next(self.variable_counter))\n        self.on_failure.append(ast.Assign([ast.Name(name, ast.Store())], form))\n        return ast.Name(name, ast.Load())\n\n    def generic_visit(self, node):\n        \"\"\"Handle expressions we don't have custom code for.\"\"\"\n        assert isinstance(node, ast.expr)\n        res = self.assign(node)\n        return res, self.explanation_param(self.display(res))\n\n    def visit_Assert(self, assert_):\n        \"\"\"Return the AST statements to replace the ast.Assert instance.\n\n        This rewrites the test of an assertion to provide\n        intermediate values and replace it with an if statement which\n        raises an assertion error with a detailed explanation in case\n        the expression is false.\n\n        \"\"\"\n        if isinstance(assert_.test, ast.Tuple) and len(assert_.test.elts) >= 1:\n            from _pytest.warning_types import PytestAssertRewriteWarning\n            import warnings\n\n            warnings.warn_explicit(\n                PytestAssertRewriteWarning(\n                    \"assertion is always true, perhaps remove parentheses?\"\n                ),\n                category=None,\n                filename=str(self.module_path),\n                lineno=assert_.lineno,\n            )\n\n        self.statements = []\n        self.variables = []\n        self.variable_counter = itertools.count()\n        self.stack = []\n        self.on_failure = []\n        self.push_format_context()\n        # Rewrite assert into a bunch of statements.\n        top_condition, explanation = self.visit(assert_.test)\n        # If in a test module, check if directly asserting None, in order to warn [Issue #3191]\n        if self.module_path is not None:\n            self.statements.append(\n                self.warn_about_none_ast(\n                    top_condition, module_path=self.module_path, lineno=assert_.lineno\n                )\n            )\n        # Create failure message.\n        body = self.on_failure\n        negation = ast.UnaryOp(ast.Not(), top_condition)\n        self.statements.append(ast.If(negation, body, []))\n        if assert_.msg:\n            assertmsg = self.helper(\"_format_assertmsg\", assert_.msg)\n            explanation = \"\\n>assert \" + explanation\n        else:\n            assertmsg = ast.Str(\"\")\n            explanation = \"assert \" + explanation\n        template = ast.BinOp(assertmsg, ast.Add(), ast.Str(explanation))\n        msg = self.pop_format_context(template)\n        fmt = self.helper(\"_format_explanation\", msg)\n        err_name = ast.Name(\"AssertionError\", ast.Load())\n        exc = ast_Call(err_name, [fmt], [])\n        if sys.version_info[0] >= 3:\n            raise_ = ast.Raise(exc, None)\n        else:\n            raise_ = ast.Raise(exc, None, None)\n        body.append(raise_)\n        # Clear temporary variables by setting them to None.\n        if self.variables:\n            variables = [ast.Name(name, ast.Store()) for name in self.variables]\n            clear = ast.Assign(variables, _NameConstant(None))\n            self.statements.append(clear)\n        # Fix line numbers.\n        for stmt in self.statements:\n            set_location(stmt, assert_.lineno, assert_.col_offset)\n        return self.statements\n\n    def warn_about_none_ast(self, node, module_path, lineno):\n        \"\"\"\n        Returns an AST issuing a warning if the value of node is `None`.\n        This is used to warn the user when asserting a function that asserts\n        internally already.\n        See issue #3191 for more details.\n        \"\"\"\n\n        # Using parse because it is different between py2 and py3.\n        AST_NONE = ast.parse(\"None\").body[0].value\n        val_is_none = ast.Compare(node, [ast.Is()], [AST_NONE])\n        send_warning = ast.parse(\n            \"\"\"\nfrom _pytest.warning_types import PytestAssertRewriteWarning\nfrom warnings import warn_explicit\nwarn_explicit(\n    PytestAssertRewriteWarning('asserting the value None, please use \"assert is None\"'),\n    category=None,\n    filename={filename!r},\n    lineno={lineno},\n)\n            \"\"\".format(\n                filename=module_path.strpath, lineno=lineno\n            )\n        ).body\n        return ast.If(val_is_none, send_warning, [])\n\n    def visit_Name(self, name):\n        # Display the repr of the name if it's a local variable or\n        # _should_repr_global_name() thinks it's acceptable.\n        locs = ast_Call(self.builtin(\"locals\"), [], [])\n        inlocs = ast.Compare(ast.Str(name.id), [ast.In()], [locs])\n        dorepr = self.helper(\"_should_repr_global_name\", name)\n        test = ast.BoolOp(ast.Or(), [inlocs, dorepr])\n        expr = ast.IfExp(test, self.display(name), ast.Str(name.id))\n        return name, self.explanation_param(expr)\n\n    def visit_BoolOp(self, boolop):\n        res_var = self.variable()\n        expl_list = self.assign(ast.List([], ast.Load()))\n        app = ast.Attribute(expl_list, \"append\", ast.Load())\n        is_or = int(isinstance(boolop.op, ast.Or))\n        body = save = self.statements\n        fail_save = self.on_failure\n        levels = len(boolop.values) - 1\n        self.push_format_context()\n        # Process each operand, short-circuting if needed.\n        for i, v in enumerate(boolop.values):\n            if i:\n                fail_inner = []\n                # cond is set in a prior loop iteration below\n                self.on_failure.append(ast.If(cond, fail_inner, []))  # noqa\n                self.on_failure = fail_inner\n            self.push_format_context()\n            res, expl = self.visit(v)\n            body.append(ast.Assign([ast.Name(res_var, ast.Store())], res))\n            expl_format = self.pop_format_context(ast.Str(expl))\n            call = ast_Call(app, [expl_format], [])\n            self.on_failure.append(ast.Expr(call))\n            if i < levels:\n                cond = res\n                if is_or:\n                    cond = ast.UnaryOp(ast.Not(), cond)\n                inner = []\n                self.statements.append(ast.If(cond, inner, []))\n                self.statements = body = inner\n        self.statements = save\n        self.on_failure = fail_save\n        expl_template = self.helper(\"_format_boolop\", expl_list, ast.Num(is_or))\n        expl = self.pop_format_context(expl_template)\n        return ast.Name(res_var, ast.Load()), self.explanation_param(expl)\n\n    def visit_UnaryOp(self, unary):\n        pattern = unary_map[unary.op.__class__]\n        operand_res, operand_expl = self.visit(unary.operand)\n        res = self.assign(ast.UnaryOp(unary.op, operand_res))\n        return res, pattern % (operand_expl,)\n\n    def visit_BinOp(self, binop):\n        symbol = binop_map[binop.op.__class__]\n        left_expr, left_expl = self.visit(binop.left)\n        right_expr, right_expl = self.visit(binop.right)\n        explanation = \"(%s %s %s)\" % (left_expl, symbol, right_expl)\n        res = self.assign(ast.BinOp(left_expr, binop.op, right_expr))\n        return res, explanation\n\n    def visit_Call_35(self, call):\n        \"\"\"\n        visit `ast.Call` nodes on Python3.5 and after\n        \"\"\"\n        new_func, func_expl = self.visit(call.func)\n        arg_expls = []\n        new_args = []\n        new_kwargs = []\n        for arg in call.args:\n            res, expl = self.visit(arg)\n            arg_expls.append(expl)\n            new_args.append(res)\n        for keyword in call.keywords:\n            res, expl = self.visit(keyword.value)\n            new_kwargs.append(ast.keyword(keyword.arg, res))\n            if keyword.arg:\n                arg_expls.append(keyword.arg + \"=\" + expl)\n            else:  # **args have `arg` keywords with an .arg of None\n                arg_expls.append(\"**\" + expl)\n\n        expl = \"%s(%s)\" % (func_expl, \", \".join(arg_expls))\n        new_call = ast.Call(new_func, new_args, new_kwargs)\n        res = self.assign(new_call)\n        res_expl = self.explanation_param(self.display(res))\n        outer_expl = \"%s\\n{%s = %s\\n}\" % (res_expl, res_expl, expl)\n        return res, outer_expl\n\n    def visit_Starred(self, starred):\n        # From Python 3.5, a Starred node can appear in a function call\n        res, expl = self.visit(starred.value)\n        new_starred = ast.Starred(res, starred.ctx)\n        return new_starred, \"*\" + expl\n\n    def visit_Call_legacy(self, call):\n        \"\"\"\n        visit `ast.Call nodes on 3.4 and below`\n        \"\"\"\n        new_func, func_expl = self.visit(call.func)\n        arg_expls = []\n        new_args = []\n        new_kwargs = []\n        new_star = new_kwarg = None\n        for arg in call.args:\n            res, expl = self.visit(arg)\n            new_args.append(res)\n            arg_expls.append(expl)\n        for keyword in call.keywords:\n            res, expl = self.visit(keyword.value)\n            new_kwargs.append(ast.keyword(keyword.arg, res))\n            arg_expls.append(keyword.arg + \"=\" + expl)\n        if call.starargs:\n            new_star, expl = self.visit(call.starargs)\n            arg_expls.append(\"*\" + expl)\n        if call.kwargs:\n            new_kwarg, expl = self.visit(call.kwargs)\n            arg_expls.append(\"**\" + expl)\n        expl = \"%s(%s)\" % (func_expl, \", \".join(arg_expls))\n        new_call = ast.Call(new_func, new_args, new_kwargs, new_star, new_kwarg)\n        res = self.assign(new_call)\n        res_expl = self.explanation_param(self.display(res))\n        outer_expl = \"%s\\n{%s = %s\\n}\" % (res_expl, res_expl, expl)\n        return res, outer_expl\n\n    # ast.Call signature changed on 3.5,\n    # conditionally change  which methods is named\n    # visit_Call depending on Python version\n    if sys.version_info >= (3, 5):\n        visit_Call = visit_Call_35\n    else:\n        visit_Call = visit_Call_legacy\n\n    def visit_Attribute(self, attr):\n        if not isinstance(attr.ctx, ast.Load):\n            return self.generic_visit(attr)\n        value, value_expl = self.visit(attr.value)\n        res = self.assign(ast.Attribute(value, attr.attr, ast.Load()))\n        res_expl = self.explanation_param(self.display(res))\n        pat = \"%s\\n{%s = %s.%s\\n}\"\n        expl = pat % (res_expl, res_expl, value_expl, attr.attr)\n        return res, expl\n\n    def visit_Compare(self, comp):\n        self.push_format_context()\n        left_res, left_expl = self.visit(comp.left)\n        if isinstance(comp.left, (ast.Compare, ast.BoolOp)):\n            left_expl = \"({})\".format(left_expl)\n        res_variables = [self.variable() for i in range(len(comp.ops))]\n        load_names = [ast.Name(v, ast.Load()) for v in res_variables]\n        store_names = [ast.Name(v, ast.Store()) for v in res_variables]\n        it = zip(range(len(comp.ops)), comp.ops, comp.comparators)\n        expls = []\n        syms = []\n        results = [left_res]\n        for i, op, next_operand in it:\n            next_res, next_expl = self.visit(next_operand)\n            if isinstance(next_operand, (ast.Compare, ast.BoolOp)):\n                next_expl = \"({})\".format(next_expl)\n            results.append(next_res)\n            sym = binop_map[op.__class__]\n            syms.append(ast.Str(sym))\n            expl = \"%s %s %s\" % (left_expl, sym, next_expl)\n            expls.append(ast.Str(expl))\n            res_expr = ast.Compare(left_res, [op], [next_res])\n            self.statements.append(ast.Assign([store_names[i]], res_expr))\n            left_res, left_expl = next_res, next_expl\n        # Use pytest.assertion.util._reprcompare if that's available.\n        expl_call = self.helper(\n            \"_call_reprcompare\",\n            ast.Tuple(syms, ast.Load()),\n            ast.Tuple(load_names, ast.Load()),\n            ast.Tuple(expls, ast.Load()),\n            ast.Tuple(results, ast.Load()),\n        )\n        if len(comp.ops) > 1:\n            res = ast.BoolOp(ast.And(), load_names)\n        else:\n            res = load_names[0]\n        return res, self.explanation_param(self.pop_format_context(expl_call))",
+          "start_line": 607,
+          "start_column": 21534,
+          "end_line": 0,
+          "end_column": 41271,
+          "start_byte": 21534,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewriter.__init__",
+          "file_path": "src/_pytest/assertion/rewrite.py",
+          "file_content": "def __init__(self, module_path, config):\n        super(AssertionRewriter, self).__init__()\n        self.module_path = module_path\n        self.config = config",
+          "start_line": 659,
+          "start_column": 23944,
+          "end_line": 4,
+          "end_column": 24102,
+          "start_byte": 23944,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewriter.run",
+          "file_path": "src/_pytest/assertion/rewrite.py",
+          "file_content": "def run(self, mod):\n        \"\"\"Find all assert statements in *mod* and rewrite them.\"\"\"\n        if not mod.body:\n            # Nothing to do.\n            return\n        # Insert some special imports at the top of the module but after any\n        # docstrings and __future__ imports.\n        aliases = [\n            ast.alias(six.moves.builtins.__name__, \"@py_builtins\"),\n            ast.alias(\"_pytest.assertion.rewrite\", \"@pytest_ar\"),\n        ]\n        doc = getattr(mod, \"docstring\", None)\n        expect_docstring = doc is None\n        if doc is not None and self.is_rewrite_disabled(doc):\n            return\n        pos = 0\n        lineno = 1\n        for item in mod.body:\n            if (\n                expect_docstring\n                and isinstance(item, ast.Expr)\n                and isinstance(item.value, ast.Str)\n            ):\n                doc = item.value.s\n                if self.is_rewrite_disabled(doc):\n                    return\n                expect_docstring = False\n            elif (\n                not isinstance(item, ast.ImportFrom)\n                or item.level > 0\n                or item.module != \"__future__\"\n            ):\n                lineno = item.lineno\n                break\n            pos += 1\n        else:\n            lineno = item.lineno\n        imports = [\n            ast.Import([alias], lineno=lineno, col_offset=0) for alias in aliases\n        ]\n        mod.body[pos:pos] = imports\n        # Collect asserts.\n        nodes = [mod]\n        while nodes:\n            node = nodes.pop()\n            for name, field in ast.iter_fields(node):\n                if isinstance(field, list):\n                    new = []\n                    for i, child in enumerate(field):\n                        if isinstance(child, ast.Assert):\n                            # Transform assert.\n                            new.extend(self.visit(child))\n                        else:\n                            new.append(child)\n                            if isinstance(child, ast.AST):\n                                nodes.append(child)\n                    setattr(node, name, new)\n                elif (\n                    isinstance(field, ast.AST)\n                    # Don't recurse into expressions as they can't contain\n                    # asserts.\n                    and not isinstance(field, ast.expr)\n                ):\n                    nodes.append(field)",
+          "start_line": 664,
+          "start_column": 24108,
+          "end_line": 4,
+          "end_column": 26514,
+          "start_byte": 24108,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewriter.is_rewrite_disabled",
+          "file_path": "src/_pytest/assertion/rewrite.py",
+          "file_content": "@staticmethod\n    def is_rewrite_disabled(docstring):\n        return \"PYTEST_DONT_REWRITE\" in docstring",
+          "start_line": 729,
+          "start_column": 26520,
+          "end_line": 4,
+          "end_column": 26623,
+          "start_byte": 26520,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewriter.variable",
+          "file_path": "src/_pytest/assertion/rewrite.py",
+          "file_content": "def variable(self):\n        \"\"\"Get a new variable.\"\"\"\n        # Use a character invalid in python identifiers to avoid clashing.\n        name = \"@py_assert\" + str(next(self.variable_counter))\n        self.variables.append(name)\n        return name",
+          "start_line": 733,
+          "start_column": 26629,
+          "end_line": 4,
+          "end_column": 26876,
+          "start_byte": 26629,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewriter.assign",
+          "file_path": "src/_pytest/assertion/rewrite.py",
+          "file_content": "def assign(self, expr):\n        \"\"\"Give *expr* a name.\"\"\"\n        name = self.variable()\n        self.statements.append(ast.Assign([ast.Name(name, ast.Store())], expr))\n        return ast.Name(name, ast.Load())",
+          "start_line": 740,
+          "start_column": 26882,
+          "end_line": 4,
+          "end_column": 27092,
+          "start_byte": 26882,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewriter.display",
+          "file_path": "src/_pytest/assertion/rewrite.py",
+          "file_content": "def display(self, expr):\n        \"\"\"Call saferepr on the expression.\"\"\"\n        return self.helper(\"_saferepr\", expr)",
+          "start_line": 746,
+          "start_column": 27098,
+          "end_line": 4,
+          "end_column": 27215,
+          "start_byte": 27098,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewriter.helper",
+          "file_path": "src/_pytest/assertion/rewrite.py",
+          "file_content": "def helper(self, name, *args):\n        \"\"\"Call a helper in this module.\"\"\"\n        py_name = ast.Name(\"@pytest_ar\", ast.Load())\n        attr = ast.Attribute(py_name, name, ast.Load())\n        return ast_Call(attr, list(args), [])",
+          "start_line": 750,
+          "start_column": 27221,
+          "end_line": 4,
+          "end_column": 27450,
+          "start_byte": 27221,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewriter.builtin",
+          "file_path": "src/_pytest/assertion/rewrite.py",
+          "file_content": "def builtin(self, name):\n        \"\"\"Return the builtin called *name*.\"\"\"\n        builtin_name = ast.Name(\"@py_builtins\", ast.Load())\n        return ast.Attribute(builtin_name, name, ast.Load())",
+          "start_line": 756,
+          "start_column": 27456,
+          "end_line": 4,
+          "end_column": 27649,
+          "start_byte": 27456,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewriter.explanation_param",
+          "file_path": "src/_pytest/assertion/rewrite.py",
+          "file_content": "def explanation_param(self, expr):\n        \"\"\"Return a new named %-formatting placeholder for expr.\n\n        This creates a %-formatting placeholder for expr in the\n        current formatting context, e.g. ``%(py0)s``.  The placeholder\n        and expr are placed in the current format context so that it\n        can be used on the next call to .pop_format_context().\n\n        \"\"\"\n        specifier = \"py\" + str(next(self.variable_counter))\n        self.explanation_specifiers[specifier] = expr\n        return \"%(\" + specifier + \")s\"",
+          "start_line": 761,
+          "start_column": 27655,
+          "end_line": 4,
+          "end_column": 28188,
+          "start_byte": 27655,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewriter.push_format_context",
+          "file_path": "src/_pytest/assertion/rewrite.py",
+          "file_content": "def push_format_context(self):\n        \"\"\"Create a new formatting context.\n\n        The format context is used for when an explanation wants to\n        have a variable value formatted in the assertion message.  In\n        this case the value required can be added using\n        .explanation_param().  Finally .pop_format_context() is used\n        to format a string of %-formatted values as added by\n        .explanation_param().\n\n        \"\"\"\n        self.explanation_specifiers = {}\n        self.stack.append(self.explanation_specifiers)",
+          "start_line": 774,
+          "start_column": 28194,
+          "end_line": 4,
+          "end_column": 28732,
+          "start_byte": 28194,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewriter.pop_format_context",
+          "file_path": "src/_pytest/assertion/rewrite.py",
+          "file_content": "def pop_format_context(self, expl_expr):\n        \"\"\"Format the %-formatted string with current format context.\n\n        The expl_expr should be an ast.Str instance constructed from\n        the %-placeholders created by .explanation_param().  This will\n        add the required code to format said string to .on_failure and\n        return the ast.Name instance of the formatted string.\n\n        \"\"\"\n        current = self.stack.pop()\n        if self.stack:\n            self.explanation_specifiers = self.stack[-1]\n        keys = [ast.Str(key) for key in current.keys()]\n        format_dict = ast.Dict(keys, list(current.values()))\n        form = ast.BinOp(expl_expr, ast.Mod(), format_dict)\n        name = \"@py_format\" + str(next(self.variable_counter))\n        self.on_failure.append(ast.Assign([ast.Name(name, ast.Store())], form))\n        return ast.Name(name, ast.Load())",
+          "start_line": 788,
+          "start_column": 28738,
+          "end_line": 4,
+          "end_column": 29612,
+          "start_byte": 28738,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewriter.generic_visit",
+          "file_path": "src/_pytest/assertion/rewrite.py",
+          "file_content": "def generic_visit(self, node):\n        \"\"\"Handle expressions we don't have custom code for.\"\"\"\n        assert isinstance(node, ast.expr)\n        res = self.assign(node)\n        return res, self.explanation_param(self.display(res))",
+          "start_line": 807,
+          "start_column": 29618,
+          "end_line": 4,
+          "end_column": 29848,
+          "start_byte": 29618,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewriter.visit_Assert",
+          "file_path": "src/_pytest/assertion/rewrite.py",
+          "file_content": "def visit_Assert(self, assert_):\n        \"\"\"Return the AST statements to replace the ast.Assert instance.\n\n        This rewrites the test of an assertion to provide\n        intermediate values and replace it with an if statement which\n        raises an assertion error with a detailed explanation in case\n        the expression is false.\n\n        \"\"\"\n        if isinstance(assert_.test, ast.Tuple) and len(assert_.test.elts) >= 1:\n            from _pytest.warning_types import PytestAssertRewriteWarning\n            import warnings\n\n            warnings.warn_explicit(\n                PytestAssertRewriteWarning(\n                    \"assertion is always true, perhaps remove parentheses?\"\n                ),\n                category=None,\n                filename=str(self.module_path),\n                lineno=assert_.lineno,\n            )\n\n        self.statements = []\n        self.variables = []\n        self.variable_counter = itertools.count()\n        self.stack = []\n        self.on_failure = []\n        self.push_format_context()\n        # Rewrite assert into a bunch of statements.\n        top_condition, explanation = self.visit(assert_.test)\n        # If in a test module, check if directly asserting None, in order to warn [Issue #3191]\n        if self.module_path is not None:\n            self.statements.append(\n                self.warn_about_none_ast(\n                    top_condition, module_path=self.module_path, lineno=assert_.lineno\n                )\n            )\n        # Create failure message.\n        body = self.on_failure\n        negation = ast.UnaryOp(ast.Not(), top_condition)\n        self.statements.append(ast.If(negation, body, []))\n        if assert_.msg:\n            assertmsg = self.helper(\"_format_assertmsg\", assert_.msg)\n            explanation = \"\\n>assert \" + explanation\n        else:\n            assertmsg = ast.Str(\"\")\n            explanation = \"assert \" + explanation\n        template = ast.BinOp(assertmsg, ast.Add(), ast.Str(explanation))\n        msg = self.pop_format_context(template)\n        fmt = self.helper(\"_format_explanation\", msg)\n        err_name = ast.Name(\"AssertionError\", ast.Load())\n        exc = ast_Call(err_name, [fmt], [])\n        if sys.version_info[0] >= 3:\n            raise_ = ast.Raise(exc, None)\n        else:\n            raise_ = ast.Raise(exc, None, None)\n        body.append(raise_)\n        # Clear temporary variables by setting them to None.\n        if self.variables:\n            variables = [ast.Name(name, ast.Store()) for name in self.variables]\n            clear = ast.Assign(variables, _NameConstant(None))\n            self.statements.append(clear)\n        # Fix line numbers.\n        for stmt in self.statements:\n            set_location(stmt, assert_.lineno, assert_.col_offset)\n        return self.statements",
+          "start_line": 813,
+          "start_column": 29854,
+          "end_line": 4,
+          "end_column": 32649,
+          "start_byte": 29854,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewriter.warn_about_none_ast",
+          "file_path": "src/_pytest/assertion/rewrite.py",
+          "file_content": "def warn_about_none_ast(self, node, module_path, lineno):\n        \"\"\"\n        Returns an AST issuing a warning if the value of node is `None`.\n        This is used to warn the user when asserting a function that asserts\n        internally already.\n        See issue #3191 for more details.\n        \"\"\"\n\n        # Using parse because it is different between py2 and py3.\n        AST_NONE = ast.parse(\"None\").body[0].value\n        val_is_none = ast.Compare(node, [ast.Is()], [AST_NONE])\n        send_warning = ast.parse(\n            \"\"\"\nfrom _pytest.warning_types import PytestAssertRewriteWarning\nfrom warnings import warn_explicit\nwarn_explicit(\n    PytestAssertRewriteWarning('asserting the value None, please use \"assert is None\"'),\n    category=None,\n    filename={filename!r},\n    lineno={lineno},\n)\n            \"\"\".format(\n                filename=module_path.strpath, lineno=lineno\n            )\n        ).body\n        return ast.If(val_is_none, send_warning, [])",
+          "start_line": 880,
+          "start_column": 32655,
+          "end_line": 4,
+          "end_column": 33624,
+          "start_byte": 32655,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewriter.visit_Name",
+          "file_path": "src/_pytest/assertion/rewrite.py",
+          "file_content": "def visit_Name(self, name):\n        # Display the repr of the name if it's a local variable or\n        # _should_repr_global_name() thinks it's acceptable.\n        locs = ast_Call(self.builtin(\"locals\"), [], [])\n        inlocs = ast.Compare(ast.Str(name.id), [ast.In()], [locs])\n        dorepr = self.helper(\"_should_repr_global_name\", name)\n        test = ast.BoolOp(ast.Or(), [inlocs, dorepr])\n        expr = ast.IfExp(test, self.display(name), ast.Str(name.id))\n        return name, self.explanation_param(expr)",
+          "start_line": 907,
+          "start_column": 33630,
+          "end_line": 4,
+          "end_column": 34144,
+          "start_byte": 33630,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewriter.visit_BoolOp",
+          "file_path": "src/_pytest/assertion/rewrite.py",
+          "file_content": "def visit_BoolOp(self, boolop):\n        res_var = self.variable()\n        expl_list = self.assign(ast.List([], ast.Load()))\n        app = ast.Attribute(expl_list, \"append\", ast.Load())\n        is_or = int(isinstance(boolop.op, ast.Or))\n        body = save = self.statements\n        fail_save = self.on_failure\n        levels = len(boolop.values) - 1\n        self.push_format_context()\n        # Process each operand, short-circuting if needed.\n        for i, v in enumerate(boolop.values):\n            if i:\n                fail_inner = []\n                # cond is set in a prior loop iteration below\n                self.on_failure.append(ast.If(cond, fail_inner, []))  # noqa\n                self.on_failure = fail_inner\n            self.push_format_context()\n            res, expl = self.visit(v)\n            body.append(ast.Assign([ast.Name(res_var, ast.Store())], res))\n            expl_format = self.pop_format_context(ast.Str(expl))\n            call = ast_Call(app, [expl_format], [])\n            self.on_failure.append(ast.Expr(call))\n            if i < levels:\n                cond = res\n                if is_or:\n                    cond = ast.UnaryOp(ast.Not(), cond)\n                inner = []\n                self.statements.append(ast.If(cond, inner, []))\n                self.statements = body = inner\n        self.statements = save\n        self.on_failure = fail_save\n        expl_template = self.helper(\"_format_boolop\", expl_list, ast.Num(is_or))\n        expl = self.pop_format_context(expl_template)\n        return ast.Name(res_var, ast.Load()), self.explanation_param(expl)",
+          "start_line": 917,
+          "start_column": 34150,
+          "end_line": 4,
+          "end_column": 35744,
+          "start_byte": 34150,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewriter.visit_UnaryOp",
+          "file_path": "src/_pytest/assertion/rewrite.py",
+          "file_content": "def visit_UnaryOp(self, unary):\n        pattern = unary_map[unary.op.__class__]\n        operand_res, operand_expl = self.visit(unary.operand)\n        res = self.assign(ast.UnaryOp(unary.op, operand_res))\n        return res, pattern % (operand_expl,)",
+          "start_line": 952,
+          "start_column": 35750,
+          "end_line": 4,
+          "end_column": 35999,
+          "start_byte": 35750,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewriter.visit_BinOp",
+          "file_path": "src/_pytest/assertion/rewrite.py",
+          "file_content": "def visit_BinOp(self, binop):\n        symbol = binop_map[binop.op.__class__]\n        left_expr, left_expl = self.visit(binop.left)\n        right_expr, right_expl = self.visit(binop.right)\n        explanation = \"(%s %s %s)\" % (left_expl, symbol, right_expl)\n        res = self.assign(ast.BinOp(left_expr, binop.op, right_expr))\n        return res, explanation",
+          "start_line": 958,
+          "start_column": 36005,
+          "end_line": 4,
+          "end_column": 36363,
+          "start_byte": 36005,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewriter.visit_Call_35",
+          "file_path": "src/_pytest/assertion/rewrite.py",
+          "file_content": "def visit_Call_35(self, call):\n        \"\"\"\n        visit `ast.Call` nodes on Python3.5 and after\n        \"\"\"\n        new_func, func_expl = self.visit(call.func)\n        arg_expls = []\n        new_args = []\n        new_kwargs = []\n        for arg in call.args:\n            res, expl = self.visit(arg)\n            arg_expls.append(expl)\n            new_args.append(res)\n        for keyword in call.keywords:\n            res, expl = self.visit(keyword.value)\n            new_kwargs.append(ast.keyword(keyword.arg, res))\n            if keyword.arg:\n                arg_expls.append(keyword.arg + \"=\" + expl)\n            else:  # **args have `arg` keywords with an .arg of None\n                arg_expls.append(\"**\" + expl)\n\n        expl = \"%s(%s)\" % (func_expl, \", \".join(arg_expls))\n        new_call = ast.Call(new_func, new_args, new_kwargs)\n        res = self.assign(new_call)\n        res_expl = self.explanation_param(self.display(res))\n        outer_expl = \"%s\\n{%s = %s\\n}\" % (res_expl, res_expl, expl)\n        return res, outer_expl",
+          "start_line": 966,
+          "start_column": 36369,
+          "end_line": 4,
+          "end_column": 37404,
+          "start_byte": 36369,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewriter.visit_Starred",
+          "file_path": "src/_pytest/assertion/rewrite.py",
+          "file_content": "def visit_Starred(self, starred):\n        # From Python 3.5, a Starred node can appear in a function call\n        res, expl = self.visit(starred.value)\n        new_starred = ast.Starred(res, starred.ctx)\n        return new_starred, \"*\" + expl",
+          "start_line": 993,
+          "start_column": 37410,
+          "end_line": 4,
+          "end_column": 37652,
+          "start_byte": 37410,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewriter.visit_Call_legacy",
+          "file_path": "src/_pytest/assertion/rewrite.py",
+          "file_content": "def visit_Call_legacy(self, call):\n        \"\"\"\n        visit `ast.Call nodes on 3.4 and below`\n        \"\"\"\n        new_func, func_expl = self.visit(call.func)\n        arg_expls = []\n        new_args = []\n        new_kwargs = []\n        new_star = new_kwarg = None\n        for arg in call.args:\n            res, expl = self.visit(arg)\n            new_args.append(res)\n            arg_expls.append(expl)\n        for keyword in call.keywords:\n            res, expl = self.visit(keyword.value)\n            new_kwargs.append(ast.keyword(keyword.arg, res))\n            arg_expls.append(keyword.arg + \"=\" + expl)\n        if call.starargs:\n            new_star, expl = self.visit(call.starargs)\n            arg_expls.append(\"*\" + expl)\n        if call.kwargs:\n            new_kwarg, expl = self.visit(call.kwargs)\n            arg_expls.append(\"**\" + expl)\n        expl = \"%s(%s)\" % (func_expl, \", \".join(arg_expls))\n        new_call = ast.Call(new_func, new_args, new_kwargs, new_star, new_kwarg)\n        res = self.assign(new_call)\n        res_expl = self.explanation_param(self.display(res))\n        outer_expl = \"%s\\n{%s = %s\\n}\" % (res_expl, res_expl, expl)\n        return res, outer_expl",
+          "start_line": 999,
+          "start_column": 37658,
+          "end_line": 4,
+          "end_column": 38842,
+          "start_byte": 37658,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewriter.visit_Attribute",
+          "file_path": "src/_pytest/assertion/rewrite.py",
+          "file_content": "def visit_Attribute(self, attr):\n        if not isinstance(attr.ctx, ast.Load):\n            return self.generic_visit(attr)\n        value, value_expl = self.visit(attr.value)\n        res = self.assign(ast.Attribute(value, attr.attr, ast.Load()))\n        res_expl = self.explanation_param(self.display(res))\n        pat = \"%s\\n{%s = %s.%s\\n}\"\n        expl = pat % (res_expl, res_expl, value_expl, attr.attr)\n        return res, expl",
+          "start_line": 1037,
+          "start_column": 39105,
+          "end_line": 4,
+          "end_column": 39536,
+          "start_byte": 39105,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewriter.visit_Compare",
+          "file_path": "src/_pytest/assertion/rewrite.py",
+          "file_content": "def visit_Compare(self, comp):\n        self.push_format_context()\n        left_res, left_expl = self.visit(comp.left)\n        if isinstance(comp.left, (ast.Compare, ast.BoolOp)):\n            left_expl = \"({})\".format(left_expl)\n        res_variables = [self.variable() for i in range(len(comp.ops))]\n        load_names = [ast.Name(v, ast.Load()) for v in res_variables]\n        store_names = [ast.Name(v, ast.Store()) for v in res_variables]\n        it = zip(range(len(comp.ops)), comp.ops, comp.comparators)\n        expls = []\n        syms = []\n        results = [left_res]\n        for i, op, next_operand in it:\n            next_res, next_expl = self.visit(next_operand)\n            if isinstance(next_operand, (ast.Compare, ast.BoolOp)):\n                next_expl = \"({})\".format(next_expl)\n            results.append(next_res)\n            sym = binop_map[op.__class__]\n            syms.append(ast.Str(sym))\n            expl = \"%s %s %s\" % (left_expl, sym, next_expl)\n            expls.append(ast.Str(expl))\n            res_expr = ast.Compare(left_res, [op], [next_res])\n            self.statements.append(ast.Assign([store_names[i]], res_expr))\n            left_res, left_expl = next_res, next_expl\n        # Use pytest.assertion.util._reprcompare if that's available.\n        expl_call = self.helper(\n            \"_call_reprcompare\",\n            ast.Tuple(syms, ast.Load()),\n            ast.Tuple(load_names, ast.Load()),\n            ast.Tuple(expls, ast.Load()),\n            ast.Tuple(results, ast.Load()),\n        )\n        if len(comp.ops) > 1:\n            res = ast.BoolOp(ast.And(), load_names)\n        else:\n            res = load_names[0]\n        return res, self.explanation_param(self.pop_format_context(expl_call))",
+          "start_line": 1047,
+          "start_column": 39542,
+          "end_line": 4,
+          "end_column": 41271,
+          "start_byte": 39542,
+          "end_byte": 4
+        }
+      ]
+    },
+    "symbols_evaluate": {
+      "scratch_pad": "1. Analyze User Instructions:\n1.1 The issue describes the lack of useful error messages when assertions with `all` or `any` functions fail in tests. \n1.2 The issue is caused due to the way assertions are rewritten, not breaking down iterable checks made by `all` or `any` into individual meaningful checks, leading to non-informative assertion failures.\n1.3 The expected result should output which exact item in the iterable caused the assertion to fail, similar to breaking down the iteration into separate assertions.\n1.4 The expected result should provide detailed error messages indicating the first failure in the iterable.\n1.5 The solution should involve improving the assertion rewriting mechanism to \"unroll\" iterables in `all`/`any`, checking each item individually and providing detailed assertion failure messages.\n\n2. Make the evaluate:\n2.1. Analyzing provided symbols to determine relevant parts for the required enhancement.\n2.2. The main symbol dealing with the assertion rewriting logic is `AssertionRewriter`, particularly methods handling `assert` statements, like `visit_Assert`.\n2.3. This issue is related to how we handle `ast.Call` expressions, as `all` and `any` are function calls.\n2.4. To address the issue, visitor methods like `visit_Call_35` inside `AssertionRewriter` should enhance processing for specific function calls to `all` or `any`. We need to check if calls involve these functions and proceed to unroll them.\n2.5. If symbols handling specific nodes related to `all`/`any` were present, it would be apparent.\n2.6. Request more information if there's lack of clarity on parts that involve recognizing and rewriting function calls specifically for `all` and `any`.",
+      "symbols": [
+        {
+          "name": "_pytest.assertion.AssertionRewriter.visit_Assert",
+          "file_path": "src/_pytest/assertion/rewrite.py",
+          "reason": "The `visit_Assert` method is responsible for rewriting assertion statements. To improve assertion messages involving `all` and `any`, this method needs to be adjusted to recognize when these functions are used and unroll the checks within."
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewriter.visit_Call_35",
+          "file_path": "src/_pytest/assertion/rewrite.py",
+          "reason": "The `visit_Call_35` method processes function calls. To implement the unrolling of `all` and `any`, this method must be adapted to recognize calls to these functions and process their iterable arguments, generating individual assertions."
+        }
+      ],
+      "more_info": [],
+      "is_done": true,
+      "symbols_scratch_pad": [
+        "The `rewrite_asserts` function calls `AssertionRewriter.run`. It's the entry point for rewriting assertions, but no specific logic for handling `all` or `any` directly needs changes here.",
+        "The `AssertionRewriter` class is the core logic for rewriting assertions. The focus would be on identifying `all` and `any` calls and handling them differently for detailed reporting.",
+        "The constructor initializes the class and sets some state, no changes needed here for the requested feature.",
+        "The `run` method goes through the AST nodes, collecting `asserts` for rewriting, but doesn't handle the specific logic for `all/any`. It is a starting point but not where detailed changes occur.",
+        "This method checks if rewriting should be bypassed based on docstrings, unrelated to `all/any` handling.",
+        "This method generates fresh identifiers for variable handling during rewriting. Unrelated to `all`/`any` handling.",
+        "Used to assign expressions to variables. Part of general AST manipulation, not directly related to `all/any`.",
+        "Handles displaying expressions. Useful for creating error messages but not directly for `all/any`.",
+        "Calls helpers within the module. Indirectly useful if creating helper functions for `all/any` logic.",
+        "Used to refer to built-in functions. Could involve redirecting `all`/`any` to custom handlers, indirectly related.",
+        "Creates placeholders for formatted explanations. Indirectly affects how results are shown, not `all/any` logic per se.",
+        "Manages format context stacks, ensuring explanations are consistent. Indirectly relevant if creating elaborate error messages.",
+        "Pulls from formatting contexts to create messages. Useful if extending how failures in `all`/`any` are explained.",
+        "A minimal visitor for nodes not deeply custom-handled. If `all`/`any` don't get special handling, may default here.",
+        "The core method for rewriting assertions. Will need to specifically enhance this to handle `all`/`any` cases as described in the issue.",
+        "Warns on `None` in assertions. Indirect, but shows how AST nodes can trigger warnings, which might inspire similar checks for `all`/`any`.",
+        "Deals with individual names, formatting them for output. Indirectly useful for error message enhancement.",
+        "Rewrites boolean operations in assertions, indirectly related by showcasing how complex operations get expanded for better reporting.",
+        "Handles unary operations, unrelated to `all`/`any`.",
+        "Handles binary operations in asserts. Related conceptually but not for `all`/`any` unrolling.",
+        "Processes function calls, crucial for addressing `all`/`any` unrolling to check iterable entries.",
+        "Handles starred arguments in calls, enlightening approach but peripheral here.",
+        "Legacy support for calls pre-Python 3.5, ensures old call styles are handled too.",
+        "Visits attributes, explaining them. Indirect unless attributes factor hugely into `all`/`any`.",
+        "Compares values, necessary for asserts as they often form conditions within or around `all`/`any`.",
+        "Implementation here addresses specialized compare assertions. Could be leveraged to differentiate `all`/`any` comparisons."
+      ]
+    }
+  },
+  "response": {
+    "file_paths": [
+      "src/_pytest/assertion/rewrite.py"
+    ],
+    "symbols": [
+      "_pytest.assertion.AssertionRewriter.visit_Assert",
+      "_pytest.assertion.AssertionRewriter.visit_Call_35"
+    ],
+    "code_spans": {
+      "_pytest.assertion.pytest_assertrepr_compare": {
+        "name": "_pytest.assertion.pytest_assertrepr_compare",
+        "file_path": "src/_pytest/assertion/util.py",
+        "file_content": "n is not None:\n                        explanation.",
+        "start_line": 154,
+        "start_column": 5119,
+        "end_line": 0,
+        "end_column": 5170,
+        "start_byte": 5119,
+        "end_byte": 0
+      },
+      "_pytest.assertion.isiterable": {
+        "name": "_pytest.assertion.isiterable",
+        "file_path": "src/_pytest/assertion/util.py",
+        "file_content": "def isiterable(obj):\n    try:\n        iter(obj)\n        return not istext(obj)\n    except TypeError:\n        return False",
+        "start_line": 129,
+        "start_column": 3518,
+        "end_line": 0,
+        "end_column": 3639,
+        "start_byte": 3518,
+        "end_byte": 0
+      },
+      "_pytest.assertion.assertrepr_compare": {
+        "name": "_pytest.assertion.assertrepr_compare",
+        "file_path": "src/_pytest/assertion/util.py",
+        "file_content": "def assertrepr_compare(config, op, left, right):\n    \"\"\"Return specialised explanations for some operators/operands\"\"\"\n    width = 80 - 15 - len(op) - 2  # 15 chars indentation, 1 space around op\n    left_repr = saferepr(left, maxsize=int(width // 2))\n    right_repr = saferepr(right, maxsize=width - len(left_repr))\n\n    summary = u\"%s %s %s\" % (ecu(left_repr), op, ecu(right_repr))\n\n    verbose = config.getoption(\"verbose\")\n    explanation = None\n    try:\n        if op == \"==\":\n            if istext(left) and istext(right):\n                explanation = _diff_text(left, right, verbose)\n            else:\n                if issequence(left) and issequence(right):\n                    explanation = _compare_eq_sequence(left, right, verbose)\n                elif isset(left) and isset(right):\n                    explanation = _compare_eq_set(left, right, verbose)\n                elif isdict(left) and isdict(right):\n                    explanation = _compare_eq_dict(left, right, verbose)\n                elif type(left) == type(right) and (isdatacls(left) or isattrs(left)):\n                    type_fn = (isdatacls, isattrs)\n                    explanation = _compare_eq_cls(left, right, verbose, type_fn)\n                elif verbose > 0:\n                    explanation = _compare_eq_verbose(left, right)\n                if isiterable(left) and isiterable(right):\n                    expl = _compare_eq_iterable(left, right, verbose)\n                    if explanation is not None:\n                        explanation.extend(expl)\n                    else:\n                        explanation = expl\n        elif op == \"not in\":\n            if istext(left) and istext(right):\n                explanation = _notin_text(left, right, verbose)\n    except outcomes.Exit:\n        raise\n    except Exception:\n        explanation = [\n            u\"(pytest_assertion plugin: representation of details failed.  \"\n            u\"Probably an object has a faulty __repr__.)\",\n            six.text_type(_pytest._code.ExceptionInfo.from_current()),\n        ]\n\n    if not explanation:\n        return None\n\n    return [summary] + explanation",
+        "start_line": 137,
+        "start_column": 3642,
+        "end_line": 0,
+        "end_column": 5775,
+        "start_byte": 3642,
+        "end_byte": 0
+      },
+      "_pytest.assertion._compare_eq_iterable": {
+        "name": "_pytest.assertion._compare_eq_iterable",
+        "file_path": "src/_pytest/assertion/util.py",
+        "file_content": "def _compare_eq_iterable(left, right, verbose=0):\n    if not verbose:\n        return [u\"Use -v to get the full diff\"]\n    # dynamic import to speedup pytest\n    import difflib\n\n    try:\n        left_formatting = pprint.pformat(left).splitlines()\n        right_formatting = pprint.pformat(right).splitlines()\n        explanation = [u\"Full diff:\"]\n    except Exception:\n        # hack: PrettyPrinter.pformat() in python 2 fails when formatting items that can't be sorted(), ie, calling\n        # sorted() on a list would raise. See issue #718.\n        # As a workaround, the full diff is generated by using the repr() string of each item of each container.\n        left_formatting = sorted(repr(x) for x in left)\n        right_formatting = sorted(repr(x) for x in right)\n        explanation = [u\"Full diff (fallback to calling repr on each item):\"]\n    explanation.extend(\n        line.strip() for line in difflib.ndiff(left_formatting, right_formatting)\n    )\n    return explanation",
+        "start_line": 262,
+        "start_column": 8366,
+        "end_line": 0,
+        "end_column": 9347,
+        "start_byte": 8366,
+        "end_byte": 0
+      },
+      "_pytest.hookspec.pytest_assertrepr_compare": {
+        "name": "_pytest.hookspec.pytest_assertrepr_compare",
+        "file_path": "src/_pytest/assertion/util.py",
+        "file_content": "",
+        "start_line": 475,
+        "start_column": 15508,
+        "end_line": 0,
+        "end_column": 16001,
+        "start_byte": 15508,
+        "end_byte": 0
+      },
+      "_pytest.assertion.rewrite_asserts": {
+        "name": "_pytest.assertion.rewrite_asserts",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def rewrite_asserts(mod, module_path=None, config=None):\n    \"\"\"Rewrite the assert statements in mod.\"\"\"\n    AssertionRewriter(module_path, config).run(mod)",
+        "start_line": 465,
+        "start_column": 17515,
+        "end_line": 0,
+        "end_column": 17671,
+        "start_byte": 17515,
+        "end_byte": 0
+      },
+      "_pytest.assertion.AssertionRewriter": {
+        "name": "_pytest.assertion.AssertionRewriter",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "class AssertionRewriter(ast.NodeVisitor):\n    \"\"\"Assertion rewriting implementation.\n\n    The main entrypoint is to call .run() with an ast.Module instance,\n    this will then find all the assert statements and rewrite them to\n    provide intermediate values and a detailed assertion error.  See\n    http://pybites.blogspot.be/2011/07/behind-scenes-of-pytests-new-assertion.html\n    for an overview of how this works.\n\n    The entry point here is .run() which will iterate over all the\n    statements in an ast.Module and for each ast.Assert statement it\n    finds call .visit() with it.  Then .visit_Assert() takes over and\n    is responsible for creating new ast statements to replace the\n    original assert statement: it rewrites the test of an assertion\n    to provide intermediate values and replace it with an if statement\n    which raises an assertion error with a detailed explanation in\n    case the expression is false.\n\n    For this .visit_Assert() uses the visitor pattern to visit all the\n    AST nodes of the ast.Assert.test field, each visit call returning\n    an AST node and the corresponding explanation string.  During this\n    state is kept in several instance attributes:\n\n    :statements: All the AST statements which will replace the assert\n       statement.\n\n    :variables: This is populated by .variable() with each variable\n       used by the statements so that they can all be set to None at\n       the end of the statements.\n\n    :variable_counter: Counter to create new unique variables needed\n       by statements.  Variables are created using .variable() and\n       have the form of \"@py_assert0\".\n\n    :on_failure: The AST statements which will be executed if the\n       assertion test fails.  This is the code which will construct\n       the failure message and raises the AssertionError.\n\n    :explanation_specifiers: A dict filled by .explanation_param()\n       with %-formatting placeholders and their corresponding\n       expressions to use in the building of an assertion message.\n       This is used by .pop_format_context() to build a message.\n\n    :stack: A stack of the explanation_specifiers dicts maintained by\n       .push_format_context() and .pop_format_context() which allows\n       to build another %-formatted string while already building one.\n\n    This state is reset on every new assert statement visited and used\n    by the other visitors.\n\n    \"\"\"\n\n    def __init__(self, module_path, config):\n        super(AssertionRewriter, self).__init__()\n        self.module_path = module_path\n        self.config = config\n\n    def run(self, mod):\n        \"\"\"Find all assert statements in *mod* and rewrite them.\"\"\"\n        if not mod.body:\n            # Nothing to do.\n            return\n        # Insert some special imports at the top of the module but after any\n        # docstrings and __future__ imports.\n        aliases = [\n            ast.alias(six.moves.builtins.__name__, \"@py_builtins\"),\n            ast.alias(\"_pytest.assertion.rewrite\", \"@pytest_ar\"),\n        ]\n        doc = getattr(mod, \"docstring\", None)\n        expect_docstring = doc is None\n        if doc is not None and self.is_rewrite_disabled(doc):\n            return\n        pos = 0\n        lineno = 1\n        for item in mod.body:\n            if (\n                expect_docstring\n                and isinstance(item, ast.Expr)\n                and isinstance(item.value, ast.Str)\n            ):\n                doc = item.value.s\n                if self.is_rewrite_disabled(doc):\n                    return\n                expect_docstring = False\n            elif (\n                not isinstance(item, ast.ImportFrom)\n                or item.level > 0\n                or item.module != \"__future__\"\n            ):\n                lineno = item.lineno\n                break\n            pos += 1\n        else:\n            lineno = item.lineno\n        imports = [\n            ast.Import([alias], lineno=lineno, col_offset=0) for alias in aliases\n        ]\n        mod.body[pos:pos] = imports\n        # Collect asserts.\n        nodes = [mod]\n        while nodes:\n            node = nodes.pop()\n            for name, field in ast.iter_fields(node):\n                if isinstance(field, list):\n                    new = []\n                    for i, child in enumerate(field):\n                        if isinstance(child, ast.Assert):\n                            # Transform assert.\n                            new.extend(self.visit(child))\n                        else:\n                            new.append(child)\n                            if isinstance(child, ast.AST):\n                                nodes.append(child)\n                    setattr(node, name, new)\n                elif (\n                    isinstance(field, ast.AST)\n                    # Don't recurse into expressions as they can't contain\n                    # asserts.\n                    and not isinstance(field, ast.expr)\n                ):\n                    nodes.append(field)\n\n    @staticmethod\n    def is_rewrite_disabled(docstring):\n        return \"PYTEST_DONT_REWRITE\" in docstring\n\n    def variable(self):\n        \"\"\"Get a new variable.\"\"\"\n        # Use a character invalid in python identifiers to avoid clashing.\n        name = \"@py_assert\" + str(next(self.variable_counter))\n        self.variables.append(name)\n        return name\n\n    def assign(self, expr):\n        \"\"\"Give *expr* a name.\"\"\"\n        name = self.variable()\n        self.statements.append(ast.Assign([ast.Name(name, ast.Store())], expr))\n        return ast.Name(name, ast.Load())\n\n    def display(self, expr):\n        \"\"\"Call saferepr on the expression.\"\"\"\n        return self.helper(\"_saferepr\", expr)\n\n    def helper(self, name, *args):\n        \"\"\"Call a helper in this module.\"\"\"\n        py_name = ast.Name(\"@pytest_ar\", ast.Load())\n        attr = ast.Attribute(py_name, name, ast.Load())\n        return ast_Call(attr, list(args), [])\n\n    def builtin(self, name):\n        \"\"\"Return the builtin called *name*.\"\"\"\n        builtin_name = ast.Name(\"@py_builtins\", ast.Load())\n        return ast.Attribute(builtin_name, name, ast.Load())\n\n    def explanation_param(self, expr):\n        \"\"\"Return a new named %-formatting placeholder for expr.\n\n        This creates a %-formatting placeholder for expr in the\n        current formatting context, e.g. ``%(py0)s``.  The placeholder\n        and expr are placed in the current format context so that it\n        can be used on the next call to .pop_format_context().\n\n        \"\"\"\n        specifier = \"py\" + str(next(self.variable_counter))\n        self.explanation_specifiers[specifier] = expr\n        return \"%(\" + specifier + \")s\"\n\n    def push_format_context(self):\n        \"\"\"Create a new formatting context.\n\n        The format context is used for when an explanation wants to\n        have a variable value formatted in the assertion message.  In\n        this case the value required can be added using\n        .explanation_param().  Finally .pop_format_context() is used\n        to format a string of %-formatted values as added by\n        .explanation_param().\n\n        \"\"\"\n        self.explanation_specifiers = {}\n        self.stack.append(self.explanation_specifiers)\n\n    def pop_format_context(self, expl_expr):\n        \"\"\"Format the %-formatted string with current format context.\n\n        The expl_expr should be an ast.Str instance constructed from\n        the %-placeholders created by .explanation_param().  This will\n        add the required code to format said string to .on_failure and\n        return the ast.Name instance of the formatted string.\n\n        \"\"\"\n        current = self.stack.pop()\n        if self.stack:\n            self.explanation_specifiers = self.stack[-1]\n        keys = [ast.Str(key) for key in current.keys()]\n        format_dict = ast.Dict(keys, list(current.values()))\n        form = ast.BinOp(expl_expr, ast.Mod(), format_dict)\n        name = \"@py_format\" + str(next(self.variable_counter))\n        self.on_failure.append(ast.Assign([ast.Name(name, ast.Store())], form))\n        return ast.Name(name, ast.Load())\n\n    def generic_visit(self, node):\n        \"\"\"Handle expressions we don't have custom code for.\"\"\"\n        assert isinstance(node, ast.expr)\n        res = self.assign(node)\n        return res, self.explanation_param(self.display(res))\n\n    def visit_Assert(self, assert_):\n        \"\"\"Return the AST statements to replace the ast.Assert instance.\n\n        This rewrites the test of an assertion to provide\n        intermediate values and replace it with an if statement which\n        raises an assertion error with a detailed explanation in case\n        the expression is false.\n\n        \"\"\"\n        if isinstance(assert_.test, ast.Tuple) and len(assert_.test.elts) >= 1:\n            from _pytest.warning_types import PytestAssertRewriteWarning\n            import warnings\n\n            warnings.warn_explicit(\n                PytestAssertRewriteWarning(\n                    \"assertion is always true, perhaps remove parentheses?\"\n                ),\n                category=None,\n                filename=str(self.module_path),\n                lineno=assert_.lineno,\n            )\n\n        self.statements = []\n        self.variables = []\n        self.variable_counter = itertools.count()\n        self.stack = []\n        self.on_failure = []\n        self.push_format_context()\n        # Rewrite assert into a bunch of statements.\n        top_condition, explanation = self.visit(assert_.test)\n        # If in a test module, check if directly asserting None, in order to warn [Issue #3191]\n        if self.module_path is not None:\n            self.statements.append(\n                self.warn_about_none_ast(\n                    top_condition, module_path=self.module_path, lineno=assert_.lineno\n                )\n            )\n        # Create failure message.\n        body = self.on_failure\n        negation = ast.UnaryOp(ast.Not(), top_condition)\n        self.statements.append(ast.If(negation, body, []))\n        if assert_.msg:\n            assertmsg = self.helper(\"_format_assertmsg\", assert_.msg)\n            explanation = \"\\n>assert \" + explanation\n        else:\n            assertmsg = ast.Str(\"\")\n            explanation = \"assert \" + explanation\n        template = ast.BinOp(assertmsg, ast.Add(), ast.Str(explanation))\n        msg = self.pop_format_context(template)\n        fmt = self.helper(\"_format_explanation\", msg)\n        err_name = ast.Name(\"AssertionError\", ast.Load())\n        exc = ast_Call(err_name, [fmt], [])\n        if sys.version_info[0] >= 3:\n            raise_ = ast.Raise(exc, None)\n        else:\n            raise_ = ast.Raise(exc, None, None)\n        body.append(raise_)\n        # Clear temporary variables by setting them to None.\n        if self.variables:\n            variables = [ast.Name(name, ast.Store()) for name in self.variables]\n            clear = ast.Assign(variables, _NameConstant(None))\n            self.statements.append(clear)\n        # Fix line numbers.\n        for stmt in self.statements:\n            set_location(stmt, assert_.lineno, assert_.col_offset)\n        return self.statements\n\n    def warn_about_none_ast(self, node, module_path, lineno):\n        \"\"\"\n        Returns an AST issuing a warning if the value of node is `None`.\n        This is used to warn the user when asserting a function that asserts\n        internally already.\n        See issue #3191 for more details.\n        \"\"\"\n\n        # Using parse because it is different between py2 and py3.\n        AST_NONE = ast.parse(\"None\").body[0].value\n        val_is_none = ast.Compare(node, [ast.Is()], [AST_NONE])\n        send_warning = ast.parse(\n            \"\"\"\nfrom _pytest.warning_types import PytestAssertRewriteWarning\nfrom warnings import warn_explicit\nwarn_explicit(\n    PytestAssertRewriteWarning('asserting the value None, please use \"assert is None\"'),\n    category=None,\n    filename={filename!r},\n    lineno={lineno},\n)\n            \"\"\".format(\n                filename=module_path.strpath, lineno=lineno\n            )\n        ).body\n        return ast.If(val_is_none, send_warning, [])\n\n    def visit_Name(self, name):\n        # Display the repr of the name if it's a local variable or\n        # _should_repr_global_name() thinks it's acceptable.\n        locs = ast_Call(self.builtin(\"locals\"), [], [])\n        inlocs = ast.Compare(ast.Str(name.id), [ast.In()], [locs])\n        dorepr = self.helper(\"_should_repr_global_name\", name)\n        test = ast.BoolOp(ast.Or(), [inlocs, dorepr])\n        expr = ast.IfExp(test, self.display(name), ast.Str(name.id))\n        return name, self.explanation_param(expr)\n\n    def visit_BoolOp(self, boolop):\n        res_var = self.variable()\n        expl_list = self.assign(ast.List([], ast.Load()))\n        app = ast.Attribute(expl_list, \"append\", ast.Load())\n        is_or = int(isinstance(boolop.op, ast.Or))\n        body = save = self.statements\n        fail_save = self.on_failure\n        levels = len(boolop.values) - 1\n        self.push_format_context()\n        # Process each operand, short-circuting if needed.\n        for i, v in enumerate(boolop.values):\n            if i:\n                fail_inner = []\n                # cond is set in a prior loop iteration below\n                self.on_failure.append(ast.If(cond, fail_inner, []))  # noqa\n                self.on_failure = fail_inner\n            self.push_format_context()\n            res, expl = self.visit(v)\n            body.append(ast.Assign([ast.Name(res_var, ast.Store())], res))\n            expl_format = self.pop_format_context(ast.Str(expl))\n            call = ast_Call(app, [expl_format], [])\n            self.on_failure.append(ast.Expr(call))\n            if i < levels:\n                cond = res\n                if is_or:\n                    cond = ast.UnaryOp(ast.Not(), cond)\n                inner = []\n                self.statements.append(ast.If(cond, inner, []))\n                self.statements = body = inner\n        self.statements = save\n        self.on_failure = fail_save\n        expl_template = self.helper(\"_format_boolop\", expl_list, ast.Num(is_or))\n        expl = self.pop_format_context(expl_template)\n        return ast.Name(res_var, ast.Load()), self.explanation_param(expl)\n\n    def visit_UnaryOp(self, unary):\n        pattern = unary_map[unary.op.__class__]\n        operand_res, operand_expl = self.visit(unary.operand)\n        res = self.assign(ast.UnaryOp(unary.op, operand_res))\n        return res, pattern % (operand_expl,)\n\n    def visit_BinOp(self, binop):\n        symbol = binop_map[binop.op.__class__]\n        left_expr, left_expl = self.visit(binop.left)\n        right_expr, right_expl = self.visit(binop.right)\n        explanation = \"(%s %s %s)\" % (left_expl, symbol, right_expl)\n        res = self.assign(ast.BinOp(left_expr, binop.op, right_expr))\n        return res, explanation\n\n    def visit_Call_35(self, call):\n        \"\"\"\n        visit `ast.Call` nodes on Python3.5 and after\n        \"\"\"\n        new_func, func_expl = self.visit(call.func)\n        arg_expls = []\n        new_args = []\n        new_kwargs = []\n        for arg in call.args:\n            res, expl = self.visit(arg)\n            arg_expls.append(expl)\n            new_args.append(res)\n        for keyword in call.keywords:\n            res, expl = self.visit(keyword.value)\n            new_kwargs.append(ast.keyword(keyword.arg, res))\n            if keyword.arg:\n                arg_expls.append(keyword.arg + \"=\" + expl)\n            else:  # **args have `arg` keywords with an .arg of None\n                arg_expls.append(\"**\" + expl)\n\n        expl = \"%s(%s)\" % (func_expl, \", \".join(arg_expls))\n        new_call = ast.Call(new_func, new_args, new_kwargs)\n        res = self.assign(new_call)\n        res_expl = self.explanation_param(self.display(res))\n        outer_expl = \"%s\\n{%s = %s\\n}\" % (res_expl, res_expl, expl)\n        return res, outer_expl\n\n    def visit_Starred(self, starred):\n        # From Python 3.5, a Starred node can appear in a function call\n        res, expl = self.visit(starred.value)\n        new_starred = ast.Starred(res, starred.ctx)\n        return new_starred, \"*\" + expl\n\n    def visit_Call_legacy(self, call):\n        \"\"\"\n        visit `ast.Call nodes on 3.4 and below`\n        \"\"\"\n        new_func, func_expl = self.visit(call.func)\n        arg_expls = []\n        new_args = []\n        new_kwargs = []\n        new_star = new_kwarg = None\n        for arg in call.args:\n            res, expl = self.visit(arg)\n            new_args.append(res)\n            arg_expls.append(expl)\n        for keyword in call.keywords:\n            res, expl = self.visit(keyword.value)\n            new_kwargs.append(ast.keyword(keyword.arg, res))\n            arg_expls.append(keyword.arg + \"=\" + expl)\n        if call.starargs:\n            new_star, expl = self.visit(call.starargs)\n            arg_expls.append(\"*\" + expl)\n        if call.kwargs:\n            new_kwarg, expl = self.visit(call.kwargs)\n            arg_expls.append(\"**\" + expl)\n        expl = \"%s(%s)\" % (func_expl, \", \".join(arg_expls))\n        new_call = ast.Call(new_func, new_args, new_kwargs, new_star, new_kwarg)\n        res = self.assign(new_call)\n        res_expl = self.explanation_param(self.display(res))\n        outer_expl = \"%s\\n{%s = %s\\n}\" % (res_expl, res_expl, expl)\n        return res, outer_expl\n\n    # ast.Call signature changed on 3.5,\n    # conditionally change  which methods is named\n    # visit_Call depending on Python version\n    if sys.version_info >= (3, 5):\n        visit_Call = visit_Call_35\n    else:\n        visit_Call = visit_Call_legacy\n\n    def visit_Attribute(self, attr):\n        if not isinstance(attr.ctx, ast.Load):\n            return self.generic_visit(attr)\n        value, value_expl = self.visit(attr.value)\n        res = self.assign(ast.Attribute(value, attr.attr, ast.Load()))\n        res_expl = self.explanation_param(self.display(res))\n        pat = \"%s\\n{%s = %s.%s\\n}\"\n        expl = pat % (res_expl, res_expl, value_expl, attr.attr)\n        return res, expl\n\n    def visit_Compare(self, comp):\n        self.push_format_context()\n        left_res, left_expl = self.visit(comp.left)\n        if isinstance(comp.left, (ast.Compare, ast.BoolOp)):\n            left_expl = \"({})\".format(left_expl)\n        res_variables = [self.variable() for i in range(len(comp.ops))]\n        load_names = [ast.Name(v, ast.Load()) for v in res_variables]\n        store_names = [ast.Name(v, ast.Store()) for v in res_variables]\n        it = zip(range(len(comp.ops)), comp.ops, comp.comparators)\n        expls = []\n        syms = []\n        results = [left_res]\n        for i, op, next_operand in it:\n            next_res, next_expl = self.visit(next_operand)\n            if isinstance(next_operand, (ast.Compare, ast.BoolOp)):\n                next_expl = \"({})\".format(next_expl)\n            results.append(next_res)\n            sym = binop_map[op.__class__]\n            syms.append(ast.Str(sym))\n            expl = \"%s %s %s\" % (left_expl, sym, next_expl)\n            expls.append(ast.Str(expl))\n            res_expr = ast.Compare(left_res, [op], [next_res])\n            self.statements.append(ast.Assign([store_names[i]], res_expr))\n            left_res, left_expl = next_res, next_expl\n        # Use pytest.assertion.util._reprcompare if that's available.\n        expl_call = self.helper(\n            \"_call_reprcompare\",\n            ast.Tuple(syms, ast.Load()),\n            ast.Tuple(load_names, ast.Load()),\n            ast.Tuple(expls, ast.Load()),\n            ast.Tuple(results, ast.Load()),\n        )\n        if len(comp.ops) > 1:\n            res = ast.BoolOp(ast.And(), load_names)\n        else:\n            res = load_names[0]\n        return res, self.explanation_param(self.pop_format_context(expl_call))",
+        "start_line": 607,
+        "start_column": 21534,
+        "end_line": 0,
+        "end_column": 41271,
+        "start_byte": 21534,
+        "end_byte": 0
+      },
+      "_pytest.assertion.AssertionRewriter.__init__": {
+        "name": "_pytest.assertion.AssertionRewriter.__init__",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def __init__(self, module_path, config):\n        super(AssertionRewriter, self).__init__()\n        self.module_path = module_path\n        self.config = config",
+        "start_line": 659,
+        "start_column": 23944,
+        "end_line": 4,
+        "end_column": 24102,
+        "start_byte": 23944,
+        "end_byte": 4
+      },
+      "_pytest.assertion.AssertionRewriter.run": {
+        "name": "_pytest.assertion.AssertionRewriter.run",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def run(self, mod):\n        \"\"\"Find all assert statements in *mod* and rewrite them.\"\"\"\n        if not mod.body:\n            # Nothing to do.\n            return\n        # Insert some special imports at the top of the module but after any\n        # docstrings and __future__ imports.\n        aliases = [\n            ast.alias(six.moves.builtins.__name__, \"@py_builtins\"),\n            ast.alias(\"_pytest.assertion.rewrite\", \"@pytest_ar\"),\n        ]\n        doc = getattr(mod, \"docstring\", None)\n        expect_docstring = doc is None\n        if doc is not None and self.is_rewrite_disabled(doc):\n            return\n        pos = 0\n        lineno = 1\n        for item in mod.body:\n            if (\n                expect_docstring\n                and isinstance(item, ast.Expr)\n                and isinstance(item.value, ast.Str)\n            ):\n                doc = item.value.s\n                if self.is_rewrite_disabled(doc):\n                    return\n                expect_docstring = False\n            elif (\n                not isinstance(item, ast.ImportFrom)\n                or item.level > 0\n                or item.module != \"__future__\"\n            ):\n                lineno = item.lineno\n                break\n            pos += 1\n        else:\n            lineno = item.lineno\n        imports = [\n            ast.Import([alias], lineno=lineno, col_offset=0) for alias in aliases\n        ]\n        mod.body[pos:pos] = imports\n        # Collect asserts.\n        nodes = [mod]\n        while nodes:\n            node = nodes.pop()\n            for name, field in ast.iter_fields(node):\n                if isinstance(field, list):\n                    new = []\n                    for i, child in enumerate(field):\n                        if isinstance(child, ast.Assert):\n                            # Transform assert.\n                            new.extend(self.visit(child))\n                        else:\n                            new.append(child)\n                            if isinstance(child, ast.AST):\n                                nodes.append(child)\n                    setattr(node, name, new)\n                elif (\n                    isinstance(field, ast.AST)\n                    # Don't recurse into expressions as they can't contain\n                    # asserts.\n                    and not isinstance(field, ast.expr)\n                ):\n                    nodes.append(field)",
+        "start_line": 664,
+        "start_column": 24108,
+        "end_line": 4,
+        "end_column": 26514,
+        "start_byte": 24108,
+        "end_byte": 4
+      },
+      "_pytest.assertion.AssertionRewriter.is_rewrite_disabled": {
+        "name": "_pytest.assertion.AssertionRewriter.is_rewrite_disabled",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "@staticmethod\n    def is_rewrite_disabled(docstring):\n        return \"PYTEST_DONT_REWRITE\" in docstring",
+        "start_line": 729,
+        "start_column": 26520,
+        "end_line": 4,
+        "end_column": 26623,
+        "start_byte": 26520,
+        "end_byte": 4
+      },
+      "_pytest.assertion.AssertionRewriter.variable": {
+        "name": "_pytest.assertion.AssertionRewriter.variable",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def variable(self):\n        \"\"\"Get a new variable.\"\"\"\n        # Use a character invalid in python identifiers to avoid clashing.\n        name = \"@py_assert\" + str(next(self.variable_counter))\n        self.variables.append(name)\n        return name",
+        "start_line": 733,
+        "start_column": 26629,
+        "end_line": 4,
+        "end_column": 26876,
+        "start_byte": 26629,
+        "end_byte": 4
+      },
+      "_pytest.assertion.AssertionRewriter.assign": {
+        "name": "_pytest.assertion.AssertionRewriter.assign",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def assign(self, expr):\n        \"\"\"Give *expr* a name.\"\"\"\n        name = self.variable()\n        self.statements.append(ast.Assign([ast.Name(name, ast.Store())], expr))\n        return ast.Name(name, ast.Load())",
+        "start_line": 740,
+        "start_column": 26882,
+        "end_line": 4,
+        "end_column": 27092,
+        "start_byte": 26882,
+        "end_byte": 4
+      },
+      "_pytest.assertion.AssertionRewriter.display": {
+        "name": "_pytest.assertion.AssertionRewriter.display",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def display(self, expr):\n        \"\"\"Call saferepr on the expression.\"\"\"\n        return self.helper(\"_saferepr\", expr)",
+        "start_line": 746,
+        "start_column": 27098,
+        "end_line": 4,
+        "end_column": 27215,
+        "start_byte": 27098,
+        "end_byte": 4
+      },
+      "_pytest.assertion.AssertionRewriter.helper": {
+        "name": "_pytest.assertion.AssertionRewriter.helper",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def helper(self, name, *args):\n        \"\"\"Call a helper in this module.\"\"\"\n        py_name = ast.Name(\"@pytest_ar\", ast.Load())\n        attr = ast.Attribute(py_name, name, ast.Load())\n        return ast_Call(attr, list(args), [])",
+        "start_line": 750,
+        "start_column": 27221,
+        "end_line": 4,
+        "end_column": 27450,
+        "start_byte": 27221,
+        "end_byte": 4
+      },
+      "_pytest.assertion.AssertionRewriter.builtin": {
+        "name": "_pytest.assertion.AssertionRewriter.builtin",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def builtin(self, name):\n        \"\"\"Return the builtin called *name*.\"\"\"\n        builtin_name = ast.Name(\"@py_builtins\", ast.Load())\n        return ast.Attribute(builtin_name, name, ast.Load())",
+        "start_line": 756,
+        "start_column": 27456,
+        "end_line": 4,
+        "end_column": 27649,
+        "start_byte": 27456,
+        "end_byte": 4
+      },
+      "_pytest.assertion.AssertionRewriter.explanation_param": {
+        "name": "_pytest.assertion.AssertionRewriter.explanation_param",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def explanation_param(self, expr):\n        \"\"\"Return a new named %-formatting placeholder for expr.\n\n        This creates a %-formatting placeholder for expr in the\n        current formatting context, e.g. ``%(py0)s``.  The placeholder\n        and expr are placed in the current format context so that it\n        can be used on the next call to .pop_format_context().\n\n        \"\"\"\n        specifier = \"py\" + str(next(self.variable_counter))\n        self.explanation_specifiers[specifier] = expr\n        return \"%(\" + specifier + \")s\"",
+        "start_line": 761,
+        "start_column": 27655,
+        "end_line": 4,
+        "end_column": 28188,
+        "start_byte": 27655,
+        "end_byte": 4
+      },
+      "_pytest.assertion.AssertionRewriter.push_format_context": {
+        "name": "_pytest.assertion.AssertionRewriter.push_format_context",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def push_format_context(self):\n        \"\"\"Create a new formatting context.\n\n        The format context is used for when an explanation wants to\n        have a variable value formatted in the assertion message.  In\n        this case the value required can be added using\n        .explanation_param().  Finally .pop_format_context() is used\n        to format a string of %-formatted values as added by\n        .explanation_param().\n\n        \"\"\"\n        self.explanation_specifiers = {}\n        self.stack.append(self.explanation_specifiers)",
+        "start_line": 774,
+        "start_column": 28194,
+        "end_line": 4,
+        "end_column": 28732,
+        "start_byte": 28194,
+        "end_byte": 4
+      },
+      "_pytest.assertion.AssertionRewriter.pop_format_context": {
+        "name": "_pytest.assertion.AssertionRewriter.pop_format_context",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def pop_format_context(self, expl_expr):\n        \"\"\"Format the %-formatted string with current format context.\n\n        The expl_expr should be an ast.Str instance constructed from\n        the %-placeholders created by .explanation_param().  This will\n        add the required code to format said string to .on_failure and\n        return the ast.Name instance of the formatted string.\n\n        \"\"\"\n        current = self.stack.pop()\n        if self.stack:\n            self.explanation_specifiers = self.stack[-1]\n        keys = [ast.Str(key) for key in current.keys()]\n        format_dict = ast.Dict(keys, list(current.values()))\n        form = ast.BinOp(expl_expr, ast.Mod(), format_dict)\n        name = \"@py_format\" + str(next(self.variable_counter))\n        self.on_failure.append(ast.Assign([ast.Name(name, ast.Store())], form))\n        return ast.Name(name, ast.Load())",
+        "start_line": 788,
+        "start_column": 28738,
+        "end_line": 4,
+        "end_column": 29612,
+        "start_byte": 28738,
+        "end_byte": 4
+      },
+      "_pytest.assertion.AssertionRewriter.generic_visit": {
+        "name": "_pytest.assertion.AssertionRewriter.generic_visit",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def generic_visit(self, node):\n        \"\"\"Handle expressions we don't have custom code for.\"\"\"\n        assert isinstance(node, ast.expr)\n        res = self.assign(node)\n        return res, self.explanation_param(self.display(res))",
+        "start_line": 807,
+        "start_column": 29618,
+        "end_line": 4,
+        "end_column": 29848,
+        "start_byte": 29618,
+        "end_byte": 4
+      },
+      "_pytest.assertion.AssertionRewriter.visit_Assert": {
+        "name": "_pytest.assertion.AssertionRewriter.visit_Assert",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def visit_Assert(self, assert_):\n        \"\"\"Return the AST statements to replace the ast.Assert instance.\n\n        This rewrites the test of an assertion to provide\n        intermediate values and replace it with an if statement which\n        raises an assertion error with a detailed explanation in case\n        the expression is false.\n\n        \"\"\"\n        if isinstance(assert_.test, ast.Tuple) and len(assert_.test.elts) >= 1:\n            from _pytest.warning_types import PytestAssertRewriteWarning\n            import warnings\n\n            warnings.warn_explicit(\n                PytestAssertRewriteWarning(\n                    \"assertion is always true, perhaps remove parentheses?\"\n                ),\n                category=None,\n                filename=str(self.module_path),\n                lineno=assert_.lineno,\n            )\n\n        self.statements = []\n        self.variables = []\n        self.variable_counter = itertools.count()\n        self.stack = []\n        self.on_failure = []\n        self.push_format_context()\n        # Rewrite assert into a bunch of statements.\n        top_condition, explanation = self.visit(assert_.test)\n        # If in a test module, check if directly asserting None, in order to warn [Issue #3191]\n        if self.module_path is not None:\n            self.statements.append(\n                self.warn_about_none_ast(\n                    top_condition, module_path=self.module_path, lineno=assert_.lineno\n                )\n            )\n        # Create failure message.\n        body = self.on_failure\n        negation = ast.UnaryOp(ast.Not(), top_condition)\n        self.statements.append(ast.If(negation, body, []))\n        if assert_.msg:\n            assertmsg = self.helper(\"_format_assertmsg\", assert_.msg)\n            explanation = \"\\n>assert \" + explanation\n        else:\n            assertmsg = ast.Str(\"\")\n            explanation = \"assert \" + explanation\n        template = ast.BinOp(assertmsg, ast.Add(), ast.Str(explanation))\n        msg = self.pop_format_context(template)\n        fmt = self.helper(\"_format_explanation\", msg)\n        err_name = ast.Name(\"AssertionError\", ast.Load())\n        exc = ast_Call(err_name, [fmt], [])\n        if sys.version_info[0] >= 3:\n            raise_ = ast.Raise(exc, None)\n        else:\n            raise_ = ast.Raise(exc, None, None)\n        body.append(raise_)\n        # Clear temporary variables by setting them to None.\n        if self.variables:\n            variables = [ast.Name(name, ast.Store()) for name in self.variables]\n            clear = ast.Assign(variables, _NameConstant(None))\n            self.statements.append(clear)\n        # Fix line numbers.\n        for stmt in self.statements:\n            set_location(stmt, assert_.lineno, assert_.col_offset)\n        return self.statements",
+        "start_line": 813,
+        "start_column": 29854,
+        "end_line": 4,
+        "end_column": 32649,
+        "start_byte": 29854,
+        "end_byte": 4
+      },
+      "_pytest.assertion.AssertionRewriter.warn_about_none_ast": {
+        "name": "_pytest.assertion.AssertionRewriter.warn_about_none_ast",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def warn_about_none_ast(self, node, module_path, lineno):\n        \"\"\"\n        Returns an AST issuing a warning if the value of node is `None`.\n        This is used to warn the user when asserting a function that asserts\n        internally already.\n        See issue #3191 for more details.\n        \"\"\"\n\n        # Using parse because it is different between py2 and py3.\n        AST_NONE = ast.parse(\"None\").body[0].value\n        val_is_none = ast.Compare(node, [ast.Is()], [AST_NONE])\n        send_warning = ast.parse(\n            \"\"\"\nfrom _pytest.warning_types import PytestAssertRewriteWarning\nfrom warnings import warn_explicit\nwarn_explicit(\n    PytestAssertRewriteWarning('asserting the value None, please use \"assert is None\"'),\n    category=None,\n    filename={filename!r},\n    lineno={lineno},\n)\n            \"\"\".format(\n                filename=module_path.strpath, lineno=lineno\n            )\n        ).body\n        return ast.If(val_is_none, send_warning, [])",
+        "start_line": 880,
+        "start_column": 32655,
+        "end_line": 4,
+        "end_column": 33624,
+        "start_byte": 32655,
+        "end_byte": 4
+      },
+      "_pytest.assertion.AssertionRewriter.visit_Name": {
+        "name": "_pytest.assertion.AssertionRewriter.visit_Name",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def visit_Name(self, name):\n        # Display the repr of the name if it's a local variable or\n        # _should_repr_global_name() thinks it's acceptable.\n        locs = ast_Call(self.builtin(\"locals\"), [], [])\n        inlocs = ast.Compare(ast.Str(name.id), [ast.In()], [locs])\n        dorepr = self.helper(\"_should_repr_global_name\", name)\n        test = ast.BoolOp(ast.Or(), [inlocs, dorepr])\n        expr = ast.IfExp(test, self.display(name), ast.Str(name.id))\n        return name, self.explanation_param(expr)",
+        "start_line": 907,
+        "start_column": 33630,
+        "end_line": 4,
+        "end_column": 34144,
+        "start_byte": 33630,
+        "end_byte": 4
+      },
+      "_pytest.assertion.AssertionRewriter.visit_BoolOp": {
+        "name": "_pytest.assertion.AssertionRewriter.visit_BoolOp",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def visit_BoolOp(self, boolop):\n        res_var = self.variable()\n        expl_list = self.assign(ast.List([], ast.Load()))\n        app = ast.Attribute(expl_list, \"append\", ast.Load())\n        is_or = int(isinstance(boolop.op, ast.Or))\n        body = save = self.statements\n        fail_save = self.on_failure\n        levels = len(boolop.values) - 1\n        self.push_format_context()\n        # Process each operand, short-circuting if needed.\n        for i, v in enumerate(boolop.values):\n            if i:\n                fail_inner = []\n                # cond is set in a prior loop iteration below\n                self.on_failure.append(ast.If(cond, fail_inner, []))  # noqa\n                self.on_failure = fail_inner\n            self.push_format_context()\n            res, expl = self.visit(v)\n            body.append(ast.Assign([ast.Name(res_var, ast.Store())], res))\n            expl_format = self.pop_format_context(ast.Str(expl))\n            call = ast_Call(app, [expl_format], [])\n            self.on_failure.append(ast.Expr(call))\n            if i < levels:\n                cond = res\n                if is_or:\n                    cond = ast.UnaryOp(ast.Not(), cond)\n                inner = []\n                self.statements.append(ast.If(cond, inner, []))\n                self.statements = body = inner\n        self.statements = save\n        self.on_failure = fail_save\n        expl_template = self.helper(\"_format_boolop\", expl_list, ast.Num(is_or))\n        expl = self.pop_format_context(expl_template)\n        return ast.Name(res_var, ast.Load()), self.explanation_param(expl)",
+        "start_line": 917,
+        "start_column": 34150,
+        "end_line": 4,
+        "end_column": 35744,
+        "start_byte": 34150,
+        "end_byte": 4
+      },
+      "_pytest.assertion.AssertionRewriter.visit_UnaryOp": {
+        "name": "_pytest.assertion.AssertionRewriter.visit_UnaryOp",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def visit_UnaryOp(self, unary):\n        pattern = unary_map[unary.op.__class__]\n        operand_res, operand_expl = self.visit(unary.operand)\n        res = self.assign(ast.UnaryOp(unary.op, operand_res))\n        return res, pattern % (operand_expl,)",
+        "start_line": 952,
+        "start_column": 35750,
+        "end_line": 4,
+        "end_column": 35999,
+        "start_byte": 35750,
+        "end_byte": 4
+      },
+      "_pytest.assertion.AssertionRewriter.visit_BinOp": {
+        "name": "_pytest.assertion.AssertionRewriter.visit_BinOp",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def visit_BinOp(self, binop):\n        symbol = binop_map[binop.op.__class__]\n        left_expr, left_expl = self.visit(binop.left)\n        right_expr, right_expl = self.visit(binop.right)\n        explanation = \"(%s %s %s)\" % (left_expl, symbol, right_expl)\n        res = self.assign(ast.BinOp(left_expr, binop.op, right_expr))\n        return res, explanation",
+        "start_line": 958,
+        "start_column": 36005,
+        "end_line": 4,
+        "end_column": 36363,
+        "start_byte": 36005,
+        "end_byte": 4
+      },
+      "_pytest.assertion.AssertionRewriter.visit_Call_35": {
+        "name": "_pytest.assertion.AssertionRewriter.visit_Call_35",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def visit_Call_35(self, call):\n        \"\"\"\n        visit `ast.Call` nodes on Python3.5 and after\n        \"\"\"\n        new_func, func_expl = self.visit(call.func)\n        arg_expls = []\n        new_args = []\n        new_kwargs = []\n        for arg in call.args:\n            res, expl = self.visit(arg)\n            arg_expls.append(expl)\n            new_args.append(res)\n        for keyword in call.keywords:\n            res, expl = self.visit(keyword.value)\n            new_kwargs.append(ast.keyword(keyword.arg, res))\n            if keyword.arg:\n                arg_expls.append(keyword.arg + \"=\" + expl)\n            else:  # **args have `arg` keywords with an .arg of None\n                arg_expls.append(\"**\" + expl)\n\n        expl = \"%s(%s)\" % (func_expl, \", \".join(arg_expls))\n        new_call = ast.Call(new_func, new_args, new_kwargs)\n        res = self.assign(new_call)\n        res_expl = self.explanation_param(self.display(res))\n        outer_expl = \"%s\\n{%s = %s\\n}\" % (res_expl, res_expl, expl)\n        return res, outer_expl",
+        "start_line": 966,
+        "start_column": 36369,
+        "end_line": 4,
+        "end_column": 37404,
+        "start_byte": 36369,
+        "end_byte": 4
+      },
+      "_pytest.assertion.AssertionRewriter.visit_Starred": {
+        "name": "_pytest.assertion.AssertionRewriter.visit_Starred",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def visit_Starred(self, starred):\n        # From Python 3.5, a Starred node can appear in a function call\n        res, expl = self.visit(starred.value)\n        new_starred = ast.Starred(res, starred.ctx)\n        return new_starred, \"*\" + expl",
+        "start_line": 993,
+        "start_column": 37410,
+        "end_line": 4,
+        "end_column": 37652,
+        "start_byte": 37410,
+        "end_byte": 4
+      },
+      "_pytest.assertion.AssertionRewriter.visit_Call_legacy": {
+        "name": "_pytest.assertion.AssertionRewriter.visit_Call_legacy",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def visit_Call_legacy(self, call):\n        \"\"\"\n        visit `ast.Call nodes on 3.4 and below`\n        \"\"\"\n        new_func, func_expl = self.visit(call.func)\n        arg_expls = []\n        new_args = []\n        new_kwargs = []\n        new_star = new_kwarg = None\n        for arg in call.args:\n            res, expl = self.visit(arg)\n            new_args.append(res)\n            arg_expls.append(expl)\n        for keyword in call.keywords:\n            res, expl = self.visit(keyword.value)\n            new_kwargs.append(ast.keyword(keyword.arg, res))\n            arg_expls.append(keyword.arg + \"=\" + expl)\n        if call.starargs:\n            new_star, expl = self.visit(call.starargs)\n            arg_expls.append(\"*\" + expl)\n        if call.kwargs:\n            new_kwarg, expl = self.visit(call.kwargs)\n            arg_expls.append(\"**\" + expl)\n        expl = \"%s(%s)\" % (func_expl, \", \".join(arg_expls))\n        new_call = ast.Call(new_func, new_args, new_kwargs, new_star, new_kwarg)\n        res = self.assign(new_call)\n        res_expl = self.explanation_param(self.display(res))\n        outer_expl = \"%s\\n{%s = %s\\n}\" % (res_expl, res_expl, expl)\n        return res, outer_expl",
+        "start_line": 999,
+        "start_column": 37658,
+        "end_line": 4,
+        "end_column": 38842,
+        "start_byte": 37658,
+        "end_byte": 4
+      },
+      "_pytest.assertion.AssertionRewriter.visit_Attribute": {
+        "name": "_pytest.assertion.AssertionRewriter.visit_Attribute",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def visit_Attribute(self, attr):\n        if not isinstance(attr.ctx, ast.Load):\n            return self.generic_visit(attr)\n        value, value_expl = self.visit(attr.value)\n        res = self.assign(ast.Attribute(value, attr.attr, ast.Load()))\n        res_expl = self.explanation_param(self.display(res))\n        pat = \"%s\\n{%s = %s.%s\\n}\"\n        expl = pat % (res_expl, res_expl, value_expl, attr.attr)\n        return res, expl",
+        "start_line": 1037,
+        "start_column": 39105,
+        "end_line": 4,
+        "end_column": 39536,
+        "start_byte": 39105,
+        "end_byte": 4
+      },
+      "_pytest.assertion.AssertionRewriter.visit_Compare": {
+        "name": "_pytest.assertion.AssertionRewriter.visit_Compare",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def visit_Compare(self, comp):\n        self.push_format_context()\n        left_res, left_expl = self.visit(comp.left)\n        if isinstance(comp.left, (ast.Compare, ast.BoolOp)):\n            left_expl = \"({})\".format(left_expl)\n        res_variables = [self.variable() for i in range(len(comp.ops))]\n        load_names = [ast.Name(v, ast.Load()) for v in res_variables]\n        store_names = [ast.Name(v, ast.Store()) for v in res_variables]\n        it = zip(range(len(comp.ops)), comp.ops, comp.comparators)\n        expls = []\n        syms = []\n        results = [left_res]\n        for i, op, next_operand in it:\n            next_res, next_expl = self.visit(next_operand)\n            if isinstance(next_operand, (ast.Compare, ast.BoolOp)):\n                next_expl = \"({})\".format(next_expl)\n            results.append(next_res)\n            sym = binop_map[op.__class__]\n            syms.append(ast.Str(sym))\n            expl = \"%s %s %s\" % (left_expl, sym, next_expl)\n            expls.append(ast.Str(expl))\n            res_expr = ast.Compare(left_res, [op], [next_res])\n            self.statements.append(ast.Assign([store_names[i]], res_expr))\n            left_res, left_expl = next_res, next_expl\n        # Use pytest.assertion.util._reprcompare if that's available.\n        expl_call = self.helper(\n            \"_call_reprcompare\",\n            ast.Tuple(syms, ast.Load()),\n            ast.Tuple(load_names, ast.Load()),\n            ast.Tuple(expls, ast.Load()),\n            ast.Tuple(results, ast.Load()),\n        )\n        if len(comp.ops) > 1:\n            res = ast.BoolOp(ast.And(), load_names)\n        else:\n            res = load_names[0]\n        return res, self.explanation_param(self.pop_format_context(expl_call))",
+        "start_line": 1047,
+        "start_column": 39542,
+        "end_line": 4,
+        "end_column": 41271,
+        "start_byte": 39542,
+        "end_byte": 4
+      }
+    }
+  }
+}

@@ -1,0 +1,26 @@
+
+diff --git a/src/_pytest/capture.py b/src/_pytest/capture.py
+index 3f9c60fb9..25b0ee612 100644
+--- a/src/_pytest/capture.py
++++ b/src/_pytest/capture.py
+@@ -192,7 +192,7 @@ class EncodedFile(io.TextIOWrapper):
+ 
+ class CaptureIO(io.TextIOWrapper):
+     def __init__(self) -> None:
+-        super().__init__(io.BytesIO(), encoding="UTF-8", newline="", write_through=True)
++        super().__init__(io.BytesIO(), encoding="UTF-8", newline=None, write_through=True)
+ 
+     def getvalue(self) -> str:
+         assert isinstance(self.buffer, io.BytesIO)
+diff --git a/test_capfd_regression.py b/test_capfd_regression.py
+new file mode 100644
+index 000000000..09d489da7
+--- /dev/null
++++ b/test_capfd_regression.py
+@@ -0,0 +1,6 @@
++import sys
++
++def test_cafd_includes_carriage_return(capfd):
++    sys.stdout.write('Greetings from DOS\r')
++    out, err = capfd.readouterr()
++    assert out.endswith('\r')

@@ -1,0 +1,799 @@
+{
+  "name": "SymbolSummary",
+  "model": "gpt-4o-2024-08-06",
+  "metadata": {},
+  "issue": "<description>:Error message prints extra code line when using assert in python3.9\n<!--\r\nThanks for submitting an issue!\r\n\r\nQuick check-list while reporting bugs:\r\n-->\r\n\r\n- [x] a detailed description of the bug or problem you are having\r\n- [x] output of `pip list` from the virtual environment you are using\r\n- [x] pytest and operating system versions\r\n- [ ] minimal example if possible\r\n### Description\r\nI have a test like this:\r\n```\r\nfrom pytest import fixture\r\n\r\n\r\ndef t(foo):\r\n    return foo\r\n\r\n\r\n@fixture\r\ndef foo():\r\n    return 1\r\n\r\n\r\ndef test_right_statement(foo):\r\n    assert foo == (3 + 2) * (6 + 9)\r\n\r\n    @t\r\n    def inner():\r\n        return 2\r\n\r\n    assert 2 == inner\r\n\r\n\r\n@t\r\ndef outer():\r\n    return 2\r\n```\r\nThe test \"test_right_statement\" fails at the first assertion,but print extra code (the \"t\" decorator) in error details, like this:\r\n\r\n```\r\n ============================= test session starts =============================\r\nplatform win32 -- Python 3.9.6, pytest-6.2.5, py-1.10.0, pluggy-0.13.1 -- \r\ncachedir: .pytest_cache\r\nrootdir: \r\nplugins: allure-pytest-2.9.45\r\ncollecting ... collected 1 item\r\n\r\ntest_statement.py::test_right_statement FAILED                           [100%]\r\n\r\n================================== FAILURES ===================================\r\n____________________________ test_right_statement _____________________________\r\n\r\nfoo = 1\r\n\r\n    def test_right_statement(foo):\r\n>       assert foo == (3 + 2) * (6 + 9)\r\n    \r\n        @t\r\nE       assert 1 == 75\r\nE         +1\r\nE         -75\r\n\r\ntest_statement.py:14: AssertionError\r\n=========================== short test summary info ===========================\r\nFAILED test_statement.py::test_right_statement - assert 1 == 75\r\n============================== 1 failed in 0.12s ==============================\r\n```\r\nAnd the same thing **did not** happen when using python3.7.10\uff1a\r\n```\r\n============================= test session starts =============================\r\nplatform win32 -- Python 3.7.10, pytest-6.2.5, py-1.11.0, pluggy-1.0.0 -- \r\ncachedir: .pytest_cache\r\nrootdir: \r\ncollecting ... collected 1 item\r\n\r\ntest_statement.py::test_right_statement FAILED                           [100%]\r\n\r\n================================== FAILURES ===================================\r\n____________________________ test_right_statement _____________________________\r\n\r\nfoo = 1\r\n\r\n    def test_right_statement(foo):\r\n>       assert foo == (3 + 2) * (6 + 9)\r\nE       assert 1 == 75\r\nE         +1\r\nE         -75\r\n\r\ntest_statement.py:14: AssertionError\r\n=========================== short test summary info ===========================\r\nFAILED test_statement.py::test_right_statement - assert 1 == 75\r\n============================== 1 failed in 0.03s ==============================\r\n```\r\nIs there some problems when calculate the statement lineno?\r\n\r\n### pip list \r\n```\r\n$ pip list\r\nPackage            Version\r\n------------------ -------\r\natomicwrites       1.4.0\r\nattrs              21.2.0\r\ncolorama           0.4.4\r\nimportlib-metadata 4.8.2\r\niniconfig          1.1.1\r\npackaging          21.3\r\npip                21.3.1\r\npluggy             1.0.0\r\npy                 1.11.0\r\npyparsing          3.0.6\r\npytest             6.2.5\r\nsetuptools         59.4.0\r\ntoml               0.10.2\r\ntyping_extensions  4.0.0\r\nzipp               3.6.0\r\n\r\n```\r\n### pytest and operating system versions\r\npytest 6.2.5\r\nWindows 10 \r\nSeems to happen in python 3.9,not 3.7\r\n\n</description>",
+  "request": {
+    "symbols": {
+      "related_symbols": [
+        {
+          "name": "_pytest.assertion.assertstate_key",
+          "file_path": "src/_pytest/assertion/rewrite.py",
+          "file_content": "assertstate_key = StashKey[\"AssertionState\"]()",
+          "start_line": 47,
+          "start_column": 1169,
+          "end_line": 0,
+          "end_column": 1215,
+          "start_byte": 1169,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewritingHook.exec_module",
+          "file_path": "src/_pytest/assertion/rewrite.py",
+          "file_content": "def exec_module(self, module: types.ModuleType) -> None:\n        assert module.__spec__ is not None\n        assert module.__spec__.origin is not None\n        fn = Path(module.__spec__.origin)\n        state = self.config.stash[assertstate_key]\n\n        self._rewritten_names[module.__name__] = fn\n\n        # The requested module looks like a test file, so rewrite it. This is\n        # the most magical part of the process: load the source, rewrite the\n        # asserts, and load the rewritten source. We also cache the rewritten\n        # module code in a special pyc. We must be aware of the possibility of\n        # concurrent pytest processes rewriting and loading pycs. To avoid\n        # tricky race conditions, we maintain the following invariant: The\n        # cached pyc is always a complete, valid pyc. Operations on it must be\n        # atomic. POSIX's atomic rename comes in handy.\n        write = not sys.dont_write_bytecode\n        cache_dir = get_cache_dir(fn)\n        if write:\n            ok = try_makedirs(cache_dir)\n            if not ok:\n                write = False\n                state.trace(f\"read only directory: {cache_dir}\")\n\n        cache_name = fn.name[:-3] + PYC_TAIL\n        pyc = cache_dir / cache_name\n        # Notice that even if we're in a read-only directory, I'm going\n        # to check for a cached pyc. This may not be optimal...\n        co = _read_pyc(fn, pyc, state.trace)\n        if co is None:\n            state.trace(f\"rewriting {fn!r}\")\n            source_stat, co = _rewrite_test(fn, self.config)\n            if write:\n                self._writing_pyc = True\n                try:\n                    _write_pyc(state, co, source_stat, pyc)\n                finally:\n                    self._writing_pyc = False\n        else:\n            state.trace(f\"found cached rewritten pyc for {fn}\")\n        exec(co, module.__dict__)",
+          "start_line": 130,
+          "start_column": 4293,
+          "end_line": 4,
+          "end_column": 6165,
+          "start_byte": 4293,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.assertion.rewrite_asserts",
+          "file_path": "src/_pytest/assertion/rewrite.py",
+          "file_content": "def rewrite_asserts(\n    mod: ast.Module,\n    source: bytes,\n    module_path: Optional[str] = None,\n    config: Optional[Config] = None,\n) -> None:\n    \"\"\"Rewrite the assert statements in mod.\"\"\"\n    AssertionRewriter(module_path, config, source).run(mod)",
+          "start_line": 418,
+          "start_column": 15578,
+          "end_line": 0,
+          "end_column": 15833,
+          "start_byte": 15578,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.assertion._get_assertion_exprs",
+          "file_path": "src/_pytest/assertion/rewrite.py",
+          "file_content": "@functools.lru_cache(maxsize=1)\ndef _get_assertion_exprs(src: bytes) -> Dict[int, str]:\n    \"\"\"Return a mapping from {lineno: \"assertion test expression\"}.\"\"\"\n    ret: Dict[int, str] = {}\n\n    depth = 0\n    lines: List[str] = []\n    assert_lineno: Optional[int] = None\n    seen_lines: Set[int] = set()\n\n    def _write_and_reset() -> None:\n        nonlocal depth, lines, assert_lineno, seen_lines\n        assert assert_lineno is not None\n        ret[assert_lineno] = \"\".join(lines).rstrip().rstrip(\"\\\\\")\n        depth = 0\n        lines = []\n        assert_lineno = None\n        seen_lines = set()\n\n    tokens = tokenize.tokenize(io.BytesIO(src).readline)\n    for tp, source, (lineno, offset), _, line in tokens:\n        if tp == tokenize.NAME and source == \"assert\":\n            assert_lineno = lineno\n        elif assert_lineno is not None:\n            # keep track of depth for the assert-message `,` lookup\n            if tp == tokenize.OP and source in \"([{\":\n                depth += 1\n            elif tp == tokenize.OP and source in \")]}\":\n                depth -= 1\n\n            if not lines:\n                lines.append(line[offset:])\n                seen_lines.add(lineno)\n            # a non-nested comma separates the expression from the message\n            elif depth == 0 and tp == tokenize.OP and source == \",\":\n                # one line assert with message\n                if lineno in seen_lines and len(lines) == 1:\n                    offset_in_trimmed = offset + len(lines[-1]) - len(line)\n                    lines[-1] = lines[-1][:offset_in_trimmed]\n                # multi-line assert with message\n                elif lineno in seen_lines:\n                    lines[-1] = lines[-1][:offset]\n                # multi line assert with escapd newline before message\n                else:\n                    lines.append(line[:offset])\n                _write_and_reset()\n            elif tp in {tokenize.NEWLINE, tokenize.ENDMARKER}:\n                _write_and_reset()\n            elif lines and lineno not in seen_lines:\n                lines.append(line)\n                seen_lines.add(lineno)\n\n    return ret",
+          "start_line": 556,
+          "start_column": 19723,
+          "end_line": 0,
+          "end_column": 21855,
+          "start_byte": 19723,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewriter.run",
+          "file_path": "src/_pytest/assertion/rewrite.py",
+          "file_content": "def run(self, mod: ast.Module) -> None:\n        \"\"\"Find all assert statements in *mod* and rewrite them.\"\"\"\n        if not mod.body:\n            # Nothing to do.\n            return\n\n        # We'll insert some special imports at the top of the module, but after any\n        # docstrings and __future__ imports, so first figure out where that is.\n        doc = getattr(mod, \"docstring\", None)\n        expect_docstring = doc is None\n        if doc is not None and self.is_rewrite_disabled(doc):\n            return\n        pos = 0\n        lineno = 1\n        for item in mod.body:\n            if (\n                expect_docstring\n                and isinstance(item, ast.Expr)\n                and isinstance(item.value, ast.Str)\n            ):\n                doc = item.value.s\n                if self.is_rewrite_disabled(doc):\n                    return\n                expect_docstring = False\n            elif (\n                isinstance(item, ast.ImportFrom)\n                and item.level == 0\n                and item.module == \"__future__\"\n            ):\n                pass\n            else:\n                break\n            pos += 1\n        # Special case: for a decorated function, set the lineno to that of the\n        # first decorator, not the `def`. Issue #4984.\n        if isinstance(item, ast.FunctionDef) and item.decorator_list:\n            lineno = item.decorator_list[0].lineno\n        else:\n            lineno = item.lineno\n        # Now actually insert the special imports.\n        if sys.version_info >= (3, 10):\n            aliases = [\n                ast.alias(\"builtins\", \"@py_builtins\", lineno=lineno, col_offset=0),\n                ast.alias(\n                    \"_pytest.assertion.rewrite\",\n                    \"@pytest_ar\",\n                    lineno=lineno,\n                    col_offset=0,\n                ),\n            ]\n        else:\n            aliases = [\n                ast.alias(\"builtins\", \"@py_builtins\"),\n                ast.alias(\"_pytest.assertion.rewrite\", \"@pytest_ar\"),\n            ]\n        imports = [\n            ast.Import([alias], lineno=lineno, col_offset=0) for alias in aliases\n        ]\n        mod.body[pos:pos] = imports\n\n        # Collect asserts.\n        nodes: List[ast.AST] = [mod]\n        while nodes:\n            node = nodes.pop()\n            for name, field in ast.iter_fields(node):\n                if isinstance(field, list):\n                    new: List[ast.AST] = []\n                    for i, child in enumerate(field):\n                        if isinstance(child, ast.Assert):\n                            # Transform assert.\n                            new.extend(self.visit(child))\n                        else:\n                            new.append(child)\n                            if isinstance(child, ast.AST):\n                                nodes.append(child)\n                    setattr(node, name, new)\n                elif (\n                    isinstance(field, ast.AST)\n                    # Don't recurse into expressions as they can't contain\n                    # asserts.\n                    and not isinstance(field, ast.expr)\n                ):\n                    nodes.append(field)",
+          "start_line": 678,
+          "start_column": 24851,
+          "end_line": 4,
+          "end_column": 28032,
+          "start_byte": 24851,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewriter.visit_Assert",
+          "file_path": "src/_pytest/assertion/rewrite.py",
+          "file_content": "def visit_Assert(self, assert_: ast.Assert) -> List[ast.stmt]:\n        \"\"\"Return the AST statements to replace the ast.Assert instance.\n\n        This rewrites the test of an assertion to provide\n        intermediate values and replace it with an if statement which\n        raises an assertion error with a detailed explanation in case\n        the expression is false.\n        \"\"\"\n        if isinstance(assert_.test, ast.Tuple) and len(assert_.test.elts) >= 1:\n            from _pytest.warning_types import PytestAssertRewriteWarning\n            import warnings\n\n            # TODO: This assert should not be needed.\n            assert self.module_path is not None\n            warnings.warn_explicit(\n                PytestAssertRewriteWarning(\n                    \"assertion is always true, perhaps remove parentheses?\"\n                ),\n                category=None,\n                filename=self.module_path,\n                lineno=assert_.lineno,\n            )\n\n        self.statements: List[ast.stmt] = []\n        self.variables: List[str] = []\n        self.variable_counter = itertools.count()\n\n        if self.enable_assertion_pass_hook:\n            self.format_variables: List[str] = []\n\n        self.stack: List[Dict[str, ast.expr]] = []\n        self.expl_stmts: List[ast.stmt] = []\n        self.push_format_context()\n        # Rewrite assert into a bunch of statements.\n        top_condition, explanation = self.visit(assert_.test)\n\n        negation = ast.UnaryOp(ast.Not(), top_condition)\n\n        if self.enable_assertion_pass_hook:  # Experimental pytest_assertion_pass hook\n            msg = self.pop_format_context(ast.Str(explanation))\n\n            # Failed\n            if assert_.msg:\n                assertmsg = self.helper(\"_format_assertmsg\", assert_.msg)\n                gluestr = \"\\n>assert \"\n            else:\n                assertmsg = ast.Str(\"\")\n                gluestr = \"assert \"\n            err_explanation = ast.BinOp(ast.Str(gluestr), ast.Add(), msg)\n            err_msg = ast.BinOp(assertmsg, ast.Add(), err_explanation)\n            err_name = ast.Name(\"AssertionError\", ast.Load())\n            fmt = self.helper(\"_format_explanation\", err_msg)\n            exc = ast.Call(err_name, [fmt], [])\n            raise_ = ast.Raise(exc, None)\n            statements_fail = []\n            statements_fail.extend(self.expl_stmts)\n            statements_fail.append(raise_)\n\n            # Passed\n            fmt_pass = self.helper(\"_format_explanation\", msg)\n            orig = _get_assertion_exprs(self.source)[assert_.lineno]\n            hook_call_pass = ast.Expr(\n                self.helper(\n                    \"_call_assertion_pass\",\n                    ast.Num(assert_.lineno),\n                    ast.Str(orig),\n                    fmt_pass,\n                )\n            )\n            # If any hooks implement assert_pass hook\n            hook_impl_test = ast.If(\n                self.helper(\"_check_if_assertion_pass_impl\"),\n                self.expl_stmts + [hook_call_pass],\n                [],\n            )\n            statements_pass = [hook_impl_test]\n\n            # Test for assertion condition\n            main_test = ast.If(negation, statements_fail, statements_pass)\n            self.statements.append(main_test)\n            if self.format_variables:\n                variables = [\n                    ast.Name(name, ast.Store()) for name in self.format_variables\n                ]\n                clear_format = ast.Assign(variables, ast.NameConstant(None))\n                self.statements.append(clear_format)\n\n        else:  # Original assertion rewriting\n            # Create failure message.\n            body = self.expl_stmts\n            self.statements.append(ast.If(negation, body, []))\n            if assert_.msg:\n                assertmsg = self.helper(\"_format_assertmsg\", assert_.msg)\n                explanation = \"\\n>assert \" + explanation\n            else:\n                assertmsg = ast.Str(\"\")\n                explanation = \"assert \" + explanation\n            template = ast.BinOp(assertmsg, ast.Add(), ast.Str(explanation))\n            msg = self.pop_format_context(template)\n            fmt = self.helper(\"_format_explanation\", msg)\n            err_name = ast.Name(\"AssertionError\", ast.Load())\n            exc = ast.Call(err_name, [fmt], [])\n            raise_ = ast.Raise(exc, None)\n\n            body.append(raise_)\n\n        # Clear temporary variables by setting them to None.\n        if self.variables:\n            variables = [ast.Name(name, ast.Store()) for name in self.variables]\n            clear = ast.Assign(variables, ast.NameConstant(None))\n            self.statements.append(clear)\n        # Fix locations (line numbers/column offsets).\n        for stmt in self.statements:\n            for node in traverse_node(stmt):\n                ast.copy_location(node, assert_)\n        return self.statements",
+          "start_line": 845,
+          "start_column": 31679,
+          "end_line": 4,
+          "end_column": 36553,
+          "start_byte": 31679,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.assertion.pytest_assertrepr_compare",
+          "file_path": "src/_pytest/assertion/util.py",
+          "file_content": "/attrs, namedtuples compare only the\n            # field values, not the type or field names. But this branch\n            # intentionally only handles the same-type case, which was often\n ",
+          "start_line": 177,
+          "start_column": 6286,
+          "end_line": 0,
+          "end_column": 6474,
+          "start_byte": 6286,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.assertion.format_explanation",
+          "file_path": "src/_pytest/assertion/util.py",
+          "file_content": "def format_explanation(explanation: str) -> str:\n    r\"\"\"Format an explanation.\n\n    Normally all embedded newlines are escaped, however there are\n    three exceptions: \\n{, \\n} and \\n~.  The first two are intended\n    cover nested explanations, see function and attribute explanations\n    for examples (.visit_Call(), visit_Attribute()).  The last one is\n    for when one explanation needs to span multiple lines, e.g. when\n    displaying diffs.\n    \"\"\"\n    lines = _split_explanation(explanation)\n    result = _format_lines(lines)\n    return \"\\n\".join(result)",
+          "start_line": 34,
+          "start_column": 1123,
+          "end_line": 0,
+          "end_column": 1684,
+          "start_byte": 1123,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.assertion.assertrepr_compare",
+          "file_path": "src/_pytest/assertion/util.py",
+          "file_content": "def assertrepr_compare(config, op: str, left: Any, right: Any) -> Optional[List[str]]:\n    \"\"\"Return specialised explanations for some operators/operands.\"\"\"\n    verbose = config.getoption(\"verbose\")\n    if verbose > 1:\n        left_repr = safeformat(left)\n        right_repr = safeformat(right)\n    else:\n        # XXX: \"15 chars indentation\" is wrong\n        #      (\"E       AssertionError: assert \"); should use term width.\n        maxsize = (\n            80 - 15 - len(op) - 2\n        ) // 2  # 15 chars indentation, 1 space around op\n        left_repr = saferepr(left, maxsize=maxsize)\n        right_repr = saferepr(right, maxsize=maxsize)\n\n    summary = f\"{left_repr} {op} {right_repr}\"\n\n    explanation = None\n    try:\n        if op == \"==\":\n            explanation = _compare_eq_any(left, right, verbose)\n        elif op == \"not in\":\n            if istext(left) and istext(right):\n                explanation = _notin_text(left, right, verbose)\n    except outcomes.Exit:\n        raise\n    except Exception:\n        explanation = [\n            \"(pytest_assertion plugin: representation of details failed: {}.\".format(\n                _pytest._code.ExceptionInfo.from_current()._getreprcrash()\n            ),\n            \" Probably an object has a faulty __repr__.)\",\n        ]\n\n    if not explanation:\n        return None\n\n    return [summary] + explanation",
+          "start_line": 137,
+          "start_column": 4125,
+          "end_line": 0,
+          "end_column": 5490,
+          "start_byte": 4125,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.assertion._compare_eq_any",
+          "file_path": "src/_pytest/assertion/util.py",
+          "file_content": "def _compare_eq_any(left: Any, right: Any, verbose: int = 0) -> List[str]:\n    explanation = []\n    if istext(left) and istext(right):\n        explanation = _diff_text(left, right, verbose)\n    else:\n        from _pytest.python_api import ApproxBase\n\n        if isinstance(left, ApproxBase) or isinstance(right, ApproxBase):\n            # Although the common order should be obtained == expected, this ensures both ways\n            approx_side = left if isinstance(left, ApproxBase) else right\n            other_side = right if isinstance(left, ApproxBase) else left\n\n            explanation = approx_side._repr_compare(other_side)\n        elif type(left) == type(right) and (\n            isdatacls(left) or isattrs(left) or isnamedtuple(left)\n        ):\n            # Note: unlike dataclasses/attrs, namedtuples compare only the\n            # field values, not the type or field names. But this branch\n            # intentionally only handles the same-type case, which was often\n            # used in older code bases before dataclasses/attrs were available.\n            explanation = _compare_eq_cls(left, right, verbose)\n        elif issequence(left) and issequence(right):\n            explanation = _compare_eq_sequence(left, right, verbose)\n        elif isset(left) and isset(right):\n            explanation = _compare_eq_set(left, right, verbose)\n        elif isdict(left) and isdict(right):\n            explanation = _compare_eq_dict(left, right, verbose)\n        elif verbose > 0:\n            explanation = _compare_eq_verbose(left, right)\n\n        if isiterable(left) and isiterable(right):\n            expl = _compare_eq_iterable(left, right, verbose)\n            explanation.extend(expl)\n\n    return explanation",
+          "start_line": 177,
+          "start_column": 5493,
+          "end_line": 0,
+          "end_column": 7215,
+          "start_byte": 5493,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.hookspec.pytest_assertrepr_compare",
+          "file_path": "src/_pytest/assertion/util.py",
+          "file_content": "",
+          "start_line": 628,
+          "start_column": 21725,
+          "end_line": 0,
+          "end_column": 22273,
+          "start_byte": 21725,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.doctest.DoctestItem.repr_failure",
+          "file_path": "src/_pytest/python.py",
+          "file_content": "one\n\n    @property\n    def cls(self):\n        \"\"\"Python class object this node was collected from (can be None).\"\"\"\n        node = self.getparent(Class)\n        return node.obj if node is not None else None\n\n    @property\n    def obj(self):\n        \"\"\"Underlying Python object.\"\"\"\n        obj = getattr(self, \"_obj\", None)\n        if obj is None:\n            self._obj = obj = self._getobj()\n            # XXX evil hack\n            # used to avoid Function marker duplication\n            if self._ALLOW_MARKERS:\n                self.own_markers.extend(get_unpacked_marks(self.obj))\n        return obj\n\n    @obj.setter\n    def obj(self, value):\n        self._obj = value\n\n    def _getobj(self):\n        \"\"\"Get the underlying Python object. May be overwritten by subclasses.\"\"\"\n        # TODO: Improve the type of `parent` such that assert/ignore aren't needed.\n        assert self.parent is not None\n        obj = self.parent.obj  # type: ignore[attr-defined]\n        return getattr(obj, self.name)\n\n    def getmodpath(self, stopatmodule: bool = True, includemodule: bool = False) -> str:\n        \"\"\"Return Python path relative to the containing module.\"\"\"\n        chain = self.listchain()\n        chain.reverse()\n        parts = []\n        for node in chain:\n            name = node.name\n            if isinstance(node, Module):\n                name = os.path.splitext(name)[0]\n                if stopatmodule:\n                    if includemodule:\n                        parts.append(name)\n                    break\n            parts.append(name)\n        parts.reverse()\n        return \".\".join(parts)\n\n    def reportinfo(self) -> Tuple[Union[\"os.PathLike[str]\", str], Optional[int], str]:\n        # XXX caching?\n        obj = self.obj\n        compat_co_firstlineno = getattr(obj, \"compat_co_firstlineno\", None)\n        if isinstance(compat_co_firstlineno, int):\n            # nose compatibility\n            file_path = sys.modules[obj.__module__].__file__\n            if file_path.endswith(\".pyc\"):\n                file_path = file_path[:-1]\n            path: Union[\"os.PathLike[str]\", str] = file_path\n            lineno = compat_co_firstlineno\n        else:\n            path, lineno = getfslineno(obj)\n        modpath = self.getmodpath()\n        assert isinstance(lineno, int)\n        return path, lineno, modpath\n\n\n# As an optimization, these builtin attribute names are pre-ignored when\n# iterating over an object during collection -- the pytest_pycollect_makeitem\n# hook is not called for them.\n# fmt: off\nclass _EmptyClass: pass  # noqa: E701\nIGNORED_ATTRIBUTES = frozenset.union(  # noqa: E305\n    frozenset(),\n    # Module.\n    dir(types.ModuleType(\"empty_module\")),\n    # Some extra module attributes the above doesn't catch.\n    {\"__builtins__\", \"__file",
+          "start_line": 309,
+          "start_column": 9828,
+          "end_line": 4,
+          "end_column": 12594,
+          "start_byte": 9828,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.nodes.Node._repr_failure_py",
+          "file_path": "src/_pytest/python.py",
+          "file_content": "assnamefilter(self, name: str) -> bool:\n        return self._matches_prefix_or_glob_option(\"python_classes\", name)\n\n    def istestfunction(self, obj: object, name: str) -> bool:\n        if self.funcnamefilter(name) or self.isnosetest(obj):\n            if isinstance(obj, staticmethod):\n                # staticmethods need to be unwrapped.\n                obj = safe_getattr(obj, \"__func__\", False)\n            return callable(obj) and fixtures.getfixturemarker(obj) is None\n        else:\n            return False\n\n    def istestclass(self, obj: object, name: str) -> bool:\n        return self.classnamefilter(name) or self.isnosetest(obj)\n\n    def _matches_prefix_or_glob_option(self, option_name: str, name: str) -> bool:\n        \"\"\"Check if the given name matches the prefix or glob-pattern defined\n        in ini configuration.\"\"\"\n        for option in self.config.getini(option_name):\n            if name.startswith(option):\n                return True\n            # Check that name looks like a glob-string before calling fnmatch\n            # because this is called for every name in each collected module,\n            # and fnmatch is somewhat expensive to call.\n            elif (\"*\" in option or \"?\" in option or \"[\" in option) and fnmatch.fnmatch(\n                name, option\n            ):\n                return True\n        return False\n\n    def collect(self) -> Iterable[Union[nodes.Item, nodes.Collector]]:\n        if not getattr(self.obj, \"__test__\", True):\n            return []\n\n        # Avoid random getattrs and peek in the __dict__ instead.\n        dicts = [getattr(self.obj, \"__dict__\", {})]\n        if isinstance(self.obj, type):\n            for basecls in self.obj.__mro__:\n                dicts.append(basecls.__dict__)\n\n        # In each class, nodes should be definition ordered. Since Python 3.6,\n        # __dict__ is definition ordered.\n        seen: Set[str] = set()\n        dict_values: List[List[Union[nodes.Item, nodes.Collector]]] = []\n        ihook = self.ihook\n        for dic in dicts:\n            values: List[Union[nodes.Item, nodes.Collector]] = []\n            # Note: seems like the dict can change during iteration -\n            # be careful not to remove the list() without consideration.\n            for name",
+          "start_line": 418,
+          "start_column": 13319,
+          "end_line": 4,
+          "end_column": 15575,
+          "start_byte": 13319,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.nodes.Node.repr_failure",
+          "file_path": "src/_pytest/python.py",
+          "file_content": "in list(dic.items()):\n                if name in IGNORED_ATTRIBUTES:\n                    continue\n                if name in seen:\n                    continue\n                seen.add(name)\n                res = ihook.pytest_pycollect_makeitem(\n                    collector=self, name=name, obj=obj\n                )\n                if res is None:\n          ",
+          "start_line": 473,
+          "start_column": 15581,
+          "end_line": 4,
+          "end_column": 15942,
+          "start_byte": 15581,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.nodes.Collector.repr_failure",
+          "file_path": "src/_pytest/python.py",
+          "file_content": "      methods = []\n        if hasattr(module, \"pytest_generate_tests\"):\n            methods.append(module.pytest_generate_tests)\n        if cls is not None and hasattr(cls, \"pytest_generate_tests\"):\n            methods.append(cls().pytest_generate_tests)\n        self.ihook.pytest_generate_tests.call_extra(methods, dict(metafunc=metafunc))\n\n        if not metafunc._calls:\n            yield Function.from_parent(self, name=name, fixtureinfo=fixtureinfo)\n        else:\n            # Add funcargs() as fixturedefs to fixtureinfo.arg2fixturedefs.\n            fm = self.session._fixturemanager\n            fixtures.add_funcarg_pseudo_fixture_def(self, metafunc, fm)\n\n            # Add_funcarg_pseudo_fixture_def may have shadowed some fixtures\n            # with direct parametrization, ",
+          "start_line": 517,
+          "start_column": 17165,
+          "end_line": 4,
+          "end_column": 17949,
+          "start_byte": 17165,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.hookspec.pytest_runtest_makereport",
+          "file_path": "src/_pytest/runner.py",
+          "file_content": "ok.pytest_exception_interact(node=collector, call=call, report=rep)\n    return rep\n",
+          "start_line": 521,
+          "start_column": 18271,
+          "end_line": 0,
+          "end_column": 18745,
+          "start_byte": 18271,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.runner.call_and_report",
+          "file_path": "src/_pytest/runner.py",
+          "file_content": "def call_and_report(\n    item: Item, when: \"Literal['setup', 'call', 'teardown']\", log: bool = True, **kwds\n) -> TestReport:\n    call = call_runtest_hook(item, when, **kwds)\n    hook = item.ihook\n    report: TestReport = hook.pytest_runtest_makereport(item=item, call=call)\n    if log:\n        hook.pytest_runtest_logreport(report=report)\n    if check_interactive_exception(call, report):\n        hook.pytest_exception_interact(node=item, call=call, report=report)\n    return report",
+          "start_line": 217,
+          "start_column": 6851,
+          "end_line": 0,
+          "end_column": 7333,
+          "start_byte": 6851,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.runner.call_runtest_hook",
+          "file_path": "src/_pytest/runner.py",
+          "file_content": "def call_runtest_hook(\n    item: Item, when: \"Literal['setup', 'call', 'teardown']\", **kwds\n) -> \"CallInfo[None]\":\n    if when == \"setup\":\n        ihook: Callable[..., None] = item.ihook.pytest_runtest_setup\n    elif when == \"call\":\n        ihook = item.ihook.pytest_runtest_call\n    elif when == \"teardown\":\n        ihook = item.ihook.pytest_runtest_teardown\n    else:\n        assert False, f\"Unhandled runtest hook case: {when}\"\n    reraise: Tuple[Type[BaseException], ...] = (Exit,)\n    if not item.config.getoption(\"usepdb\", False):\n        reraise += (KeyboardInterrupt,)\n    return CallInfo.from_call(\n        lambda: ihook(item=item, **kwds), when=when, reraise=reraise\n    )",
+          "start_line": 245,
+          "start_column": 7829,
+          "end_line": 0,
+          "end_column": 8511,
+          "start_byte": 7829,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.runner.CallInfo.from_call",
+          "file_path": "src/_pytest/runner.py",
+          "file_content": "@classmethod\n    def from_call(\n        cls,\n        func: \"Callable[[], TResult]\",\n        when: \"Literal['collect', 'setup', 'call', 'teardown']\",\n        reraise: Optional[\n            Union[Type[BaseException], Tuple[Type[BaseException], ...]]\n        ] = None,\n    ) -> \"CallInfo[TResult]\":\n        \"\"\"Call func, wrapping the result in a CallInfo.\n\n        :param func:\n            The function to call. Called without arguments.\n        :param when:\n            The phase in which the function is called.\n        :param reraise:\n            Exception or exceptions that shall propagate if raised by the\n            function, instead of being wrapped in the CallInfo.\n        \"\"\"\n        excinfo = None\n        start = timing.time()\n        precise_start = timing.perf_counter()\n        try:\n            result: Optional[TResult] = func()\n        except BaseException:\n            excinfo = ExceptionInfo.from_current()\n            if reraise is not None and isinstance(excinfo.value, reraise):\n                raise\n            result = None\n        # use the perf counter\n        precise_stop = timing.perf_counter()\n        duration = precise_stop - precise_start\n        stop = timing.time()\n        return cls(\n            start=start,\n            stop=stop,\n            duration=duration,\n            when=when,\n            result=result,\n            excinfo=excinfo,\n            _ispytest=True,\n        )",
+          "start_line": 316,
+          "start_column": 10263,
+          "end_line": 4,
+          "end_column": 11679,
+          "start_byte": 10263,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.runner.pytest_runtest_makereport",
+          "file_path": "src/_pytest/runner.py",
+          "file_content": "def pytest_runtest_makereport(item: Item, call: CallInfo[None]) -> TestReport:\n    return TestReport.from_item_and_call(item, call)",
+          "start_line": 365,
+          "start_column": 11897,
+          "end_line": 0,
+          "end_column": 12028,
+          "start_byte": 11897,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.skipping.pytest_runtest_makereport",
+          "file_path": "src/_pytest/runner.py",
+          "file_content": "nal[ExceptionInfo[BaseException]]\n    #: The system time when the call started, in seconds since the epoch.\n    start: float\n    #: The system time when the call ended, in seconds since the epoch.\n    stop: float\n    #: The call duration, in seconds.\n    duration: float\n    #: The context of invocation: \"collect\", \"setup\", \"call\" or \"teardown\".\n    when: \"Literal['collect', 'setup', 'call', 'teardown']\"\n\n    def __init__(\n        self,\n        result: Optional[TResult],\n        excinfo: Optional[ExceptionInfo[BaseException]],\n        start: float,\n        stop: float,\n        duration: float,\n        when: \"Literal['collect', 'setup', 'call', 'teardown']\",\n        *,\n        _ispytest: bool = False,\n    ) -> None:\n        check_ispytest(_ispytest)\n        self._result = result\n        self.excinfo = excinfo\n        self.start = start\n        self.stop = stop\n        self.duration = duration\n        self.when = when\n\n    @property\n    def result(self) -> TResult:\n        \"\"\"The return value of the call, if it didn't raise.\n\n        Can only be accessed if ex",
+          "start_line": 261,
+          "start_column": 8818,
+          "end_line": 0,
+          "end_column": 9891,
+          "start_byte": 8818,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.unittest.pytest_runtest_makereport",
+          "file_path": "src/_pytest/runner.py",
+          "file_content": "ls(\n            start=start,\n            stop=stop,\n            duration=duration,\n            when=when,\n            result=result,\n            excinfo=excinfo,\n            _ispytest=True,\n        )\n\n    def __repr__(self) -> str:\n        if self.excinfo is None:\n            return f\"<CallInfo when={self.when!r} result: {self._result!r}>\"\n        return f\"<CallInfo when={self.when!r} excinfo={self.excinfo!r}>\"\n\n\ndef pytest_runtest_makereport(item: Item, call: CallInfo[None]) -> TestReport:\n    return TestReport.from_item_and_call(item, call)\n\n\ndef pytest_make_collect_report(collector: Collector) -> CollectReport:\n    call = CallInfo.from_call(lambda: list(collector.collect()), \"collect\")\n    longrepr: Union[None, Tuple[str, int, str], str, TerminalRepr] = None\n    if not call.excinfo:\n        outcome: Literal[\"passed\", \"skipped\", \"failed\"] = \"passed\"\n    else:\n        skip_exceptions = [Skipped]\n        unittest = sys.modules.get(\"u",
+          "start_line": 332,
+          "start_column": 11480,
+          "end_line": 0,
+          "end_column": 12427,
+          "start_byte": 11480,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.assertion.pytest_assertrepr_compare",
+          "file_path": "src/_pytest/hookspec.py",
+          "file_content": " will invoke the configure hooks and runtest_mainloop.\n\n    Stops at first non-None result, see :ref:`firstresult`.\n\n    :param pytest.Config config: The pytest config object.\n    \"\"\"\n\n\nde",
+          "start_line": 177,
+          "start_column": 6286,
+          "end_line": 0,
+          "end_column": 6474,
+          "start_byte": 6286,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.debugging.PdbInvoke.pytest_exception_interact",
+          "file_path": "src/_pytest/hookspec.py",
+          "file_content": ".. versionchanged:: 7.0.0\n        The ``fspath`` parameter was added as a :class:`pathlib.Path`\n        equivalent of the ``path`` parameter. The ``path`` parameter\n        has been deprecated.\n    \"\"\"\n\n\ndef pytest_collect_file(\n    fspath: Path, path: \"LEGACY_PATH\", parent: \"Collector\"\n) -> \"Optional[Collector]\":\n    \"\"\"Create a Collector for the given path, or None if not relevant.\n\n    The new node needs to have the specified ``parent`` as a parent.\n\n    ",
+          "start_line": 285,
+          "start_column": 9713,
+          "end_line": 4,
+          "end_column": 10175,
+          "start_byte": 9713,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.faulthandler.pytest_exception_interact",
+          "file_path": "src/_pytest/hookspec.py",
+          "file_content": "ytest\n        :ref:`discovers plugins during startup <pluginorder>`.\n\n    :param pytest.Parser parser:\n        To add command line options, call\n        :py:func:`parser.addoption(...) <pytest.Parser.addoption>`.\n        To add ini-f",
+          "start_line": 90,
+          "start_column": 2953,
+          "end_line": 0,
+          "end_column": 3186,
+          "start_byte": 2953,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.hookspec.pytest_assertrepr_compare",
+          "file_path": "src/_pytest/hookspec.py",
+          "file_content": "def pytest_assertrepr_compare(\n    config: \"Config\", op: str, left: object, right: object\n) -> Optional[List[str]]:\n    \"\"\"Return explanation for comparisons in failing assert expressions.\n\n    Return None for no custom explanation, otherwise return a list\n    of strings. The strings will be joined by newlines but any newlines\n    *in* a string will be escaped. Note that all but the first line will\n    be indented slightly, the intention is for the first line to be a summary.\n\n    :param pytest.Config config: The pytest config object.\n    \"\"\"",
+          "start_line": 628,
+          "start_column": 21725,
+          "end_line": 0,
+          "end_column": 22273,
+          "start_byte": 21725,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.hookspec.pytest_assertion_pass",
+          "file_path": "src/_pytest/hookspec.py",
+          "file_content": "def pytest_assertion_pass(item: \"Item\", lineno: int, orig: str, expl: str) -> None:\n    \"\"\"Called whenever an assertion passes.\n\n    .. versionadded:: 5.0\n\n    Use this hook to do some processing after a passing assertion.\n    The original assertion information is available in the `orig` string\n    and the pytest introspected assertion information is available in the\n    `expl` string.\n\n    This hook must be explicitly enabled by the ``enable_assertion_pass_hook``\n    ini-file option:\n\n    .. code-block:: ini\n\n        [pytest]\n        enable_assertion_pass_hook=true\n\n    You need to **clean the .pyc** files in your project directory and interpreter libraries\n    when enabling this option, as assertions will require to be re-written.\n\n    :param pytest.Item item: pytest item object of current test.\n    :param int lineno: Line number of the assert statement.\n    :param str orig: String with the original assertion.\n    :param str expl: String with the assert explanation.\n    \"\"\"",
+          "start_line": 642,
+          "start_column": 22276,
+          "end_line": 0,
+          "end_column": 23266,
+          "start_byte": 22276,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.hookspec.pytest_exception_interact",
+          "file_path": "src/_pytest/hookspec.py",
+          "file_content": "def pytest_exception_interact(\n    node: Union[\"Item\", \"Collector\"],\n    call: \"CallInfo[Any]\",\n    report: Union[\"CollectReport\", \"TestReport\"],\n) -> None:\n    \"\"\"Called when an exception was raised which can potentially be\n    interactively handled.\n\n    May be called during collection (see :py:func:`pytest_make_collect_report`),\n    in which case ``report`` is a :class:`CollectReport`.\n\n    May be called during runtest of an item (see :py:func:`pytest_runtest_protocol`),\n    in which case ``report`` is a :class:`TestReport`.\n\n    This hook is not called if the exception that was raised is an internal\n    exception like ``skip.Exception``.\n    \"\"\"",
+          "start_line": 889,
+          "start_column": 31127,
+          "end_line": 0,
+          "end_column": 31784,
+          "start_byte": 31127,
+          "end_byte": 0
+        }
+      ],
+      "root_caused_symbols": [
+        {
+          "name": "_pytest.nodes.Node._prunetraceback",
+          "file_path": "src/_pytest/python.py",
+          "file_content": "on) as test classes.\n        return safe_getattr(obj, \"__test__\", False) is True\n\n    ",
+          "start_line": 415,
+          "start_column": 13227,
+          "end_line": 4,
+          "end_column": 13313,
+          "start_byte": 13227,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.nodes.Collector._prunetraceback",
+          "file_path": "src/_pytest/python.py",
+          "file_content": "e sure we update what the\n            # function really needs.\n            fixtureinfo.prune_dependency_tree()\n\n            for callspec in metafunc._calls:\n                subname = f\"{name}[{callspec.id}]\"\n                yield Function.from_parent(\n                    self,\n                    name=subname,\n                    callspec=callspec,\n                  ",
+          "start_line": 538,
+          "start_column": 17955,
+          "end_line": 4,
+          "end_column": 18324,
+          "start_byte": 17955,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.python.Function._prunetraceback",
+          "file_path": "src/_pytest/python.py",
+          "file_content": "def _prunetraceback(self, excinfo: ExceptionInfo[BaseException]) -> None:\n        if hasattr(self, \"_obj\") and not self.config.getoption(\"fulltrace\", False):\n            code = _pytest._code.Code.from_function(get_real_func(self.obj))\n            path, firstlineno = code.path, code.firstlineno\n            traceback = excinfo.traceback\n            ntraceback = traceback.cut(path=path, firstlineno=firstlineno)\n            if ntraceback == traceback:\n                ntraceback = ntraceback.cut(path=path)\n                if ntraceback == traceback:\n                    ntraceback = ntraceback.filter(filter_traceback)\n                    if not ntraceback:\n                        ntraceback = traceback\n\n            excinfo.traceback = ntraceback.filter()\n            # issue364: mark all but first and last frames to\n            # only show a single-line message for each frame.\n            if self.config.getoption(\"tbstyle\", \"auto\") == \"auto\":\n                if len(excinfo.traceback) > 2:\n                    for entry in excinfo.traceback[1:-1]:\n                        entry.set_repr_style(\"short\")",
+          "start_line": 1713,
+          "start_column": 64881,
+          "end_line": 4,
+          "end_column": 65989,
+          "start_byte": 64881,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.python.Function.repr_failure",
+          "file_path": "src/_pytest/python.py",
+          "file_content": "def repr_failure(  # type: ignore[override]\n        self,\n        excinfo: ExceptionInfo[BaseException],\n    ) -> Union[str, TerminalRepr]:\n        style = self.config.getoption(\"tbstyle\", \"auto\")\n        if style == \"auto\":\n            style = \"long\"\n        return self._repr_failure_py(excinfo, style=style)",
+          "start_line": 1735,
+          "start_column": 66051,
+          "end_line": 4,
+          "end_column": 66361,
+          "start_byte": 66051,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.unittest.TestCaseFunction._prunetraceback",
+          "file_path": "src/_pytest/python.py",
+          "file_content": "e):\n                name = os.path.splitext(name)[0]\n                if stopatmodule:\n                    if includemodule:\n                        parts.append(name)\n                    break\n            parts.append(name)\n        parts.reverse()\n        return \".\".join(parts)\n\n    def reportinfo(self) -> Tuple[Union[\"os.",
+          "start_line": 321,
+          "start_column": 11153,
+          "end_line": 4,
+          "end_column": 11477,
+          "start_byte": 11153,
+          "end_byte": 4
+        }
+      ]
+    },
+    "symbols_evaluate": {
+      "scratch_pad": "1.1 What issue is the user describing?\nThe issue is about an error message in pytest for Python 3.9 containing extra code lines not present in earlier versions (like Python 3.7).\n\n1.2 How was this issue caused?\nThe issue might be related to the assertion rewriting mechanism in pytest, which seems to behave differently in Python 3.9 compared to 3.7.\n\n1.3 If the user described the expected result, what should it be fixed to?\nThe error message should not include the extra decorator code lines in its output.\n\n1.4 If the user did not provide an expected result, what should the expectation be?\nThe expectation would be an error message showing only relevant assertion failure details without extra code lines.\n\n1.5 How should the issue be fixed to meet the expectation?\nThe pytest assertion rewriting logic might need to be adjusted or fixed to ensure it handles decorators or multiline assertions correctly across Python versions, especially in Python 3.9, matching the behavior in Python 3.7.",
+      "symbols": [
+        {
+          "name": "_pytest.python.Function._prunetraceback",
+          "file_path": "src/_pytest/python.py",
+          "reason": "Handles traceback pruning, possibly needs adjustment to ensure extra lines aren't included in output."
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewritingHook.exec_module",
+          "file_path": "src/_pytest/assertion/rewrite.py",
+          "reason": "Responsible for rewriting asserts, could be introducing changes in Python 3.9."
+        },
+        {
+          "name": "_pytest.assertion.rewrite_asserts",
+          "file_path": "src/_pytest/assertion/rewrite.py",
+          "reason": "Rewrites assert statements, possibly involved in adding extra output in 3.9."
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewriter.run",
+          "file_path": "src/_pytest/assertion/rewrite.py",
+          "reason": "Involved in assertion rewriting, could be causing different behavior in test outputs."
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewriter.visit_Assert",
+          "file_path": "src/_pytest/assertion/rewrite.py",
+          "reason": "Handles assert transformations, possibly affecting how assertion errors are displayed."
+        }
+      ],
+      "more_info": [],
+      "is_done": true,
+      "symbols_scratch_pad": [
+        "The symbol '_pytest.nodes.Node._prunetraceback' content is not directly provided, but it likely deals with traceback pruning, which can affect how error messages are displayed. If traceback includes more lines in Python 3.9, this could be involved.",
+        "The symbol '_pytest.nodes.Collector._prunetraceback' content is not available, but like Node, it likely deals with pruning traceback and thus related to how error messages might have extra content.",
+        "This function '_pytest.python.Function._prunetraceback' already prunes the traceback when 'fulltrace' option is not enabled. Modifying the way tracebacks are cut could adjust the output to avoid extra lines.",
+        "The function '_pytest.python.Function.repr_failure' determines the representation of a failure in terms of style, which might indirectly relate if formatting needs adjusting for different Python versions.",
+        "The symbol '_pytest.unittest.TestCaseFunction._prunetraceback' content is not provided, but it presumably also manages traceback pruning in a manner that could interact with assert output",
+        "The symbol '_pytest.assertion.assertstate_key' is unrelated to the rewriting process; it involves a key for state tracking.",
+        "The function '_pytest.assertion.AssertionRewritingHook.exec_module' is responsible for rewriting modules and could be central to changes in output between Python versions.",
+        "'The symbol '_pytest.assertion.rewrite_asserts' is directly related to rewriting assert statements, potentially causing or influencing the difference in assert output between Python versions.'",
+        "The symbol '_pytest.assertion._get_assertion_exprs' is related to mapping assertion expressions, unlikely to need changes unless expressions themselves are misrepresented.",
+        "The function '_pytest.assertion.AssertionRewriter.run' finds and rewrites all assert statements, likely needing investigation for influencing output differences.",
+        "The function '_pytest.assertion.AssertionRewriter.visit_Assert' rewrites individual assert statements, which could be modified to ensure they do not introduce extra code lines in errors.",
+        "The symbol '_pytest.assertion.pytest_assertrepr_compare' deals with specialized assertion explanation but doesn't relate to rewriting process or output issues.",
+        "The function '_pytest.assertion.format_explanation' formats explanations but isn't directly related to inclusion of extra assert expression lines.",
+        "The symbol '_pytest.assertion.assertrepr_compare' might be relevant if it affects how assertions are represented during failure, but unrelated to code line output.",
+        "The symbol '_pytest.assertion._compare_eq_any' is irrelevant to the rewriting mechanism; it strictly deals with comparing equality for explanations.",
+        "The hook '_pytest.hookspec.pytest_assertrepr_compare' offers a mechanism for custom comparison representation, but doesn't participate in the rewriting framework.",
+        "The symbol '_pytest.doctest.DoctestItem.repr_failure' relates to doctest failures but isn't relevant to Python 3.9 assertions and their message output.",
+        "The symbol '_pytest.nodes.Node._repr_failure_py' would affect test node failure representation but isn't the root cause of different output in Python versions.",
+        "The symbol '_pytest.nodes.Node.repr_failure' manages failure representation for arbitrary nodes, but the central issue remains with the assertion system.",
+        "The symbol '_pytest.nodes.Collector.repr_failure' covers collector failure representation, unrelated to assertion failure details.",
+        "The hook '_pytest.hookspec.pytest_runtest_makereport' processes runtest reports, indirectly related through report accuracy and content.",
+        "The function '_pytest.runner.call_and_report' makes reports on test results, interacting with runtest hook, report could receive refined traceback.",
+        "The function '_pytest.runner.call_runtest_hook' queries hook setup but is a utility, a background process.",
+        "The symbol '_pytest.runner.CallInfo.from_call' manages calling process and lifecycle, indirectly linked to runtime behavior for errors.",
+        "The function '_pytest.runner.pytest_runtest_makereport' constructs test report linking CallInfo but it's a structural element not processing errors precision like assertions.",
+        "The symbol '_pytest.skipping.pytest_runtest_makereport' expands on test report but doesn't influence rewriting.",
+        "The symbol '_pytest.unittest.pytest_runtest_makereport' similar to others in making runtime reports doesn't intervene directly with assertion errors.",
+        "The hook '_pytest.hookspec.pytest_assertrepr_compare' in hookspec is structurally same as util's, guides compare configs rather than execution.",
+        "The symbol '_pytest.debugging.PdbInvoke.pytest_exception_interact' facilitates exception handling engagement, relationally irrelevant.",
+        "The function '_pytest.faulthandler.pytest_exception_interact' noted here works in fault handling interaction.",
+        "The hook '_pytest.hookspec.pytest_assertion_pass' involves passing assertion state which doesn't contribute to failures like in the scenario.",
+        "The hook '_pytest.hookspec.pytest_exception_interact' allows handling exceptions interactively, not source of expressing or altering assertion outputs."
+      ]
+    }
+  },
+  "response": {
+    "file_paths": [
+      "src/_pytest/python.py",
+      "src/_pytest/assertion/rewrite.py"
+    ],
+    "symbols": [
+      "_pytest.python.Function._prunetraceback",
+      "_pytest.assertion.AssertionRewritingHook.exec_module",
+      "_pytest.assertion.rewrite_asserts",
+      "_pytest.assertion.AssertionRewriter.run",
+      "_pytest.assertion.AssertionRewriter.visit_Assert"
+    ],
+    "code_spans": {
+      "_pytest.assertion.assertstate_key": {
+        "name": "_pytest.assertion.assertstate_key",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "assertstate_key = StashKey[\"AssertionState\"]()",
+        "start_line": 47,
+        "start_column": 1169,
+        "end_line": 0,
+        "end_column": 1215,
+        "start_byte": 1169,
+        "end_byte": 0
+      },
+      "_pytest.assertion.AssertionRewritingHook.exec_module": {
+        "name": "_pytest.assertion.AssertionRewritingHook.exec_module",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def exec_module(self, module: types.ModuleType) -> None:\n        assert module.__spec__ is not None\n        assert module.__spec__.origin is not None\n        fn = Path(module.__spec__.origin)\n        state = self.config.stash[assertstate_key]\n\n        self._rewritten_names[module.__name__] = fn\n\n        # The requested module looks like a test file, so rewrite it. This is\n        # the most magical part of the process: load the source, rewrite the\n        # asserts, and load the rewritten source. We also cache the rewritten\n        # module code in a special pyc. We must be aware of the possibility of\n        # concurrent pytest processes rewriting and loading pycs. To avoid\n        # tricky race conditions, we maintain the following invariant: The\n        # cached pyc is always a complete, valid pyc. Operations on it must be\n        # atomic. POSIX's atomic rename comes in handy.\n        write = not sys.dont_write_bytecode\n        cache_dir = get_cache_dir(fn)\n        if write:\n            ok = try_makedirs(cache_dir)\n            if not ok:\n                write = False\n                state.trace(f\"read only directory: {cache_dir}\")\n\n        cache_name = fn.name[:-3] + PYC_TAIL\n        pyc = cache_dir / cache_name\n        # Notice that even if we're in a read-only directory, I'm going\n        # to check for a cached pyc. This may not be optimal...\n        co = _read_pyc(fn, pyc, state.trace)\n        if co is None:\n            state.trace(f\"rewriting {fn!r}\")\n            source_stat, co = _rewrite_test(fn, self.config)\n            if write:\n                self._writing_pyc = True\n                try:\n                    _write_pyc(state, co, source_stat, pyc)\n                finally:\n                    self._writing_pyc = False\n        else:\n            state.trace(f\"found cached rewritten pyc for {fn}\")\n        exec(co, module.__dict__)",
+        "start_line": 130,
+        "start_column": 4293,
+        "end_line": 4,
+        "end_column": 6165,
+        "start_byte": 4293,
+        "end_byte": 4
+      },
+      "_pytest.assertion.rewrite_asserts": {
+        "name": "_pytest.assertion.rewrite_asserts",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def rewrite_asserts(\n    mod: ast.Module,\n    source: bytes,\n    module_path: Optional[str] = None,\n    config: Optional[Config] = None,\n) -> None:\n    \"\"\"Rewrite the assert statements in mod.\"\"\"\n    AssertionRewriter(module_path, config, source).run(mod)",
+        "start_line": 418,
+        "start_column": 15578,
+        "end_line": 0,
+        "end_column": 15833,
+        "start_byte": 15578,
+        "end_byte": 0
+      },
+      "_pytest.assertion._get_assertion_exprs": {
+        "name": "_pytest.assertion._get_assertion_exprs",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "@functools.lru_cache(maxsize=1)\ndef _get_assertion_exprs(src: bytes) -> Dict[int, str]:\n    \"\"\"Return a mapping from {lineno: \"assertion test expression\"}.\"\"\"\n    ret: Dict[int, str] = {}\n\n    depth = 0\n    lines: List[str] = []\n    assert_lineno: Optional[int] = None\n    seen_lines: Set[int] = set()\n\n    def _write_and_reset() -> None:\n        nonlocal depth, lines, assert_lineno, seen_lines\n        assert assert_lineno is not None\n        ret[assert_lineno] = \"\".join(lines).rstrip().rstrip(\"\\\\\")\n        depth = 0\n        lines = []\n        assert_lineno = None\n        seen_lines = set()\n\n    tokens = tokenize.tokenize(io.BytesIO(src).readline)\n    for tp, source, (lineno, offset), _, line in tokens:\n        if tp == tokenize.NAME and source == \"assert\":\n            assert_lineno = lineno\n        elif assert_lineno is not None:\n            # keep track of depth for the assert-message `,` lookup\n            if tp == tokenize.OP and source in \"([{\":\n                depth += 1\n            elif tp == tokenize.OP and source in \")]}\":\n                depth -= 1\n\n            if not lines:\n                lines.append(line[offset:])\n                seen_lines.add(lineno)\n            # a non-nested comma separates the expression from the message\n            elif depth == 0 and tp == tokenize.OP and source == \",\":\n                # one line assert with message\n                if lineno in seen_lines and len(lines) == 1:\n                    offset_in_trimmed = offset + len(lines[-1]) - len(line)\n                    lines[-1] = lines[-1][:offset_in_trimmed]\n                # multi-line assert with message\n                elif lineno in seen_lines:\n                    lines[-1] = lines[-1][:offset]\n                # multi line assert with escapd newline before message\n                else:\n                    lines.append(line[:offset])\n                _write_and_reset()\n            elif tp in {tokenize.NEWLINE, tokenize.ENDMARKER}:\n                _write_and_reset()\n            elif lines and lineno not in seen_lines:\n                lines.append(line)\n                seen_lines.add(lineno)\n\n    return ret",
+        "start_line": 556,
+        "start_column": 19723,
+        "end_line": 0,
+        "end_column": 21855,
+        "start_byte": 19723,
+        "end_byte": 0
+      },
+      "_pytest.assertion.AssertionRewriter.run": {
+        "name": "_pytest.assertion.AssertionRewriter.run",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def run(self, mod: ast.Module) -> None:\n        \"\"\"Find all assert statements in *mod* and rewrite them.\"\"\"\n        if not mod.body:\n            # Nothing to do.\n            return\n\n        # We'll insert some special imports at the top of the module, but after any\n        # docstrings and __future__ imports, so first figure out where that is.\n        doc = getattr(mod, \"docstring\", None)\n        expect_docstring = doc is None\n        if doc is not None and self.is_rewrite_disabled(doc):\n            return\n        pos = 0\n        lineno = 1\n        for item in mod.body:\n            if (\n                expect_docstring\n                and isinstance(item, ast.Expr)\n                and isinstance(item.value, ast.Str)\n            ):\n                doc = item.value.s\n                if self.is_rewrite_disabled(doc):\n                    return\n                expect_docstring = False\n            elif (\n                isinstance(item, ast.ImportFrom)\n                and item.level == 0\n                and item.module == \"__future__\"\n            ):\n                pass\n            else:\n                break\n            pos += 1\n        # Special case: for a decorated function, set the lineno to that of the\n        # first decorator, not the `def`. Issue #4984.\n        if isinstance(item, ast.FunctionDef) and item.decorator_list:\n            lineno = item.decorator_list[0].lineno\n        else:\n            lineno = item.lineno\n        # Now actually insert the special imports.\n        if sys.version_info >= (3, 10):\n            aliases = [\n                ast.alias(\"builtins\", \"@py_builtins\", lineno=lineno, col_offset=0),\n                ast.alias(\n                    \"_pytest.assertion.rewrite\",\n                    \"@pytest_ar\",\n                    lineno=lineno,\n                    col_offset=0,\n                ),\n            ]\n        else:\n            aliases = [\n                ast.alias(\"builtins\", \"@py_builtins\"),\n                ast.alias(\"_pytest.assertion.rewrite\", \"@pytest_ar\"),\n            ]\n        imports = [\n            ast.Import([alias], lineno=lineno, col_offset=0) for alias in aliases\n        ]\n        mod.body[pos:pos] = imports\n\n        # Collect asserts.\n        nodes: List[ast.AST] = [mod]\n        while nodes:\n            node = nodes.pop()\n            for name, field in ast.iter_fields(node):\n                if isinstance(field, list):\n                    new: List[ast.AST] = []\n                    for i, child in enumerate(field):\n                        if isinstance(child, ast.Assert):\n                            # Transform assert.\n                            new.extend(self.visit(child))\n                        else:\n                            new.append(child)\n                            if isinstance(child, ast.AST):\n                                nodes.append(child)\n                    setattr(node, name, new)\n                elif (\n                    isinstance(field, ast.AST)\n                    # Don't recurse into expressions as they can't contain\n                    # asserts.\n                    and not isinstance(field, ast.expr)\n                ):\n                    nodes.append(field)",
+        "start_line": 678,
+        "start_column": 24851,
+        "end_line": 4,
+        "end_column": 28032,
+        "start_byte": 24851,
+        "end_byte": 4
+      },
+      "_pytest.assertion.AssertionRewriter.visit_Assert": {
+        "name": "_pytest.assertion.AssertionRewriter.visit_Assert",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def visit_Assert(self, assert_: ast.Assert) -> List[ast.stmt]:\n        \"\"\"Return the AST statements to replace the ast.Assert instance.\n\n        This rewrites the test of an assertion to provide\n        intermediate values and replace it with an if statement which\n        raises an assertion error with a detailed explanation in case\n        the expression is false.\n        \"\"\"\n        if isinstance(assert_.test, ast.Tuple) and len(assert_.test.elts) >= 1:\n            from _pytest.warning_types import PytestAssertRewriteWarning\n            import warnings\n\n            # TODO: This assert should not be needed.\n            assert self.module_path is not None\n            warnings.warn_explicit(\n                PytestAssertRewriteWarning(\n                    \"assertion is always true, perhaps remove parentheses?\"\n                ),\n                category=None,\n                filename=self.module_path,\n                lineno=assert_.lineno,\n            )\n\n        self.statements: List[ast.stmt] = []\n        self.variables: List[str] = []\n        self.variable_counter = itertools.count()\n\n        if self.enable_assertion_pass_hook:\n            self.format_variables: List[str] = []\n\n        self.stack: List[Dict[str, ast.expr]] = []\n        self.expl_stmts: List[ast.stmt] = []\n        self.push_format_context()\n        # Rewrite assert into a bunch of statements.\n        top_condition, explanation = self.visit(assert_.test)\n\n        negation = ast.UnaryOp(ast.Not(), top_condition)\n\n        if self.enable_assertion_pass_hook:  # Experimental pytest_assertion_pass hook\n            msg = self.pop_format_context(ast.Str(explanation))\n\n            # Failed\n            if assert_.msg:\n                assertmsg = self.helper(\"_format_assertmsg\", assert_.msg)\n                gluestr = \"\\n>assert \"\n            else:\n                assertmsg = ast.Str(\"\")\n                gluestr = \"assert \"\n            err_explanation = ast.BinOp(ast.Str(gluestr), ast.Add(), msg)\n            err_msg = ast.BinOp(assertmsg, ast.Add(), err_explanation)\n            err_name = ast.Name(\"AssertionError\", ast.Load())\n            fmt = self.helper(\"_format_explanation\", err_msg)\n            exc = ast.Call(err_name, [fmt], [])\n            raise_ = ast.Raise(exc, None)\n            statements_fail = []\n            statements_fail.extend(self.expl_stmts)\n            statements_fail.append(raise_)\n\n            # Passed\n            fmt_pass = self.helper(\"_format_explanation\", msg)\n            orig = _get_assertion_exprs(self.source)[assert_.lineno]\n            hook_call_pass = ast.Expr(\n                self.helper(\n                    \"_call_assertion_pass\",\n                    ast.Num(assert_.lineno),\n                    ast.Str(orig),\n                    fmt_pass,\n                )\n            )\n            # If any hooks implement assert_pass hook\n            hook_impl_test = ast.If(\n                self.helper(\"_check_if_assertion_pass_impl\"),\n                self.expl_stmts + [hook_call_pass],\n                [],\n            )\n            statements_pass = [hook_impl_test]\n\n            # Test for assertion condition\n            main_test = ast.If(negation, statements_fail, statements_pass)\n            self.statements.append(main_test)\n            if self.format_variables:\n                variables = [\n                    ast.Name(name, ast.Store()) for name in self.format_variables\n                ]\n                clear_format = ast.Assign(variables, ast.NameConstant(None))\n                self.statements.append(clear_format)\n\n        else:  # Original assertion rewriting\n            # Create failure message.\n            body = self.expl_stmts\n            self.statements.append(ast.If(negation, body, []))\n            if assert_.msg:\n                assertmsg = self.helper(\"_format_assertmsg\", assert_.msg)\n                explanation = \"\\n>assert \" + explanation\n            else:\n                assertmsg = ast.Str(\"\")\n                explanation = \"assert \" + explanation\n            template = ast.BinOp(assertmsg, ast.Add(), ast.Str(explanation))\n            msg = self.pop_format_context(template)\n            fmt = self.helper(\"_format_explanation\", msg)\n            err_name = ast.Name(\"AssertionError\", ast.Load())\n            exc = ast.Call(err_name, [fmt], [])\n            raise_ = ast.Raise(exc, None)\n\n            body.append(raise_)\n\n        # Clear temporary variables by setting them to None.\n        if self.variables:\n            variables = [ast.Name(name, ast.Store()) for name in self.variables]\n            clear = ast.Assign(variables, ast.NameConstant(None))\n            self.statements.append(clear)\n        # Fix locations (line numbers/column offsets).\n        for stmt in self.statements:\n            for node in traverse_node(stmt):\n                ast.copy_location(node, assert_)\n        return self.statements",
+        "start_line": 845,
+        "start_column": 31679,
+        "end_line": 4,
+        "end_column": 36553,
+        "start_byte": 31679,
+        "end_byte": 4
+      },
+      "_pytest.assertion.pytest_assertrepr_compare": {
+        "name": "_pytest.assertion.pytest_assertrepr_compare",
+        "file_path": "src/_pytest/hookspec.py",
+        "file_content": " will invoke the configure hooks and runtest_mainloop.\n\n    Stops at first non-None result, see :ref:`firstresult`.\n\n    :param pytest.Config config: The pytest config object.\n    \"\"\"\n\n\nde",
+        "start_line": 177,
+        "start_column": 6286,
+        "end_line": 0,
+        "end_column": 6474,
+        "start_byte": 6286,
+        "end_byte": 0
+      },
+      "_pytest.assertion.format_explanation": {
+        "name": "_pytest.assertion.format_explanation",
+        "file_path": "src/_pytest/assertion/util.py",
+        "file_content": "def format_explanation(explanation: str) -> str:\n    r\"\"\"Format an explanation.\n\n    Normally all embedded newlines are escaped, however there are\n    three exceptions: \\n{, \\n} and \\n~.  The first two are intended\n    cover nested explanations, see function and attribute explanations\n    for examples (.visit_Call(), visit_Attribute()).  The last one is\n    for when one explanation needs to span multiple lines, e.g. when\n    displaying diffs.\n    \"\"\"\n    lines = _split_explanation(explanation)\n    result = _format_lines(lines)\n    return \"\\n\".join(result)",
+        "start_line": 34,
+        "start_column": 1123,
+        "end_line": 0,
+        "end_column": 1684,
+        "start_byte": 1123,
+        "end_byte": 0
+      },
+      "_pytest.assertion.assertrepr_compare": {
+        "name": "_pytest.assertion.assertrepr_compare",
+        "file_path": "src/_pytest/assertion/util.py",
+        "file_content": "def assertrepr_compare(config, op: str, left: Any, right: Any) -> Optional[List[str]]:\n    \"\"\"Return specialised explanations for some operators/operands.\"\"\"\n    verbose = config.getoption(\"verbose\")\n    if verbose > 1:\n        left_repr = safeformat(left)\n        right_repr = safeformat(right)\n    else:\n        # XXX: \"15 chars indentation\" is wrong\n        #      (\"E       AssertionError: assert \"); should use term width.\n        maxsize = (\n            80 - 15 - len(op) - 2\n        ) // 2  # 15 chars indentation, 1 space around op\n        left_repr = saferepr(left, maxsize=maxsize)\n        right_repr = saferepr(right, maxsize=maxsize)\n\n    summary = f\"{left_repr} {op} {right_repr}\"\n\n    explanation = None\n    try:\n        if op == \"==\":\n            explanation = _compare_eq_any(left, right, verbose)\n        elif op == \"not in\":\n            if istext(left) and istext(right):\n                explanation = _notin_text(left, right, verbose)\n    except outcomes.Exit:\n        raise\n    except Exception:\n        explanation = [\n            \"(pytest_assertion plugin: representation of details failed: {}.\".format(\n                _pytest._code.ExceptionInfo.from_current()._getreprcrash()\n            ),\n            \" Probably an object has a faulty __repr__.)\",\n        ]\n\n    if not explanation:\n        return None\n\n    return [summary] + explanation",
+        "start_line": 137,
+        "start_column": 4125,
+        "end_line": 0,
+        "end_column": 5490,
+        "start_byte": 4125,
+        "end_byte": 0
+      },
+      "_pytest.assertion._compare_eq_any": {
+        "name": "_pytest.assertion._compare_eq_any",
+        "file_path": "src/_pytest/assertion/util.py",
+        "file_content": "def _compare_eq_any(left: Any, right: Any, verbose: int = 0) -> List[str]:\n    explanation = []\n    if istext(left) and istext(right):\n        explanation = _diff_text(left, right, verbose)\n    else:\n        from _pytest.python_api import ApproxBase\n\n        if isinstance(left, ApproxBase) or isinstance(right, ApproxBase):\n            # Although the common order should be obtained == expected, this ensures both ways\n            approx_side = left if isinstance(left, ApproxBase) else right\n            other_side = right if isinstance(left, ApproxBase) else left\n\n            explanation = approx_side._repr_compare(other_side)\n        elif type(left) == type(right) and (\n            isdatacls(left) or isattrs(left) or isnamedtuple(left)\n        ):\n            # Note: unlike dataclasses/attrs, namedtuples compare only the\n            # field values, not the type or field names. But this branch\n            # intentionally only handles the same-type case, which was often\n            # used in older code bases before dataclasses/attrs were available.\n            explanation = _compare_eq_cls(left, right, verbose)\n        elif issequence(left) and issequence(right):\n            explanation = _compare_eq_sequence(left, right, verbose)\n        elif isset(left) and isset(right):\n            explanation = _compare_eq_set(left, right, verbose)\n        elif isdict(left) and isdict(right):\n            explanation = _compare_eq_dict(left, right, verbose)\n        elif verbose > 0:\n            explanation = _compare_eq_verbose(left, right)\n\n        if isiterable(left) and isiterable(right):\n            expl = _compare_eq_iterable(left, right, verbose)\n            explanation.extend(expl)\n\n    return explanation",
+        "start_line": 177,
+        "start_column": 5493,
+        "end_line": 0,
+        "end_column": 7215,
+        "start_byte": 5493,
+        "end_byte": 0
+      },
+      "_pytest.hookspec.pytest_assertrepr_compare": {
+        "name": "_pytest.hookspec.pytest_assertrepr_compare",
+        "file_path": "src/_pytest/hookspec.py",
+        "file_content": "def pytest_assertrepr_compare(\n    config: \"Config\", op: str, left: object, right: object\n) -> Optional[List[str]]:\n    \"\"\"Return explanation for comparisons in failing assert expressions.\n\n    Return None for no custom explanation, otherwise return a list\n    of strings. The strings will be joined by newlines but any newlines\n    *in* a string will be escaped. Note that all but the first line will\n    be indented slightly, the intention is for the first line to be a summary.\n\n    :param pytest.Config config: The pytest config object.\n    \"\"\"",
+        "start_line": 628,
+        "start_column": 21725,
+        "end_line": 0,
+        "end_column": 22273,
+        "start_byte": 21725,
+        "end_byte": 0
+      },
+      "_pytest.doctest.DoctestItem.repr_failure": {
+        "name": "_pytest.doctest.DoctestItem.repr_failure",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "one\n\n    @property\n    def cls(self):\n        \"\"\"Python class object this node was collected from (can be None).\"\"\"\n        node = self.getparent(Class)\n        return node.obj if node is not None else None\n\n    @property\n    def obj(self):\n        \"\"\"Underlying Python object.\"\"\"\n        obj = getattr(self, \"_obj\", None)\n        if obj is None:\n            self._obj = obj = self._getobj()\n            # XXX evil hack\n            # used to avoid Function marker duplication\n            if self._ALLOW_MARKERS:\n                self.own_markers.extend(get_unpacked_marks(self.obj))\n        return obj\n\n    @obj.setter\n    def obj(self, value):\n        self._obj = value\n\n    def _getobj(self):\n        \"\"\"Get the underlying Python object. May be overwritten by subclasses.\"\"\"\n        # TODO: Improve the type of `parent` such that assert/ignore aren't needed.\n        assert self.parent is not None\n        obj = self.parent.obj  # type: ignore[attr-defined]\n        return getattr(obj, self.name)\n\n    def getmodpath(self, stopatmodule: bool = True, includemodule: bool = False) -> str:\n        \"\"\"Return Python path relative to the containing module.\"\"\"\n        chain = self.listchain()\n        chain.reverse()\n        parts = []\n        for node in chain:\n            name = node.name\n            if isinstance(node, Module):\n                name = os.path.splitext(name)[0]\n                if stopatmodule:\n                    if includemodule:\n                        parts.append(name)\n                    break\n            parts.append(name)\n        parts.reverse()\n        return \".\".join(parts)\n\n    def reportinfo(self) -> Tuple[Union[\"os.PathLike[str]\", str], Optional[int], str]:\n        # XXX caching?\n        obj = self.obj\n        compat_co_firstlineno = getattr(obj, \"compat_co_firstlineno\", None)\n        if isinstance(compat_co_firstlineno, int):\n            # nose compatibility\n            file_path = sys.modules[obj.__module__].__file__\n            if file_path.endswith(\".pyc\"):\n                file_path = file_path[:-1]\n            path: Union[\"os.PathLike[str]\", str] = file_path\n            lineno = compat_co_firstlineno\n        else:\n            path, lineno = getfslineno(obj)\n        modpath = self.getmodpath()\n        assert isinstance(lineno, int)\n        return path, lineno, modpath\n\n\n# As an optimization, these builtin attribute names are pre-ignored when\n# iterating over an object during collection -- the pytest_pycollect_makeitem\n# hook is not called for them.\n# fmt: off\nclass _EmptyClass: pass  # noqa: E701\nIGNORED_ATTRIBUTES = frozenset.union(  # noqa: E305\n    frozenset(),\n    # Module.\n    dir(types.ModuleType(\"empty_module\")),\n    # Some extra module attributes the above doesn't catch.\n    {\"__builtins__\", \"__file",
+        "start_line": 309,
+        "start_column": 9828,
+        "end_line": 4,
+        "end_column": 12594,
+        "start_byte": 9828,
+        "end_byte": 4
+      },
+      "_pytest.nodes.Node._repr_failure_py": {
+        "name": "_pytest.nodes.Node._repr_failure_py",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "assnamefilter(self, name: str) -> bool:\n        return self._matches_prefix_or_glob_option(\"python_classes\", name)\n\n    def istestfunction(self, obj: object, name: str) -> bool:\n        if self.funcnamefilter(name) or self.isnosetest(obj):\n            if isinstance(obj, staticmethod):\n                # staticmethods need to be unwrapped.\n                obj = safe_getattr(obj, \"__func__\", False)\n            return callable(obj) and fixtures.getfixturemarker(obj) is None\n        else:\n            return False\n\n    def istestclass(self, obj: object, name: str) -> bool:\n        return self.classnamefilter(name) or self.isnosetest(obj)\n\n    def _matches_prefix_or_glob_option(self, option_name: str, name: str) -> bool:\n        \"\"\"Check if the given name matches the prefix or glob-pattern defined\n        in ini configuration.\"\"\"\n        for option in self.config.getini(option_name):\n            if name.startswith(option):\n                return True\n            # Check that name looks like a glob-string before calling fnmatch\n            # because this is called for every name in each collected module,\n            # and fnmatch is somewhat expensive to call.\n            elif (\"*\" in option or \"?\" in option or \"[\" in option) and fnmatch.fnmatch(\n                name, option\n            ):\n                return True\n        return False\n\n    def collect(self) -> Iterable[Union[nodes.Item, nodes.Collector]]:\n        if not getattr(self.obj, \"__test__\", True):\n            return []\n\n        # Avoid random getattrs and peek in the __dict__ instead.\n        dicts = [getattr(self.obj, \"__dict__\", {})]\n        if isinstance(self.obj, type):\n            for basecls in self.obj.__mro__:\n                dicts.append(basecls.__dict__)\n\n        # In each class, nodes should be definition ordered. Since Python 3.6,\n        # __dict__ is definition ordered.\n        seen: Set[str] = set()\n        dict_values: List[List[Union[nodes.Item, nodes.Collector]]] = []\n        ihook = self.ihook\n        for dic in dicts:\n            values: List[Union[nodes.Item, nodes.Collector]] = []\n            # Note: seems like the dict can change during iteration -\n            # be careful not to remove the list() without consideration.\n            for name",
+        "start_line": 418,
+        "start_column": 13319,
+        "end_line": 4,
+        "end_column": 15575,
+        "start_byte": 13319,
+        "end_byte": 4
+      },
+      "_pytest.nodes.Node.repr_failure": {
+        "name": "_pytest.nodes.Node.repr_failure",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "in list(dic.items()):\n                if name in IGNORED_ATTRIBUTES:\n                    continue\n                if name in seen:\n                    continue\n                seen.add(name)\n                res = ihook.pytest_pycollect_makeitem(\n                    collector=self, name=name, obj=obj\n                )\n                if res is None:\n          ",
+        "start_line": 473,
+        "start_column": 15581,
+        "end_line": 4,
+        "end_column": 15942,
+        "start_byte": 15581,
+        "end_byte": 4
+      },
+      "_pytest.nodes.Collector.repr_failure": {
+        "name": "_pytest.nodes.Collector.repr_failure",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "      methods = []\n        if hasattr(module, \"pytest_generate_tests\"):\n            methods.append(module.pytest_generate_tests)\n        if cls is not None and hasattr(cls, \"pytest_generate_tests\"):\n            methods.append(cls().pytest_generate_tests)\n        self.ihook.pytest_generate_tests.call_extra(methods, dict(metafunc=metafunc))\n\n        if not metafunc._calls:\n            yield Function.from_parent(self, name=name, fixtureinfo=fixtureinfo)\n        else:\n            # Add funcargs() as fixturedefs to fixtureinfo.arg2fixturedefs.\n            fm = self.session._fixturemanager\n            fixtures.add_funcarg_pseudo_fixture_def(self, metafunc, fm)\n\n            # Add_funcarg_pseudo_fixture_def may have shadowed some fixtures\n            # with direct parametrization, ",
+        "start_line": 517,
+        "start_column": 17165,
+        "end_line": 4,
+        "end_column": 17949,
+        "start_byte": 17165,
+        "end_byte": 4
+      },
+      "_pytest.hookspec.pytest_runtest_makereport": {
+        "name": "_pytest.hookspec.pytest_runtest_makereport",
+        "file_path": "src/_pytest/runner.py",
+        "file_content": "ok.pytest_exception_interact(node=collector, call=call, report=rep)\n    return rep\n",
+        "start_line": 521,
+        "start_column": 18271,
+        "end_line": 0,
+        "end_column": 18745,
+        "start_byte": 18271,
+        "end_byte": 0
+      },
+      "_pytest.runner.call_and_report": {
+        "name": "_pytest.runner.call_and_report",
+        "file_path": "src/_pytest/runner.py",
+        "file_content": "def call_and_report(\n    item: Item, when: \"Literal['setup', 'call', 'teardown']\", log: bool = True, **kwds\n) -> TestReport:\n    call = call_runtest_hook(item, when, **kwds)\n    hook = item.ihook\n    report: TestReport = hook.pytest_runtest_makereport(item=item, call=call)\n    if log:\n        hook.pytest_runtest_logreport(report=report)\n    if check_interactive_exception(call, report):\n        hook.pytest_exception_interact(node=item, call=call, report=report)\n    return report",
+        "start_line": 217,
+        "start_column": 6851,
+        "end_line": 0,
+        "end_column": 7333,
+        "start_byte": 6851,
+        "end_byte": 0
+      },
+      "_pytest.runner.call_runtest_hook": {
+        "name": "_pytest.runner.call_runtest_hook",
+        "file_path": "src/_pytest/runner.py",
+        "file_content": "def call_runtest_hook(\n    item: Item, when: \"Literal['setup', 'call', 'teardown']\", **kwds\n) -> \"CallInfo[None]\":\n    if when == \"setup\":\n        ihook: Callable[..., None] = item.ihook.pytest_runtest_setup\n    elif when == \"call\":\n        ihook = item.ihook.pytest_runtest_call\n    elif when == \"teardown\":\n        ihook = item.ihook.pytest_runtest_teardown\n    else:\n        assert False, f\"Unhandled runtest hook case: {when}\"\n    reraise: Tuple[Type[BaseException], ...] = (Exit,)\n    if not item.config.getoption(\"usepdb\", False):\n        reraise += (KeyboardInterrupt,)\n    return CallInfo.from_call(\n        lambda: ihook(item=item, **kwds), when=when, reraise=reraise\n    )",
+        "start_line": 245,
+        "start_column": 7829,
+        "end_line": 0,
+        "end_column": 8511,
+        "start_byte": 7829,
+        "end_byte": 0
+      },
+      "_pytest.runner.CallInfo.from_call": {
+        "name": "_pytest.runner.CallInfo.from_call",
+        "file_path": "src/_pytest/runner.py",
+        "file_content": "@classmethod\n    def from_call(\n        cls,\n        func: \"Callable[[], TResult]\",\n        when: \"Literal['collect', 'setup', 'call', 'teardown']\",\n        reraise: Optional[\n            Union[Type[BaseException], Tuple[Type[BaseException], ...]]\n        ] = None,\n    ) -> \"CallInfo[TResult]\":\n        \"\"\"Call func, wrapping the result in a CallInfo.\n\n        :param func:\n            The function to call. Called without arguments.\n        :param when:\n            The phase in which the function is called.\n        :param reraise:\n            Exception or exceptions that shall propagate if raised by the\n            function, instead of being wrapped in the CallInfo.\n        \"\"\"\n        excinfo = None\n        start = timing.time()\n        precise_start = timing.perf_counter()\n        try:\n            result: Optional[TResult] = func()\n        except BaseException:\n            excinfo = ExceptionInfo.from_current()\n            if reraise is not None and isinstance(excinfo.value, reraise):\n                raise\n            result = None\n        # use the perf counter\n        precise_stop = timing.perf_counter()\n        duration = precise_stop - precise_start\n        stop = timing.time()\n        return cls(\n            start=start,\n            stop=stop,\n            duration=duration,\n            when=when,\n            result=result,\n            excinfo=excinfo,\n            _ispytest=True,\n        )",
+        "start_line": 316,
+        "start_column": 10263,
+        "end_line": 4,
+        "end_column": 11679,
+        "start_byte": 10263,
+        "end_byte": 4
+      },
+      "_pytest.runner.pytest_runtest_makereport": {
+        "name": "_pytest.runner.pytest_runtest_makereport",
+        "file_path": "src/_pytest/runner.py",
+        "file_content": "def pytest_runtest_makereport(item: Item, call: CallInfo[None]) -> TestReport:\n    return TestReport.from_item_and_call(item, call)",
+        "start_line": 365,
+        "start_column": 11897,
+        "end_line": 0,
+        "end_column": 12028,
+        "start_byte": 11897,
+        "end_byte": 0
+      },
+      "_pytest.skipping.pytest_runtest_makereport": {
+        "name": "_pytest.skipping.pytest_runtest_makereport",
+        "file_path": "src/_pytest/runner.py",
+        "file_content": "nal[ExceptionInfo[BaseException]]\n    #: The system time when the call started, in seconds since the epoch.\n    start: float\n    #: The system time when the call ended, in seconds since the epoch.\n    stop: float\n    #: The call duration, in seconds.\n    duration: float\n    #: The context of invocation: \"collect\", \"setup\", \"call\" or \"teardown\".\n    when: \"Literal['collect', 'setup', 'call', 'teardown']\"\n\n    def __init__(\n        self,\n        result: Optional[TResult],\n        excinfo: Optional[ExceptionInfo[BaseException]],\n        start: float,\n        stop: float,\n        duration: float,\n        when: \"Literal['collect', 'setup', 'call', 'teardown']\",\n        *,\n        _ispytest: bool = False,\n    ) -> None:\n        check_ispytest(_ispytest)\n        self._result = result\n        self.excinfo = excinfo\n        self.start = start\n        self.stop = stop\n        self.duration = duration\n        self.when = when\n\n    @property\n    def result(self) -> TResult:\n        \"\"\"The return value of the call, if it didn't raise.\n\n        Can only be accessed if ex",
+        "start_line": 261,
+        "start_column": 8818,
+        "end_line": 0,
+        "end_column": 9891,
+        "start_byte": 8818,
+        "end_byte": 0
+      },
+      "_pytest.unittest.pytest_runtest_makereport": {
+        "name": "_pytest.unittest.pytest_runtest_makereport",
+        "file_path": "src/_pytest/runner.py",
+        "file_content": "ls(\n            start=start,\n            stop=stop,\n            duration=duration,\n            when=when,\n            result=result,\n            excinfo=excinfo,\n            _ispytest=True,\n        )\n\n    def __repr__(self) -> str:\n        if self.excinfo is None:\n            return f\"<CallInfo when={self.when!r} result: {self._result!r}>\"\n        return f\"<CallInfo when={self.when!r} excinfo={self.excinfo!r}>\"\n\n\ndef pytest_runtest_makereport(item: Item, call: CallInfo[None]) -> TestReport:\n    return TestReport.from_item_and_call(item, call)\n\n\ndef pytest_make_collect_report(collector: Collector) -> CollectReport:\n    call = CallInfo.from_call(lambda: list(collector.collect()), \"collect\")\n    longrepr: Union[None, Tuple[str, int, str], str, TerminalRepr] = None\n    if not call.excinfo:\n        outcome: Literal[\"passed\", \"skipped\", \"failed\"] = \"passed\"\n    else:\n        skip_exceptions = [Skipped]\n        unittest = sys.modules.get(\"u",
+        "start_line": 332,
+        "start_column": 11480,
+        "end_line": 0,
+        "end_column": 12427,
+        "start_byte": 11480,
+        "end_byte": 0
+      },
+      "_pytest.debugging.PdbInvoke.pytest_exception_interact": {
+        "name": "_pytest.debugging.PdbInvoke.pytest_exception_interact",
+        "file_path": "src/_pytest/hookspec.py",
+        "file_content": ".. versionchanged:: 7.0.0\n        The ``fspath`` parameter was added as a :class:`pathlib.Path`\n        equivalent of the ``path`` parameter. The ``path`` parameter\n        has been deprecated.\n    \"\"\"\n\n\ndef pytest_collect_file(\n    fspath: Path, path: \"LEGACY_PATH\", parent: \"Collector\"\n) -> \"Optional[Collector]\":\n    \"\"\"Create a Collector for the given path, or None if not relevant.\n\n    The new node needs to have the specified ``parent`` as a parent.\n\n    ",
+        "start_line": 285,
+        "start_column": 9713,
+        "end_line": 4,
+        "end_column": 10175,
+        "start_byte": 9713,
+        "end_byte": 4
+      },
+      "_pytest.faulthandler.pytest_exception_interact": {
+        "name": "_pytest.faulthandler.pytest_exception_interact",
+        "file_path": "src/_pytest/hookspec.py",
+        "file_content": "ytest\n        :ref:`discovers plugins during startup <pluginorder>`.\n\n    :param pytest.Parser parser:\n        To add command line options, call\n        :py:func:`parser.addoption(...) <pytest.Parser.addoption>`.\n        To add ini-f",
+        "start_line": 90,
+        "start_column": 2953,
+        "end_line": 0,
+        "end_column": 3186,
+        "start_byte": 2953,
+        "end_byte": 0
+      },
+      "_pytest.hookspec.pytest_assertion_pass": {
+        "name": "_pytest.hookspec.pytest_assertion_pass",
+        "file_path": "src/_pytest/hookspec.py",
+        "file_content": "def pytest_assertion_pass(item: \"Item\", lineno: int, orig: str, expl: str) -> None:\n    \"\"\"Called whenever an assertion passes.\n\n    .. versionadded:: 5.0\n\n    Use this hook to do some processing after a passing assertion.\n    The original assertion information is available in the `orig` string\n    and the pytest introspected assertion information is available in the\n    `expl` string.\n\n    This hook must be explicitly enabled by the ``enable_assertion_pass_hook``\n    ini-file option:\n\n    .. code-block:: ini\n\n        [pytest]\n        enable_assertion_pass_hook=true\n\n    You need to **clean the .pyc** files in your project directory and interpreter libraries\n    when enabling this option, as assertions will require to be re-written.\n\n    :param pytest.Item item: pytest item object of current test.\n    :param int lineno: Line number of the assert statement.\n    :param str orig: String with the original assertion.\n    :param str expl: String with the assert explanation.\n    \"\"\"",
+        "start_line": 642,
+        "start_column": 22276,
+        "end_line": 0,
+        "end_column": 23266,
+        "start_byte": 22276,
+        "end_byte": 0
+      },
+      "_pytest.hookspec.pytest_exception_interact": {
+        "name": "_pytest.hookspec.pytest_exception_interact",
+        "file_path": "src/_pytest/hookspec.py",
+        "file_content": "def pytest_exception_interact(\n    node: Union[\"Item\", \"Collector\"],\n    call: \"CallInfo[Any]\",\n    report: Union[\"CollectReport\", \"TestReport\"],\n) -> None:\n    \"\"\"Called when an exception was raised which can potentially be\n    interactively handled.\n\n    May be called during collection (see :py:func:`pytest_make_collect_report`),\n    in which case ``report`` is a :class:`CollectReport`.\n\n    May be called during runtest of an item (see :py:func:`pytest_runtest_protocol`),\n    in which case ``report`` is a :class:`TestReport`.\n\n    This hook is not called if the exception that was raised is an internal\n    exception like ``skip.Exception``.\n    \"\"\"",
+        "start_line": 889,
+        "start_column": 31127,
+        "end_line": 0,
+        "end_column": 31784,
+        "start_byte": 31127,
+        "end_byte": 0
+      },
+      "_pytest.nodes.Node._prunetraceback": {
+        "name": "_pytest.nodes.Node._prunetraceback",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "on) as test classes.\n        return safe_getattr(obj, \"__test__\", False) is True\n\n    ",
+        "start_line": 415,
+        "start_column": 13227,
+        "end_line": 4,
+        "end_column": 13313,
+        "start_byte": 13227,
+        "end_byte": 4
+      },
+      "_pytest.nodes.Collector._prunetraceback": {
+        "name": "_pytest.nodes.Collector._prunetraceback",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "e sure we update what the\n            # function really needs.\n            fixtureinfo.prune_dependency_tree()\n\n            for callspec in metafunc._calls:\n                subname = f\"{name}[{callspec.id}]\"\n                yield Function.from_parent(\n                    self,\n                    name=subname,\n                    callspec=callspec,\n                  ",
+        "start_line": 538,
+        "start_column": 17955,
+        "end_line": 4,
+        "end_column": 18324,
+        "start_byte": 17955,
+        "end_byte": 4
+      },
+      "_pytest.python.Function._prunetraceback": {
+        "name": "_pytest.python.Function._prunetraceback",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "def _prunetraceback(self, excinfo: ExceptionInfo[BaseException]) -> None:\n        if hasattr(self, \"_obj\") and not self.config.getoption(\"fulltrace\", False):\n            code = _pytest._code.Code.from_function(get_real_func(self.obj))\n            path, firstlineno = code.path, code.firstlineno\n            traceback = excinfo.traceback\n            ntraceback = traceback.cut(path=path, firstlineno=firstlineno)\n            if ntraceback == traceback:\n                ntraceback = ntraceback.cut(path=path)\n                if ntraceback == traceback:\n                    ntraceback = ntraceback.filter(filter_traceback)\n                    if not ntraceback:\n                        ntraceback = traceback\n\n            excinfo.traceback = ntraceback.filter()\n            # issue364: mark all but first and last frames to\n            # only show a single-line message for each frame.\n            if self.config.getoption(\"tbstyle\", \"auto\") == \"auto\":\n                if len(excinfo.traceback) > 2:\n                    for entry in excinfo.traceback[1:-1]:\n                        entry.set_repr_style(\"short\")",
+        "start_line": 1713,
+        "start_column": 64881,
+        "end_line": 4,
+        "end_column": 65989,
+        "start_byte": 64881,
+        "end_byte": 4
+      },
+      "_pytest.python.Function.repr_failure": {
+        "name": "_pytest.python.Function.repr_failure",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "def repr_failure(  # type: ignore[override]\n        self,\n        excinfo: ExceptionInfo[BaseException],\n    ) -> Union[str, TerminalRepr]:\n        style = self.config.getoption(\"tbstyle\", \"auto\")\n        if style == \"auto\":\n            style = \"long\"\n        return self._repr_failure_py(excinfo, style=style)",
+        "start_line": 1735,
+        "start_column": 66051,
+        "end_line": 4,
+        "end_column": 66361,
+        "start_byte": 66051,
+        "end_byte": 4
+      },
+      "_pytest.unittest.TestCaseFunction._prunetraceback": {
+        "name": "_pytest.unittest.TestCaseFunction._prunetraceback",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "e):\n                name = os.path.splitext(name)[0]\n                if stopatmodule:\n                    if includemodule:\n                        parts.append(name)\n                    break\n            parts.append(name)\n        parts.reverse()\n        return \".\".join(parts)\n\n    def reportinfo(self) -> Tuple[Union[\"os.",
+        "start_line": 321,
+        "start_column": 11153,
+        "end_line": 4,
+        "end_column": 11477,
+        "start_byte": 11153,
+        "end_byte": 4
+      }
+    }
+  }
+}

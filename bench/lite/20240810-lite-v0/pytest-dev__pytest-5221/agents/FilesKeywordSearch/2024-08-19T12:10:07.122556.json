@@ -1,0 +1,93 @@
+{
+  "name": "FilesKeywordSearch",
+  "model": "gpt-4o-2024-08-06",
+  "metadata": {},
+  "issue": "<description>:Display fixture scope with `pytest --fixtures`\nIt would be useful to show fixture scopes with `pytest --fixtures`; currently the only way to learn the scope of a fixture is look at the docs (when that is documented) or at the source code.\n</description>",
+  "request": {
+    "tokens": [
+      "pytest_fixture_setup",
+      "fixture",
+      "FixtureManager",
+      "getfixtureinfo",
+      "scope",
+      "name2fixturedefs",
+      "fixture",
+      "scopes",
+      "getfixturedefs",
+      "pytest_collection_modifyitems"
+    ]
+  },
+  "response": {
+    "results": {
+      "pytest_collection_modifyitems": [
+        "src/_pytest/stepwise.py",
+        "src/_pytest/mark/__init__.py",
+        "src/_pytest/cacheprovider.py",
+        "src/_pytest/fixtures.py",
+        "src/_pytest/hookspec.py",
+        "src/_pytest/main.py"
+      ],
+      "fixture": [
+        "src/_pytest/cacheprovider.py",
+        "src/_pytest/capture.py",
+        "src/_pytest/setupplan.py",
+        "src/_pytest/doctest.py",
+        "src/_pytest/compat.py",
+        "src/_pytest/python.py",
+        "src/_pytest/junitxml.py",
+        "src/_pytest/monkeypatch.py",
+        "src/_pytest/terminal.py",
+        "src/_pytest/unittest.py",
+        "src/_pytest/mark/__init__.py",
+        "src/_pytest/fixtures.py",
+        "src/_pytest/tmpdir.py",
+        "src/_pytest/deprecated.py",
+        "src/_pytest/setuponly.py",
+        "src/pytest.py",
+        "src/_pytest/pytester.py",
+        "src/_pytest/logging.py",
+        "src/_pytest/debugging.py",
+        "src/_pytest/hookspec.py"
+      ],
+      "scope": [
+        "src/_pytest/fixtures.py",
+        "src/_pytest/nodes.py",
+        "src/_pytest/tmpdir.py",
+        "src/_pytest/doctest.py",
+        "src/_pytest/python_api.py",
+        "src/_pytest/python.py",
+        "src/_pytest/terminal.py",
+        "src/_pytest/setuponly.py",
+        "src/_pytest/unittest.py"
+      ],
+      "getfixtureinfo": [
+        "src/_pytest/fixtures.py",
+        "src/_pytest/doctest.py",
+        "src/_pytest/python.py",
+        "src/_pytest/unittest.py"
+      ],
+      "pytest_fixture_setup": [
+        "src/_pytest/fixtures.py",
+        "src/_pytest/hookspec.py",
+        "src/_pytest/setuponly.py",
+        "src/_pytest/setupplan.py"
+      ],
+      "name2fixturedefs": [
+        "src/_pytest/fixtures.py",
+        "src/_pytest/python.py",
+        "src/_pytest/runner.py"
+      ],
+      "scopes": [
+        "src/_pytest/fixtures.py",
+        "src/_pytest/python.py",
+        "src/_pytest/nodes.py"
+      ],
+      "FixtureManager": [
+        "src/_pytest/fixtures.py"
+      ],
+      "getfixturedefs": [
+        "src/_pytest/fixtures.py"
+      ]
+    }
+  }
+}

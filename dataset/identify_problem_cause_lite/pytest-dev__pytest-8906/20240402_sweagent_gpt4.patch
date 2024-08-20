@@ -1,0 +1,82 @@
+
+diff --git a/doc/en/how-to/skipping.rst b/doc/en/how-to/skipping.rst
+index 156570062..74fd5f451 100644
+--- a/doc/en/how-to/skipping.rst
++++ b/doc/en/how-to/skipping.rst
+@@ -74,7 +74,15 @@ It is also possible to skip the whole module using
+     if not sys.platform.startswith("win"):
+         pytest.skip("skipping windows-only tests", allow_module_level=True)
+ 
++You can also use the ``skip_module`` function to skip the entire module with a single call:
+ 
++.. code-block:: python
++
++    import pytest
++
++    pytest.skip_module("requires python3.8 or higher")
++
++This is equivalent to calling ``pytest.skip`` with ``allow_module_level=True``, but provides a more concise way to skip an entire module.
+ **Reference**: :ref:`pytest.mark.skip ref`
+ 
+ ``skipif``
+diff --git a/pos_only.py b/pos_only.py
+new file mode 100644
+index 000000000..cd4011087
+--- /dev/null
++++ b/pos_only.py
+@@ -0,0 +1,2 @@
++def foo(a, /, b):
++    return a + b
+diff --git a/reproduce_skip_issue.py b/reproduce_skip_issue.py
+new file mode 100644
+index 000000000..995680490
+--- /dev/null
++++ b/reproduce_skip_issue.py
+@@ -0,0 +1,14 @@
++from pytest import raises, skip
++import sys
++if sys.version_info < (3, 8):
++    skip(msg="Requires Python >= 3.8", allow_module_level=True)
++
++# import must be after the module level skip:
++from pos_only import *
++
++def test_foo():
++    assert foo(10, 20) == 30
++    assert foo(10, b=20) == 30
++    with raises(TypeError):
++        assert foo(a=10, b=20)
++print("Script completed successfully, no errors.")
+diff --git a/src/_pytest/outcomes.py b/src/_pytest/outcomes.py
+index 2addf5572..03fe76046 100644
+--- a/src/_pytest/outcomes.py
++++ b/src/_pytest/outcomes.py
+@@ -229,4 +229,11 @@ def importorskip(
+                 % (modname, verattr, minversion),
+                 allow_module_level=True,
+             )
+-    return mod
++def skip_module(msg: str, *, pytrace: bool = True):
++    """
++    Skip an entire module if a certain condition is met.
++
++    :param str msg: The message to show when skipping the module.
++    :param bool pytrace: Show the traceback for the skip.
++    """
++    skip(msg=msg, pytrace=pytrace, allow_module_level=True)
+diff --git a/src/_pytest/python.py b/src/_pytest/python.py
+index 79dfb7320..36568df3b 100644
+--- a/src/_pytest/python.py
++++ b/src/_pytest/python.py
+@@ -610,6 +610,11 @@ class Module(nodes.File, PyCollector):
+             raise self.CollectError(
+                 "Using pytest.skip outside of a test is not allowed. "
+                 "To decorate a test function, use the @pytest.mark.skip "
++                "or @pytest.mark.skipif decorators instead. To skip a "
++                "module, you can use pytest.skip with allow_module_level=True "
++                "at the module level. For example: "
++                "pytest.skip(msg='reason', allow_module_level=True)."
++                "To decorate a test function, use the @pytest.mark.skip "
+                 "or @pytest.mark.skipif decorators instead, and to skip a "
+                 "module use `pytestmark = pytest.mark.{skip,skipif}."
+             ) from e

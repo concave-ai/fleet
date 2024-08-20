@@ -1,0 +1,1189 @@
+{
+  "name": "FileSymbolSearch",
+  "model": "gpt-4o-2024-08-06",
+  "metadata": {},
+  "issue": "<description>:Wrong path to test file when directory changed in fixture\nFiles are shown as relative to new directory when working directory is changed in a fixture. This makes it impossible to jump to the error as the editor is unaware of the directory change. The displayed directory should stay relative to the original directory.\r\n\r\ntest_path_error.py:\r\n```python\r\nimport os\r\nimport errno\r\nimport shutil\r\n\r\nimport pytest\r\n\r\n\r\n@pytest.fixture\r\ndef private_dir():  # or (monkeypatch)\r\n    out_dir = 'ddd'\r\n\r\n    try:\r\n        shutil.rmtree(out_dir)\r\n    except OSError as ex:\r\n        if ex.errno != errno.ENOENT:\r\n            raise\r\n    os.mkdir(out_dir)\r\n\r\n    old_dir = os.getcwd()\r\n    os.chdir(out_dir)\r\n    yield out_dir\r\n    os.chdir(old_dir)\r\n\r\n    # Same issue if using:\r\n    # monkeypatch.chdir(out_dir)\r\n\r\n\r\ndef test_show_wrong_path(private_dir):\r\n    assert False\r\n```\r\n\r\n```diff\r\n+ Expected: test_path_error.py:29: AssertionError\r\n- Displayed: ../test_path_error.py:29: AssertionError\r\n```\r\n\r\nThe full output is:\r\n```\r\n-*- mode: compilation; default-directory: \"~/src/pytest_path_error/\" -*-\r\nCompilation started at Fri Jan 10 00:05:52\r\n\r\nnox\r\nnox > Running session test\r\nnox > Creating virtual environment (virtualenv) using python3.7 in .nox/test\r\nnox > pip install pytest>=5.3\r\nnox > pip freeze\r\nattrs==19.3.0\r\nimportlib-metadata==1.3.0\r\nmore-itertools==8.0.2\r\npackaging==20.0\r\npluggy==0.13.1\r\npy==1.8.1\r\npyparsing==2.4.6\r\npytest==5.3.2\r\nsix==1.13.0\r\nwcwidth==0.1.8\r\nzipp==0.6.0\r\nnox > pytest \r\n================================= test session starts =================================\r\nplatform linux -- Python 3.7.5, pytest-5.3.2, py-1.8.1, pluggy-0.13.1\r\nrootdir: /home/lhn/src/pytest_path_error\r\ncollected 1 item                                                                      \r\n\r\ntest_path_error.py F                                                            [100%]\r\n\r\n====================================== FAILURES =======================================\r\n________________________________ test_show_wrong_path _________________________________\r\n\r\nprivate_dir = 'ddd'\r\n\r\n    def test_show_wrong_path(private_dir):\r\n>       assert False\r\nE       assert False\r\n\r\n../test_path_error.py:29: AssertionError\r\n================================== 1 failed in 0.03s ==================================\r\nnox > Command pytest  failed with exit code 1\r\nnox > Session test failed.\r\n\r\nCompilation exited abnormally with code 1 at Fri Jan 10 00:06:01\r\n```\r\n\r\nnoxfile.py:\r\n```python\r\nimport nox\r\n\r\n@nox.session(python='3.7')\r\ndef test(session):\r\n    session.install('pytest>=5.3')\r\n    session.run('pip', 'freeze')\r\n    session.run('pytest')\r\n```\n</description>",
+  "request": {
+    "files": [
+      {
+        "file_path": "src/_pytest/fixtures.py",
+        "relevant_symbol_keys": [
+          "FixtureRequest",
+          "FixtureRequest._get_active_fixturedef",
+          "FixtureDef.execute"
+        ],
+        "root_cause_symbol_keys": []
+      },
+      {
+        "file_path": "src/_pytest/monkeypatch.py",
+        "relevant_symbol_keys": [
+          "MonkeyPatch.chdir",
+          "MonkeyPatch.undo"
+        ],
+        "root_cause_symbol_keys": []
+      },
+      {
+        "file_path": "src/_pytest/pathlib.py",
+        "relevant_symbol_keys": [],
+        "root_cause_symbol_keys": []
+      },
+      {
+        "file_path": "src/_pytest/python.py",
+        "relevant_symbol_keys": [
+          "PyobjMixin.reportinfo",
+          "PyobjMixin.getmodpath",
+          "Function._prunetraceback"
+        ],
+        "root_cause_symbol_keys": []
+      },
+      {
+        "file_path": "src/_pytest/pytester.py",
+        "relevant_symbol_keys": [
+          "Testdir",
+          "CwdSnapshot",
+          "make_numbered_dir",
+          "Path"
+        ],
+        "root_cause_symbol_keys": []
+      },
+      {
+        "file_path": "src/_pytest/terminal.py",
+        "relevant_symbol_keys": [
+          "TerminalReporter.write_fspath_result",
+          "TerminalReporter._locationline",
+          "TerminalReporter.currentfspath",
+          "TerminalReporter.startdir"
+        ],
+        "root_cause_symbol_keys": []
+      }
+    ],
+    "with_content": true
+  },
+  "response": {
+    "related_symbols": [
+      {
+        "name": "_pytest.fixtures.FixtureRequest",
+        "file_path": "src/_pytest/fixtures.py",
+        "file_content": "class FixtureRequest:\n    \"\"\" A request for a fixture from a test or fixture function.\n\n    A request object gives access to the requesting test context\n    and has an optional ``param`` attribute in case\n    the fixture is parametrized indirectly.\n    \"\"\"\n\n    def __init__(self, pyfuncitem):\n        self._pyfuncitem = pyfuncitem\n        #: fixture for which this request is being performed\n        self.fixturename = None\n        #: Scope string, one of \"function\", \"class\", \"module\", \"session\"\n        self.scope = \"function\"\n        self._fixture_defs = {}  # type: Dict[str, FixtureDef]\n        fixtureinfo = pyfuncitem._fixtureinfo\n        self._arg2fixturedefs = fixtureinfo.name2fixturedefs.copy()\n        self._arg2index = {}\n        self._fixturemanager = pyfuncitem.session._fixturemanager\n\n    @property\n    def fixturenames(self):\n        \"\"\"names of all active fixtures in this request\"\"\"\n        result = list(self._pyfuncitem._fixtureinfo.names_closure)\n        result.extend(set(self._fixture_defs).difference(result))\n        return result\n\n    @property\n    def funcargnames(self):\n        \"\"\" alias attribute for ``fixturenames`` for pre-2.3 compatibility\"\"\"\n        warnings.warn(FUNCARGNAMES, stacklevel=2)\n        return self.fixturenames\n\n    @property\n    def node(self):\n        \"\"\" underlying collection node (depends on current request scope)\"\"\"\n        return self._getscopeitem(self.scope)\n\n    def _getnextfixturedef(self, argname):\n        fixturedefs = self._arg2fixturedefs.get(argname, None)\n        if fixturedefs is None:\n            # we arrive here because of a dynamic call to\n            # getfixturevalue(argname) usage which was naturally\n            # not known at parsing/collection time\n            parentid = self._pyfuncitem.parent.nodeid\n            fixturedefs = self._fixturemanager.getfixturedefs(argname, parentid)\n            self._arg2fixturedefs[argname] = fixturedefs\n        # fixturedefs list is immutable so we maintain a decreasing index\n        index = self._arg2index.get(argname, 0) - 1\n        if fixturedefs is None or (-index > len(fixturedefs)):\n            raise FixtureLookupError(argname, self)\n        self._arg2index[argname] = index\n        return fixturedefs[index]\n\n    @property\n    def config(self):\n        \"\"\" the pytest config object associated with this request. \"\"\"\n        return self._pyfuncitem.config\n\n    @scopeproperty()\n    def function(self):\n        \"\"\" test function object if the request has a per-function scope. \"\"\"\n        return self._pyfuncitem.obj\n\n    @scopeproperty(\"class\")\n    def cls(self):\n        \"\"\" class (can be None) where the test function was collected. \"\"\"\n        clscol = self._pyfuncitem.getparent(_pytest.python.Class)\n        if clscol:\n            return clscol.obj\n\n    @property\n    def instance(self):\n        \"\"\" instance (can be None) on which test function was collected. \"\"\"\n        # unittest support hack, see _pytest.unittest.TestCaseFunction\n        try:\n            return self._pyfuncitem._testcase\n        except AttributeError:\n            function = getattr(self, \"function\", None)\n            return getattr(function, \"__self__\", None)\n\n    @scopeproperty()\n    def module(self):\n        \"\"\" python module object where the test function was collected. \"\"\"\n        return self._pyfuncitem.getparent(_pytest.python.Module).obj\n\n    @scopeproperty()\n    def fspath(self) -> py.path.local:\n        \"\"\" the file system path of the test module which collected this test. \"\"\"\n        # TODO: Remove ignore once _pyfuncitem is properly typed.\n        return self._pyfuncitem.fspath  # type: ignore\n\n    @property\n    def keywords(self):\n        \"\"\" keywords/markers dictionary for the underlying node. \"\"\"\n        return self.node.keywords\n\n    @property\n    def session(self):\n        \"\"\" pytest session object. \"\"\"\n        return self._pyfuncitem.session\n\n    def addfinalizer(self, finalizer):\n        \"\"\" add finalizer/teardown function to be called after the\n        last test within the requesting test context finished\n        execution. \"\"\"\n        # XXX usually this method is shadowed by fixturedef specific ones\n        self._addfinalizer(finalizer, scope=self.scope)\n\n    def _addfinalizer(self, finalizer, scope):\n        colitem = self._getscopeitem(scope)\n        self._pyfuncitem.session._setupstate.addfinalizer(\n            finalizer=finalizer, colitem=colitem\n        )\n\n    def applymarker(self, marker):\n        \"\"\" Apply a marker to a single test function invocation.\n        This method is useful if you don't want to have a keyword/marker\n        on all function invocations.\n\n        :arg marker: a :py:class:`_pytest.mark.MarkDecorator` object\n            created by a call to ``pytest.mark.NAME(...)``.\n        \"\"\"\n        self.node.add_marker(marker)\n\n    def raiseerror(self, msg):\n        \"\"\" raise a FixtureLookupError with the given message. \"\"\"\n        raise self._fixturemanager.FixtureLookupError(None, self, msg)\n\n    def _fillfixtures(self):\n        item = self._pyfuncitem\n        fixturenames = getattr(item, \"fixturenames\", self.fixturenames)\n        for argname in fixturenames:\n            if argname not in item.funcargs:\n                item.funcargs[argname] = self.getfixturevalue(argname)\n\n    def getfixturevalue(self, argname):\n        \"\"\" Dynamically run a named fixture function.\n\n        Declaring fixtures via function argument is recommended where possible.\n        But if you can only decide whether to use another fixture at test\n        setup time, you may use this function to retrieve it inside a fixture\n        or test function body.\n\n        :raise pytest.FixtureLookupError:\n            If the given fixture could not be found.\n        \"\"\"\n        return self._get_active_fixturedef(argname).cached_result[0]\n\n    def _get_active_fixturedef(self, argname):\n        try:\n            return self._fixture_defs[argname]\n        except KeyError:\n            try:\n                fixturedef = self._getnextfixturedef(argname)\n            except FixtureLookupError:\n                if argname == \"request\":\n                    cached_result = (self, [0], None)\n                    scope = \"function\"\n                    return PseudoFixtureDef(cached_result, scope)\n                raise\n        # remove indent to prevent the python3 exception\n        # from leaking into the call\n        self._compute_fixture_value(fixturedef)\n        self._fixture_defs[argname] = fixturedef\n        return fixturedef\n\n    def _get_fixturestack(self):\n        current = self\n        values = []\n        while 1:\n            fixturedef = getattr(current, \"_fixturedef\", None)\n            if fixturedef is None:\n                values.reverse()\n                return values\n            values.append(fixturedef)\n            current = current._parent_request\n\n    def _compute_fixture_value(self, fixturedef: \"FixtureDef\") -> None:\n        \"\"\"\n        Creates a SubRequest based on \"self\" and calls the execute method of the given fixturedef object. This will\n        force the FixtureDef object to throw away any previous results and compute a new fixture value, which\n        will be stored into the FixtureDef object itself.\n        \"\"\"\n        # prepare a subrequest object before calling fixture function\n        # (latter managed by fixturedef)\n        argname = fixturedef.argname\n        funcitem = self._pyfuncitem\n        scope = fixturedef.scope\n        try:\n            param = funcitem.callspec.getparam(argname)\n        except (AttributeError, ValueError):\n            param = NOTSET\n            param_index = 0\n            has_params = fixturedef.params is not None\n            fixtures_not_supported = getattr(funcitem, \"nofuncargs\", False)\n            if has_params and fixtures_not_supported:\n                msg = (\n                    \"{name} does not support fixtures, maybe unittest.TestCase subclass?\\n\"\n                    \"Node id: {nodeid}\\n\"\n                    \"Function type: {typename}\"\n                ).format(\n                    name=funcitem.name,\n                    nodeid=funcitem.nodeid,\n                    typename=type(funcitem).__name__,\n                )\n                fail(msg, pytrace=False)\n            if has_params:\n                frame = inspect.stack()[3]\n                frameinfo = inspect.getframeinfo(frame[0])\n                source_path = py.path.local(frameinfo.filename)\n                source_lineno = frameinfo.lineno\n                rel_source_path = source_path.relto(funcitem.config.rootdir)\n                if rel_source_path:\n                    source_path_str = rel_source_path\n                else:\n                    source_path_str = str(source_path)\n                msg = (\n                    \"The requested fixture has no parameter defined for test:\\n\"\n                    \"    {}\\n\\n\"\n                    \"Requested fixture '{}' defined in:\\n{}\"\n                    \"\\n\\nRequested here:\\n{}:{}\".format(\n                        funcitem.nodeid,\n                        fixturedef.argname,\n                        getlocation(fixturedef.func, funcitem.config.rootdir),\n                        source_path_str,\n                        source_lineno,\n                    )\n                )\n                fail(msg, pytrace=False)\n        else:\n            param_index = funcitem.callspec.indices[argname]\n            # if a parametrize invocation set a scope it will override\n            # the static scope defined with the fixture function\n            paramscopenum = funcitem.callspec._arg2scopenum.get(argname)\n            if paramscopenum is not None:\n                scope = scopes[paramscopenum]\n\n        subrequest = SubRequest(self, scope, param, param_index, fixturedef)\n\n        # check if a higher-level scoped fixture accesses a lower level one\n        subrequest._check_scope(argname, self.scope, scope)\n        try:\n            # call the fixture function\n            fixturedef.execute(request=subrequest)\n        finally:\n            self._schedule_finalizers(fixturedef, subrequest)\n\n    def _schedule_finalizers(self, fixturedef, subrequest):\n        # if fixture function failed it might have registered finalizers\n        self.session._setupstate.addfinalizer(\n            functools.partial(fixturedef.finish, request=subrequest), subrequest.node\n        )\n\n    def _check_scope(self, argname, invoking_scope, requested_scope):\n        if argname == \"request\":\n            return\n        if scopemismatch(invoking_scope, requested_scope):\n            # try to report something helpful\n            lines = self._factorytraceback()\n            fail(\n                \"ScopeMismatch: You tried to access the %r scoped \"\n                \"fixture %r with a %r scoped request object, \"\n                \"involved factories\\n%s\"\n                % ((requested_scope, argname, invoking_scope, \"\\n\".join(lines))),\n                pytrace=False,\n            )\n\n    def _factorytraceback(self):\n        lines = []\n        for fixturedef in self._get_fixturestack():\n            factory = fixturedef.func\n            fs, lineno = getfslineno(factory)\n            p = self._pyfuncitem.session.fspath.bestrelpath(fs)\n            args = _format_args(factory)\n            lines.append(\"%s:%d:  def %s%s\" % (p, lineno + 1, factory.__name__, args))\n        return lines\n\n    def _getscopeitem(self, scope):\n        if scope == \"function\":\n            # this might also be a non-function Item despite its attribute name\n            return self._pyfuncitem\n        if scope == \"package\":\n            node = get_scope_package(self._pyfuncitem, self._fixturedef)\n        else:\n            node = get_scope_node(self._pyfuncitem, scope)\n        if node is None and scope == \"class\":\n            # fallback to function item itself\n            node = self._pyfuncitem\n        assert node, 'Could not obtain a node for scope \"{}\" for function {!r}'.format(\n            scope, self._pyfuncitem\n        )\n        return node\n\n    def __repr__(self):\n        return \"<FixtureRequest for %r>\" % (self.node)",
+        "start_line": 346,
+        "start_column": 12854,
+        "end_line": 0,
+        "end_column": 24896,
+        "start_byte": 12854,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.fixtures.FixtureRequest.__init__",
+        "file_path": "src/_pytest/fixtures.py",
+        "file_content": "def __init__(self, pyfuncitem):\n        self._pyfuncitem = pyfuncitem\n        #: fixture for which this request is being performed\n        self.fixturename = None\n        #: Scope string, one of \"function\", \"class\", \"module\", \"session\"\n        self.scope = \"function\"\n        self._fixture_defs = {}  # type: Dict[str, FixtureDef]\n        fixtureinfo = pyfuncitem._fixtureinfo\n        self._arg2fixturedefs = fixtureinfo.name2fixturedefs.copy()\n        self._arg2index = {}\n        self._fixturemanager = pyfuncitem.session._fixturemanager",
+        "start_line": 354,
+        "start_column": 13116,
+        "end_line": 4,
+        "end_column": 13655,
+        "start_byte": 13116,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.fixtures.FixtureRequest.fixturenames",
+        "file_path": "src/_pytest/fixtures.py",
+        "file_content": "@property\n    def fixturenames(self):\n        \"\"\"names of all active fixtures in this request\"\"\"\n        result = list(self._pyfuncitem._fixtureinfo.names_closure)\n        result.extend(set(self._fixture_defs).difference(result))\n        return result",
+        "start_line": 366,
+        "start_column": 13661,
+        "end_line": 4,
+        "end_column": 13912,
+        "start_byte": 13661,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.fixtures.FixtureRequest.funcargnames",
+        "file_path": "src/_pytest/fixtures.py",
+        "file_content": "@property\n    def funcargnames(self):\n        \"\"\" alias attribute for ``fixturenames`` for pre-2.3 compatibility\"\"\"\n        warnings.warn(FUNCARGNAMES, stacklevel=2)\n        return self.fixturenames",
+        "start_line": 373,
+        "start_column": 13918,
+        "end_line": 4,
+        "end_column": 14116,
+        "start_byte": 13918,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.fixtures.FixtureRequest.node",
+        "file_path": "src/_pytest/fixtures.py",
+        "file_content": "@property\n    def node(self):\n        \"\"\" underlying collection node (depends on current request scope)\"\"\"\n        return self._getscopeitem(self.scope)",
+        "start_line": 379,
+        "start_column": 14122,
+        "end_line": 4,
+        "end_column": 14274,
+        "start_byte": 14122,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.fixtures.FixtureRequest._getnextfixturedef",
+        "file_path": "src/_pytest/fixtures.py",
+        "file_content": "def _getnextfixturedef(self, argname):\n        fixturedefs = self._arg2fixturedefs.get(argname, None)\n        if fixturedefs is None:\n            # we arrive here because of a dynamic call to\n            # getfixturevalue(argname) usage which was naturally\n            # not known at parsing/collection time\n            parentid = self._pyfuncitem.parent.nodeid\n            fixturedefs = self._fixturemanager.getfixturedefs(argname, parentid)\n            self._arg2fixturedefs[argname] = fixturedefs\n        # fixturedefs list is immutable so we maintain a decreasing index\n        index = self._arg2index.get(argname, 0) - 1\n        if fixturedefs is None or (-index > len(fixturedefs)):\n            raise FixtureLookupError(argname, self)\n        self._arg2index[argname] = index\n        return fixturedefs[index]",
+        "start_line": 384,
+        "start_column": 14280,
+        "end_line": 4,
+        "end_column": 15095,
+        "start_byte": 14280,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.fixtures.FixtureRequest.config",
+        "file_path": "src/_pytest/fixtures.py",
+        "file_content": "@property\n    def config(self):\n        \"\"\" the pytest config object associated with this request. \"\"\"\n        return self._pyfuncitem.config",
+        "start_line": 400,
+        "start_column": 15101,
+        "end_line": 4,
+        "end_column": 15242,
+        "start_byte": 15101,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.fixtures.FixtureRequest.function",
+        "file_path": "src/_pytest/fixtures.py",
+        "file_content": "@scopeproperty()\n    def function(self):\n        \"\"\" test function object if the request has a per-function scope. \"\"\"\n        return self._pyfuncitem.obj",
+        "start_line": 405,
+        "start_column": 15248,
+        "end_line": 4,
+        "end_column": 15402,
+        "start_byte": 15248,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.fixtures.FixtureRequest.cls",
+        "file_path": "src/_pytest/fixtures.py",
+        "file_content": "@scopeproperty(\"class\")\n    def cls(self):\n        \"\"\" class (can be None) where the test function was collected. \"\"\"\n        clscol = self._pyfuncitem.getparent(_pytest.python.Class)\n        if clscol:\n            return clscol.obj",
+        "start_line": 410,
+        "start_column": 15408,
+        "end_line": 4,
+        "end_column": 15640,
+        "start_byte": 15408,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.fixtures.FixtureRequest.instance",
+        "file_path": "src/_pytest/fixtures.py",
+        "file_content": "@property\n    def instance(self):\n        \"\"\" instance (can be None) on which test function was collected. \"\"\"\n        # unittest support hack, see _pytest.unittest.TestCaseFunction\n        try:\n            return self._pyfuncitem._testcase\n        except AttributeError:\n            function = getattr(self, \"function\", None)\n            return getattr(function, \"__self__\", None)",
+        "start_line": 417,
+        "start_column": 15646,
+        "end_line": 4,
+        "end_column": 16027,
+        "start_byte": 15646,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.fixtures.FixtureRequest.module",
+        "file_path": "src/_pytest/fixtures.py",
+        "file_content": "@scopeproperty()\n    def module(self):\n        \"\"\" python module object where the test function was collected. \"\"\"\n        return self._pyfuncitem.getparent(_pytest.python.Module).obj",
+        "start_line": 427,
+        "start_column": 16033,
+        "end_line": 4,
+        "end_column": 16216,
+        "start_byte": 16033,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.fixtures.FixtureRequest.fspath",
+        "file_path": "src/_pytest/fixtures.py",
+        "file_content": "@scopeproperty()\n    def fspath(self) -> py.path.local:\n        \"\"\" the file system path of the test module which collected this test. \"\"\"\n        # TODO: Remove ignore once _pyfuncitem is properly typed.\n        return self._pyfuncitem.fspath  # type: ignore",
+        "start_line": 432,
+        "start_column": 16222,
+        "end_line": 4,
+        "end_column": 16481,
+        "start_byte": 16222,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.fixtures.FixtureRequest.keywords",
+        "file_path": "src/_pytest/fixtures.py",
+        "file_content": "@property\n    def keywords(self):\n        \"\"\" keywords/markers dictionary for the underlying node. \"\"\"\n        return self.node.keywords",
+        "start_line": 438,
+        "start_column": 16487,
+        "end_line": 4,
+        "end_column": 16623,
+        "start_byte": 16487,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.fixtures.FixtureRequest.session",
+        "file_path": "src/_pytest/fixtures.py",
+        "file_content": "@property\n    def session(self):\n        \"\"\" pytest session object. \"\"\"\n        return self._pyfuncitem.session",
+        "start_line": 443,
+        "start_column": 16629,
+        "end_line": 4,
+        "end_column": 16740,
+        "start_byte": 16629,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.fixtures.FixtureRequest.addfinalizer",
+        "file_path": "src/_pytest/fixtures.py",
+        "file_content": "def addfinalizer(self, finalizer):\n        \"\"\" add finalizer/teardown function to be called after the\n        last test within the requesting test context finished\n        execution. \"\"\"\n        # XXX usually this method is shadowed by fixturedef specific ones\n        self._addfinalizer(finalizer, scope=self.scope)",
+        "start_line": 448,
+        "start_column": 16746,
+        "end_line": 4,
+        "end_column": 17062,
+        "start_byte": 16746,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.fixtures.FixtureRequest._addfinalizer",
+        "file_path": "src/_pytest/fixtures.py",
+        "file_content": "def _addfinalizer(self, finalizer, scope):\n        colitem = self._getscopeitem(scope)\n        self._pyfuncitem.session._setupstate.addfinalizer(\n            finalizer=finalizer, colitem=colitem\n        )",
+        "start_line": 455,
+        "start_column": 17068,
+        "end_line": 4,
+        "end_column": 17272,
+        "start_byte": 17068,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.fixtures.FixtureRequest.applymarker",
+        "file_path": "src/_pytest/fixtures.py",
+        "file_content": "def applymarker(self, marker):\n        \"\"\" Apply a marker to a single test function invocation.\n        This method is useful if you don't want to have a keyword/marker\n        on all function invocations.\n\n        :arg marker: a :py:class:`_pytest.mark.MarkDecorator` object\n            created by a call to ``pytest.mark.NAME(...)``.\n        \"\"\"\n        self.node.add_marker(marker)",
+        "start_line": 461,
+        "start_column": 17278,
+        "end_line": 4,
+        "end_column": 17662,
+        "start_byte": 17278,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.fixtures.FixtureRequest.raiseerror",
+        "file_path": "src/_pytest/fixtures.py",
+        "file_content": "def raiseerror(self, msg):\n        \"\"\" raise a FixtureLookupError with the given message. \"\"\"\n        raise self._fixturemanager.FixtureLookupError(None, self, msg)",
+        "start_line": 471,
+        "start_column": 17668,
+        "end_line": 4,
+        "end_column": 17832,
+        "start_byte": 17668,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.fixtures.FixtureRequest._fillfixtures",
+        "file_path": "src/_pytest/fixtures.py",
+        "file_content": "def _fillfixtures(self):\n        item = self._pyfuncitem\n        fixturenames = getattr(item, \"fixturenames\", self.fixturenames)\n        for argname in fixturenames:\n            if argname not in item.funcargs:\n                item.funcargs[argname] = self.getfixturevalue(argname)",
+        "start_line": 475,
+        "start_column": 17838,
+        "end_line": 4,
+        "end_column": 18119,
+        "start_byte": 17838,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.fixtures.FixtureRequest.getfixturevalue",
+        "file_path": "src/_pytest/fixtures.py",
+        "file_content": "def getfixturevalue(self, argname):\n        \"\"\" Dynamically run a named fixture function.\n\n        Declaring fixtures via function argument is recommended where possible.\n        But if you can only decide whether to use another fixture at test\n        setup time, you may use this function to retrieve it inside a fixture\n        or test function body.\n\n        :raise pytest.FixtureLookupError:\n            If the given fixture could not be found.\n        \"\"\"\n        return self._get_active_fixturedef(argname).cached_result[0]",
+        "start_line": 482,
+        "start_column": 18125,
+        "end_line": 4,
+        "end_column": 18655,
+        "start_byte": 18125,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.fixtures.FixtureRequest._get_active_fixturedef",
+        "file_path": "src/_pytest/fixtures.py",
+        "file_content": "def _get_active_fixturedef(self, argname):\n        try:\n            return self._fixture_defs[argname]\n        except KeyError:\n            try:\n                fixturedef = self._getnextfixturedef(argname)\n            except FixtureLookupError:\n                if argname == \"request\":\n                    cached_result = (self, [0], None)\n                    scope = \"function\"\n                    return PseudoFixtureDef(cached_result, scope)\n                raise\n        # remove indent to prevent the python3 exception\n        # from leaking into the call\n        self._compute_fixture_value(fixturedef)\n        self._fixture_defs[argname] = fixturedef\n        return fixturedef",
+        "start_line": 495,
+        "start_column": 18661,
+        "end_line": 4,
+        "end_column": 19345,
+        "start_byte": 18661,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.fixtures.FixtureRequest._get_fixturestack",
+        "file_path": "src/_pytest/fixtures.py",
+        "file_content": "def _get_fixturestack(self):\n        current = self\n        values = []\n        while 1:\n            fixturedef = getattr(current, \"_fixturedef\", None)\n            if fixturedef is None:\n                values.reverse()\n                return values\n            values.append(fixturedef)\n            current = current._parent_request",
+        "start_line": 513,
+        "start_column": 19351,
+        "end_line": 4,
+        "end_column": 19684,
+        "start_byte": 19351,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.fixtures.FixtureRequest._compute_fixture_value",
+        "file_path": "src/_pytest/fixtures.py",
+        "file_content": "def _compute_fixture_value(self, fixturedef: \"FixtureDef\") -> None:\n        \"\"\"\n        Creates a SubRequest based on \"self\" and calls the execute method of the given fixturedef object. This will\n        force the FixtureDef object to throw away any previous results and compute a new fixture value, which\n        will be stored into the FixtureDef object itself.\n        \"\"\"\n        # prepare a subrequest object before calling fixture function\n        # (latter managed by fixturedef)\n        argname = fixturedef.argname\n        funcitem = self._pyfuncitem\n        scope = fixturedef.scope\n        try:\n            param = funcitem.callspec.getparam(argname)\n        except (AttributeError, ValueError):\n            param = NOTSET\n            param_index = 0\n            has_params = fixturedef.params is not None\n            fixtures_not_supported = getattr(funcitem, \"nofuncargs\", False)\n            if has_params and fixtures_not_supported:\n                msg = (\n                    \"{name} does not support fixtures, maybe unittest.TestCase subclass?\\n\"\n                    \"Node id: {nodeid}\\n\"\n                    \"Function type: {typename}\"\n                ).format(\n                    name=funcitem.name,\n                    nodeid=funcitem.nodeid,\n                    typename=type(funcitem).__name__,\n                )\n                fail(msg, pytrace=False)\n            if has_params:\n                frame = inspect.stack()[3]\n                frameinfo = inspect.getframeinfo(frame[0])\n                source_path = py.path.local(frameinfo.filename)\n                source_lineno = frameinfo.lineno\n                rel_source_path = source_path.relto(funcitem.config.rootdir)\n                if rel_source_path:\n                    source_path_str = rel_source_path\n                else:\n                    source_path_str = str(source_path)\n                msg = (\n                    \"The requested fixture has no parameter defined for test:\\n\"\n                    \"    {}\\n\\n\"\n                    \"Requested fixture '{}' defined in:\\n{}\"\n                    \"\\n\\nRequested here:\\n{}:{}\".format(\n                        funcitem.nodeid,\n                        fixturedef.argname,\n                        getlocation(fixturedef.func, funcitem.config.rootdir),\n                        source_path_str,\n                        source_lineno,\n                    )\n                )\n                fail(msg, pytrace=False)\n        else:\n            param_index = funcitem.callspec.indices[argname]\n            # if a parametrize invocation set a scope it will override\n            # the static scope defined with the fixture function\n            paramscopenum = funcitem.callspec._arg2scopenum.get(argname)\n            if paramscopenum is not None:\n                scope = scopes[paramscopenum]\n\n        subrequest = SubRequest(self, scope, param, param_index, fixturedef)\n\n        # check if a higher-level scoped fixture accesses a lower level one\n        subrequest._check_scope(argname, self.scope, scope)\n        try:\n            # call the fixture function\n            fixturedef.execute(request=subrequest)\n        finally:\n            self._schedule_finalizers(fixturedef, subrequest)",
+        "start_line": 524,
+        "start_column": 19690,
+        "end_line": 4,
+        "end_column": 22902,
+        "start_byte": 19690,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.fixtures.FixtureRequest._schedule_finalizers",
+        "file_path": "src/_pytest/fixtures.py",
+        "file_content": "def _schedule_finalizers(self, fixturedef, subrequest):\n        # if fixture function failed it might have registered finalizers\n        self.session._setupstate.addfinalizer(\n            functools.partial(fixturedef.finish, request=subrequest), subrequest.node\n        )",
+        "start_line": 594,
+        "start_column": 22908,
+        "end_line": 4,
+        "end_column": 23179,
+        "start_byte": 22908,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.fixtures.FixtureRequest._check_scope",
+        "file_path": "src/_pytest/fixtures.py",
+        "file_content": "def _check_scope(self, argname, invoking_scope, requested_scope):\n        if argname == \"request\":\n            return\n        if scopemismatch(invoking_scope, requested_scope):\n            # try to report something helpful\n            lines = self._factorytraceback()\n            fail(\n                \"ScopeMismatch: You tried to access the %r scoped \"\n                \"fixture %r with a %r scoped request object, \"\n                \"involved factories\\n%s\"\n                % ((requested_scope, argname, invoking_scope, \"\\n\".join(lines))),\n                pytrace=False,\n            )",
+        "start_line": 600,
+        "start_column": 23185,
+        "end_line": 4,
+        "end_column": 23769,
+        "start_byte": 23185,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.fixtures.FixtureRequest._factorytraceback",
+        "file_path": "src/_pytest/fixtures.py",
+        "file_content": "def _factorytraceback(self):\n        lines = []\n        for fixturedef in self._get_fixturestack():\n            factory = fixturedef.func\n            fs, lineno = getfslineno(factory)\n            p = self._pyfuncitem.session.fspath.bestrelpath(fs)\n            args = _format_args(factory)\n            lines.append(\"%s:%d:  def %s%s\" % (p, lineno + 1, factory.__name__, args))\n        return lines",
+        "start_line": 614,
+        "start_column": 23775,
+        "end_line": 4,
+        "end_column": 24171,
+        "start_byte": 23775,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.fixtures.FixtureRequest._getscopeitem",
+        "file_path": "src/_pytest/fixtures.py",
+        "file_content": "def _getscopeitem(self, scope):\n        if scope == \"function\":\n            # this might also be a non-function Item despite its attribute name\n            return self._pyfuncitem\n        if scope == \"package\":\n            node = get_scope_package(self._pyfuncitem, self._fixturedef)\n        else:\n            node = get_scope_node(self._pyfuncitem, scope)\n        if node is None and scope == \"class\":\n            # fallback to function item itself\n            node = self._pyfuncitem\n        assert node, 'Could not obtain a node for scope \"{}\" for function {!r}'.format(\n            scope, self._pyfuncitem\n        )\n        return node",
+        "start_line": 624,
+        "start_column": 24177,
+        "end_line": 4,
+        "end_column": 24816,
+        "start_byte": 24177,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.fixtures.FixtureRequest.__repr__",
+        "file_path": "src/_pytest/fixtures.py",
+        "file_content": "def __repr__(self):\n        return \"<FixtureRequest for %r>\" % (self.node)",
+        "start_line": 640,
+        "start_column": 24822,
+        "end_line": 4,
+        "end_column": 24896,
+        "start_byte": 24822,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.fixtures.FixtureDef.execute",
+        "file_path": "src/_pytest/fixtures.py",
+        "file_content": "def execute(self, request):\n        # get required arguments and register our own finish()\n        # with their finalization\n        for argname in self.argnames:\n            fixturedef = request._get_active_fixturedef(argname)\n            if argname != \"request\":\n                fixturedef.addfinalizer(functools.partial(self.finish, request=request))\n\n        my_cache_key = self.cache_key(request)\n        if self.cached_result is not None:\n            result, cache_key, err = self.cached_result\n            # note: comparison with `==` can fail (or be expensive) for e.g.\n            # numpy arrays (#6497)\n            if my_cache_key is cache_key:\n                if err is not None:\n                    _, val, tb = err\n                    raise val.with_traceback(tb)\n                else:\n                    return result\n            # we have a previous but differently parametrized fixture instance\n            # so we need to tear it down before creating a new one\n            self.finish(request)\n            assert self.cached_result is None\n\n        hook = self._fixturemanager.session.gethookproxy(request.node.fspath)\n        return hook.pytest_fixture_setup(fixturedef=self, request=request)",
+        "start_line": 900,
+        "start_column": 34136,
+        "end_line": 4,
+        "end_column": 35347,
+        "start_byte": 34136,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.monkeypatch.MonkeyPatch.chdir",
+        "file_path": "src/_pytest/monkeypatch.py",
+        "file_content": "def chdir(self, path):\n        \"\"\" Change the current working directory to the specified path.\n        Path can be a string or a py.path.local object.\n        \"\"\"\n        if self._cwd is None:\n            self._cwd = os.getcwd()\n        if hasattr(path, \"chdir\"):\n            path.chdir()\n        elif isinstance(path, Path):\n            # modern python uses the fspath protocol here LEGACY\n            os.chdir(str(path))\n        else:\n            os.chdir(path)",
+        "start_line": 274,
+        "start_column": 9526,
+        "end_line": 4,
+        "end_column": 9989,
+        "start_byte": 9526,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.monkeypatch.MonkeyPatch.undo",
+        "file_path": "src/_pytest/monkeypatch.py",
+        "file_content": "def undo(self):\n        \"\"\" Undo previous changes.  This call consumes the\n        undo stack. Calling it a second time has no effect unless\n        you do more monkeypatching after the undo call.\n\n        There is generally no need to call `undo()`, since it is\n        called automatically during tear-down.\n\n        Note that the same `monkeypatch` fixture is used across a\n        single test function invocation. If `monkeypatch` is used both by\n        the test function itself and one of the test fixtures,\n        calling `undo()` will undo all of the changes made in\n        both functions.\n        \"\"\"\n        for obj, name, value in reversed(self._setattr):\n            if value is not notset:\n                setattr(obj, name, value)\n            else:\n                delattr(obj, name)\n        self._setattr[:] = []\n        for dictionary, name, value in reversed(self._setitem):\n            if value is notset:\n                try:\n                    del dictionary[name]\n                except KeyError:\n                    pass  # was already deleted, so we have the desired state\n            else:\n                dictionary[name] = value\n        self._setitem[:] = []\n        if self._savesyspath is not None:\n            sys.path[:] = self._savesyspath\n            self._savesyspath = None\n\n        if self._cwd is not None:\n            os.chdir(self._cwd)\n            self._cwd = None",
+        "start_line": 288,
+        "start_column": 9995,
+        "end_line": 4,
+        "end_column": 11401,
+        "start_byte": 9995,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.python.PyobjMixin.getmodpath",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "def getmodpath(self, stopatmodule=True, includemodule=False):\n        \"\"\" return python path relative to the containing module. \"\"\"\n        chain = self.listchain()\n        chain.reverse()\n        parts = []\n        for node in chain:\n            if isinstance(node, Instance):\n                continue\n            name = node.name\n            if isinstance(node, Module):\n                name = os.path.splitext(name)[0]\n                if stopatmodule:\n                    if includemodule:\n                        parts.append(name)\n                    break\n            parts.append(name)\n        parts.reverse()\n        return \".\".join(parts)",
+        "start_line": 278,
+        "start_column": 9795,
+        "end_line": 4,
+        "end_column": 10442,
+        "start_byte": 9795,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.python.PyobjMixin.reportinfo",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "def reportinfo(self) -> Tuple[Union[py.path.local, str], int, str]:\n        # XXX caching?\n        obj = self.obj\n        compat_co_firstlineno = getattr(obj, \"compat_co_firstlineno\", None)\n        if isinstance(compat_co_firstlineno, int):\n            # nose compatibility\n            file_path = sys.modules[obj.__module__].__file__\n            if file_path.endswith(\".pyc\"):\n                file_path = file_path[:-1]\n            fspath = file_path  # type: Union[py.path.local, str]\n            lineno = compat_co_firstlineno\n        else:\n            fspath, lineno = getfslineno(obj)\n        modpath = self.getmodpath()\n        assert isinstance(lineno, int)\n        return fspath, lineno, modpath",
+        "start_line": 297,
+        "start_column": 10448,
+        "end_line": 4,
+        "end_column": 11151,
+        "start_byte": 10448,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.python.Function._prunetraceback",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "def _prunetraceback(self, excinfo: ExceptionInfo) -> None:\n        if hasattr(self, \"_obj\") and not self.config.getoption(\"fulltrace\", False):\n            code = _pytest._code.Code(get_real_func(self.obj))\n            path, firstlineno = code.path, code.firstlineno\n            traceback = excinfo.traceback\n            ntraceback = traceback.cut(path=path, firstlineno=firstlineno)\n            if ntraceback == traceback:\n                ntraceback = ntraceback.cut(path=path)\n                if ntraceback == traceback:\n                    ntraceback = ntraceback.filter(filter_traceback)\n                    if not ntraceback:\n                        ntraceback = traceback\n\n            excinfo.traceback = ntraceback.filter()\n            # issue364: mark all but first and last frames to\n            # only show a single-line message for each frame\n            if self.config.getoption(\"tbstyle\", \"auto\") == \"auto\":\n                if len(excinfo.traceback) > 2:\n                    for entry in excinfo.traceback[1:-1]:\n                        entry.set_repr_style(\"short\")",
+        "start_line": 1506,
+        "start_column": 56006,
+        "end_line": 4,
+        "end_column": 57084,
+        "start_byte": 56006,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.unittest.TestCaseFunction._prunetraceback",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "s(name, obj))\n            outcome.force_result(res)\n\n\nclass PyobjMixin:\n    _ALLOW_MARKERS = True\n\n    @property\n    def module(self):\n        \"\"\"Python module object this node was collected from (can be None).\"\"\"\n        node = self.getparent(Module)\n        retur",
+        "start_line": 234,
+        "start_column": 8436,
+        "end_line": 4,
+        "end_column": 8701,
+        "start_byte": 8436,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pathlib._AnyPurePath",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "E_CHECKING\nfrom _pytest.config import _PluggyPlugin\nfr",
+        "start_line": 33,
+        "start_column": 654,
+        "end_line": 0,
+        "end_column": 708,
+        "start_byte": 654,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.pathlib.make_numbered_dir",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "r:\")\n            error.extend([str(f) for f in lines2])\n            error.append(error[0])\n            error.append(\"*** function %s:%s: %s \" % item.location)\n            error.append(\"See issue #2366\")\n            item.warn(pytest.PytestWarning(\"\\n\".join(error)))\n\n\n# used at least by pytest-xdist plugin\n\n\n@pytest.fixture\ndef _pytest(request: FixtureRequest) -> \"PytestArg\":\n    \"\"\"Return a helper which offers a gethookrecorder(hook) method which\n    returns a HookRecorder instance which helps to make assertions about called\n    hooks.\n\n    \"\"\"\n    return PytestArg(request)\n\n\nclass PytestArg:\n    def __init__(self, request: FixtureRequest) -> None:\n        self.request = request\n\n    def gethookrecorder(self, hook) -> \"HookRecorder\":\n        hookrecorder = HookRecor",
+        "start_line": 165,
+        "start_column": 4382,
+        "end_line": 0,
+        "end_column": 5157,
+        "start_byte": 4382,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.pathlib.make_numbered_dir_with_cleanup",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "en and rep.when != \"call\" and rep.passed:\n                # setup/teardown passing reports - let's ignore those\n                continue\n            if when and rep.when != when:\n                continue\n            if not inamepart or inamepart in rep.nodeid.split(\"::\"):\n                values.append(rep)\n        if not values:\n            raise ValueError(\n                \"could not find test report matching %r: \"\n                \"no test reports at all!\" % (inamepart,)\n            )\n        if len(values) > 1:\n            raise ValueError(\n                \"found 2 or more testreports matching {!r}: {}\".format(\n                    inamepart, values\n                )\n            )\n        return values[0]\n\n    def getfailures(\n        self,\n        names: Union[\n            str, Iterable[str]\n      ",
+        "start_line": 293,
+        "start_column": 8831,
+        "end_line": 0,
+        "end_column": 9642,
+        "start_byte": 8831,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.pytester.CwdSnapshot",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "class CwdSnapshot:\n    def __init__(self) -> None:\n        self.__saved = os.getcwd()\n\n    def restore(self) -> None:\n        os.chdir(self.__saved)",
+        "start_line": 501,
+        "start_column": 15548,
+        "end_line": 0,
+        "end_column": 15696,
+        "start_byte": 15548,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.pytester.CwdSnapshot.__init__",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def __init__(self) -> None:\n        self.__saved = os.getcwd()",
+        "start_line": 502,
+        "start_column": 15571,
+        "end_line": 4,
+        "end_column": 15633,
+        "start_byte": 15571,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.CwdSnapshot.restore",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def restore(self) -> None:\n        os.chdir(self.__saved)",
+        "start_line": 505,
+        "start_column": 15639,
+        "end_line": 4,
+        "end_column": 15696,
+        "start_byte": 15639,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.SysPathsSnapshot",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "class SysPathsSnapshot:\n    def __init__(self) -> None:\n        self.__saved = list(sys.path), list(sys.meta_path)\n\n    def restore(self) -> None:\n        sys.path[:], sys.meta_path[:] = self.__saved",
+        "start_line": 523,
+        "start_column": 16130,
+        "end_line": 0,
+        "end_column": 16329,
+        "start_byte": 16130,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.pytester.SysPathsSnapshot.__init__",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def __init__(self) -> None:\n        self.__saved = list(sys.path), list(sys.meta_path)",
+        "start_line": 524,
+        "start_column": 16158,
+        "end_line": 4,
+        "end_column": 16244,
+        "start_byte": 16158,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.SysPathsSnapshot.restore",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def restore(self) -> None:\n        sys.path[:], sys.meta_path[:] = self.__saved",
+        "start_line": 527,
+        "start_column": 16250,
+        "end_line": 4,
+        "end_column": 16329,
+        "start_byte": 16250,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "class Testdir:\n    \"\"\"Temporary test directory with tools to test/run pytest itself.\n\n    This is based on the ``tmpdir`` fixture but provides a number of methods\n    which aid with testing pytest itself.  Unless :py:meth:`chdir` is used all\n    methods will use :py:attr:`tmpdir` as their current working directory.\n\n    Attributes:\n\n    :ivar tmpdir: The :py:class:`py.path.local` instance of the temporary directory.\n\n    :ivar plugins: A list of plugins to use with :py:meth:`parseconfig` and\n       :py:meth:`runpytest`.  Initially this is an empty list but plugins can\n       be added to the list.  The type of items to add to the list depends on\n       the method using them so refer to them for details.\n\n    \"\"\"\n\n    __test__ = False\n\n    CLOSE_STDIN = object\n\n    class TimeoutExpired(Exception):\n        pass\n\n    def __init__(self, request: FixtureRequest, tmpdir_factory: TempdirFactory) -> None:\n        self.request = request\n        self._mod_collections = (\n            WeakKeyDictionary()\n        )  # type: WeakKeyDictionary[Module, List[Union[Item, Collector]]]\n        if request.function:\n            name = request.function.__name__  # type: str\n        else:\n            name = request.node.name\n        self._name = name\n        self.tmpdir = tmpdir_factory.mktemp(name, numbered=True)\n        self.test_tmproot = tmpdir_factory.mktemp(\"tmp-\" + name, numbered=True)\n        self.plugins = []  # type: List[Union[str, _PluggyPlugin]]\n        self._cwd_snapshot = CwdSnapshot()\n        self._sys_path_snapshot = SysPathsSnapshot()\n        self._sys_modules_snapshot = self.__take_sys_modules_snapshot()\n        self.chdir()\n        self.request.addfinalizer(self.finalize)\n        self._method = self.request.config.getoption(\"--runpytest\")\n\n        mp = self.monkeypatch = MonkeyPatch()\n        mp.setenv(\"PYTEST_DEBUG_TEMPROOT\", str(self.test_tmproot))\n        # Ensure no unexpected caching via tox.\n        mp.delenv(\"TOX_ENV_DIR\", raising=False)\n        # Discard outer pytest options.\n        mp.delenv(\"PYTEST_ADDOPTS\", raising=False)\n        # Ensure no user config is used.\n        tmphome = str(self.tmpdir)\n        mp.setenv(\"HOME\", tmphome)\n        mp.setenv(\"USERPROFILE\", tmphome)\n        # Do not use colors for inner runs by default.\n        mp.setenv(\"PY_COLORS\", \"0\")\n\n    def __repr__(self):\n        return \"<Testdir {!r}>\".format(self.tmpdir)\n\n    def __str__(self):\n        return str(self.tmpdir)\n\n    def finalize(self):\n        \"\"\"Clean up global state artifacts.\n\n        Some methods modify the global interpreter state and this tries to\n        clean this up.  It does not remove the temporary directory however so\n        it can be looked at after the test run has finished.\n\n        \"\"\"\n        self._sys_modules_snapshot.restore()\n        self._sys_path_snapshot.restore()\n        self._cwd_snapshot.restore()\n        self.monkeypatch.undo()\n\n    def __take_sys_modules_snapshot(self):\n        # some zope modules used by twisted-related tests keep internal state\n        # and can't be deleted; we had some trouble in the past with\n        # `zope.interface` for example\n        def preserve_module(name):\n            return name.startswith(\"zope\")\n\n        return SysModulesSnapshot(preserve=preserve_module)\n\n    def make_hook_recorder(self, pluginmanager):\n        \"\"\"Create a new :py:class:`HookRecorder` for a PluginManager.\"\"\"\n        pluginmanager.reprec = reprec = HookRecorder(pluginmanager)\n        self.request.addfinalizer(reprec.finish_recording)\n        return reprec\n\n    def chdir(self):\n        \"\"\"Cd into the temporary directory.\n\n        This is done automatically upon instantiation.\n\n        \"\"\"\n        self.tmpdir.chdir()\n\n    def _makefile(self, ext, lines, files, encoding=\"utf-8\"):\n        items = list(files.items())\n\n        def to_text(s):\n            return s.decode(encoding) if isinstance(s, bytes) else str(s)\n\n        if lines:\n            source = \"\\n\".join(to_text(x) for x in lines)\n            basename = self._name\n            items.insert(0, (basename, source))\n\n        ret = None\n        for basename, value in items:\n            p = self.tmpdir.join(basename).new(ext=ext)\n            p.dirpath().ensure_dir()\n            source = Source(value)\n            source = \"\\n\".join(to_text(line) for line in source.lines)\n            p.write(source.strip().encode(encoding), \"wb\")\n            if ret is None:\n                ret = p\n        return ret\n\n    def makefile(self, ext, *args, **kwargs):\n        r\"\"\"Create new file(s) in the testdir.\n\n        :param str ext: The extension the file(s) should use, including the dot, e.g. `.py`.\n        :param list[str] args: All args will be treated as strings and joined using newlines.\n           The result will be written as contents to the file.  The name of the\n           file will be based on the test function requesting this fixture.\n        :param kwargs: Each keyword is the name of a file, while the value of it will\n           be written as contents of the file.\n\n        Examples:\n\n        .. code-block:: python\n\n            testdir.makefile(\".txt\", \"line1\", \"line2\")\n\n            testdir.makefile(\".ini\", pytest=\"[pytest]\\naddopts=-rs\\n\")\n\n        \"\"\"\n        return self._makefile(ext, args, kwargs)\n\n    def makeconftest(self, source):\n        \"\"\"Write a contest.py file with 'source' as contents.\"\"\"\n        return self.makepyfile(conftest=source)\n\n    def makeini(self, source):\n        \"\"\"Write a tox.ini file with 'source' as contents.\"\"\"\n        return self.makefile(\".ini\", tox=source)\n\n    def getinicfg(self, source):\n        \"\"\"Return the pytest section from the tox.ini config file.\"\"\"\n        p = self.makeini(source)\n        return py.iniconfig.IniConfig(p)[\"pytest\"]\n\n    def makepyfile(self, *args, **kwargs):\n        r\"\"\"Shortcut for .makefile() with a .py extension.\n        Defaults to the test name with a '.py' extension, e.g test_foobar.py, overwriting\n        existing files.\n\n        Examples:\n\n        .. code-block:: python\n\n            def test_something(testdir):\n                # initial file is created test_something.py\n                testdir.makepyfile(\"foobar\")\n                # to create multiple files, pass kwargs accordingly\n                testdir.makepyfile(custom=\"foobar\")\n                # at this point, both 'test_something.py' & 'custom.py' exist in the test directory\n\n        \"\"\"\n        return self._makefile(\".py\", args, kwargs)\n\n    def maketxtfile(self, *args, **kwargs):\n        r\"\"\"Shortcut for .makefile() with a .txt extension.\n        Defaults to the test name with a '.txt' extension, e.g test_foobar.txt, overwriting\n        existing files.\n\n        Examples:\n\n        .. code-block:: python\n\n            def test_something(testdir):\n                # initial file is created test_something.txt\n                testdir.maketxtfile(\"foobar\")\n                # to create multiple files, pass kwargs accordingly\n                testdir.maketxtfile(custom=\"foobar\")\n                # at this point, both 'test_something.txt' & 'custom.txt' exist in the test directory\n\n        \"\"\"\n        return self._makefile(\".txt\", args, kwargs)\n\n    def syspathinsert(self, path=None):\n        \"\"\"Prepend a directory to sys.path, defaults to :py:attr:`tmpdir`.\n\n        This is undone automatically when this object dies at the end of each\n        test.\n        \"\"\"\n        if path is None:\n            path = self.tmpdir\n\n        self.monkeypatch.syspath_prepend(str(path))\n\n    def mkdir(self, name):\n        \"\"\"Create a new (sub)directory.\"\"\"\n        return self.tmpdir.mkdir(name)\n\n    def mkpydir(self, name):\n        \"\"\"Create a new python package.\n\n        This creates a (sub)directory with an empty ``__init__.py`` file so it\n        gets recognised as a python package.\n\n        \"\"\"\n        p = self.mkdir(name)\n        p.ensure(\"__init__.py\")\n        return p\n\n    def copy_example(self, name=None):\n        \"\"\"Copy file from project's directory into the testdir.\n\n        :param str name: The name of the file to copy.\n        :return: path to the copied directory (inside ``self.tmpdir``).\n\n        \"\"\"\n        import warnings\n        from _pytest.warning_types import PYTESTER_COPY_EXAMPLE\n\n        warnings.warn(PYTESTER_COPY_EXAMPLE, stacklevel=2)\n        example_dir = self.request.config.getini(\"pytester_example_dir\")\n        if example_dir is None:\n            raise ValueError(\"pytester_example_dir is unset, can't copy examples\")\n        example_dir = self.request.config.rootdir.join(example_dir)\n\n        for extra_element in self.request.node.iter_markers(\"pytester_example_path\"):\n            assert extra_element.args\n            example_dir = example_dir.join(*extra_element.args)\n\n        if name is None:\n            func_name = self._name\n            maybe_dir = example_dir / func_name\n            maybe_file = example_dir / (func_name + \".py\")\n\n            if maybe_dir.isdir():\n                example_path = maybe_dir\n            elif maybe_file.isfile():\n                example_path = maybe_file\n            else:\n                raise LookupError(\n                    \"{} cant be found as module or package in {}\".format(\n                        func_name, example_dir.bestrelpath(self.request.config.rootdir)\n                    )\n                )\n        else:\n            example_path = example_dir.join(name)\n\n        if example_path.isdir() and not example_path.join(\"__init__.py\").isfile():\n            example_path.copy(self.tmpdir)\n            return self.tmpdir\n        elif example_path.isfile():\n            result = self.tmpdir.join(example_path.basename)\n            example_path.copy(result)\n            return result\n        else:\n            raise LookupError(\n                'example \"{}\" is not found as a file or directory'.format(example_path)\n            )\n\n    Session = Session\n\n    def getnode(self, config, arg):\n        \"\"\"Return the collection node of a file.\n\n        :param config: :py:class:`_pytest.config.Config` instance, see\n           :py:meth:`parseconfig` and :py:meth:`parseconfigure` to create the\n           configuration\n\n        :param arg: a :py:class:`py.path.local` instance of the file\n\n        \"\"\"\n        session = Session.from_config(config)\n        assert \"::\" not in str(arg)\n        p = py.path.local(arg)\n        config.hook.pytest_sessionstart(session=session)\n        res = session.perform_collect([str(p)], genitems=False)[0]\n        config.hook.pytest_sessionfinish(session=session, exitstatus=ExitCode.OK)\n        return res\n\n    def getpathnode(self, path):\n        \"\"\"Return the collection node of a file.\n\n        This is like :py:meth:`getnode` but uses :py:meth:`parseconfigure` to\n        create the (configured) pytest Config instance.\n\n        :param path: a :py:class:`py.path.local` instance of the file\n\n        \"\"\"\n        config = self.parseconfigure(path)\n        session = Session.from_config(config)\n        x = session.fspath.bestrelpath(path)\n        config.hook.pytest_sessionstart(session=session)\n        res = session.perform_collect([x], genitems=False)[0]\n        config.hook.pytest_sessionfinish(session=session, exitstatus=ExitCode.OK)\n        return res\n\n    def genitems(self, colitems):\n        \"\"\"Generate all test items from a collection node.\n\n        This recurses into the collection node and returns a list of all the\n        test items contained within.\n\n        \"\"\"\n        session = colitems[0].session\n        result = []\n        for colitem in colitems:\n            result.extend(session.genitems(colitem))\n        return result\n\n    def runitem(self, source):\n        \"\"\"Run the \"test_func\" Item.\n\n        The calling test instance (class containing the test method) must\n        provide a ``.getrunner()`` method which should return a runner which\n        can run the test protocol for a single item, e.g.\n        :py:func:`_pytest.runner.runtestprotocol`.\n\n        \"\"\"\n        # used from runner functional tests\n        item = self.getitem(source)\n        # the test class where we are called from wants to provide the runner\n        testclassinstance = self.request.instance\n        runner = testclassinstance.getrunner()\n        return runner(item)\n\n    def inline_runsource(self, source, *cmdlineargs):\n        \"\"\"Run a test module in process using ``pytest.main()``.\n\n        This run writes \"source\" into a temporary file and runs\n        ``pytest.main()`` on it, returning a :py:class:`HookRecorder` instance\n        for the result.\n\n        :param source: the source code of the test module\n\n        :param cmdlineargs: any extra command line arguments to use\n\n        :return: :py:class:`HookRecorder` instance of the result\n\n        \"\"\"\n        p = self.makepyfile(source)\n        values = list(cmdlineargs) + [p]\n        return self.inline_run(*values)\n\n    def inline_genitems(self, *args):\n        \"\"\"Run ``pytest.main(['--collectonly'])`` in-process.\n\n        Runs the :py:func:`pytest.main` function to run all of pytest inside\n        the test process itself like :py:meth:`inline_run`, but returns a\n        tuple of the collected items and a :py:class:`HookRecorder` instance.\n\n        \"\"\"\n        rec = self.inline_run(\"--collect-only\", *args)\n        items = [x.item for x in rec.getcalls(\"pytest_itemcollected\")]\n        return items, rec\n\n    def inline_run(self, *args, plugins=(), no_reraise_ctrlc: bool = False):\n        \"\"\"Run ``pytest.main()`` in-process, returning a HookRecorder.\n\n        Runs the :py:func:`pytest.main` function to run all of pytest inside\n        the test process itself.  This means it can return a\n        :py:class:`HookRecorder` instance which gives more detailed results\n        from that run than can be done by matching stdout/stderr from\n        :py:meth:`runpytest`.\n\n        :param args: command line arguments to pass to :py:func:`pytest.main`\n\n        :kwarg plugins: extra plugin instances the ``pytest.main()`` instance should use.\n\n        :kwarg no_reraise_ctrlc: typically we reraise keyboard interrupts from the child run. If\n            True, the KeyboardInterrupt exception is captured.\n\n        :return: a :py:class:`HookRecorder` instance\n        \"\"\"\n        # (maybe a cpython bug?) the importlib cache sometimes isn't updated\n        # properly between file creation and inline_run (especially if imports\n        # are interspersed with file creation)\n        importlib.invalidate_caches()\n\n        plugins = list(plugins)\n        finalizers = []\n        try:\n            # Any sys.module or sys.path changes done while running pytest\n            # inline should be reverted after the test run completes to avoid\n            # clashing with later inline tests run within the same pytest test,\n            # e.g. just because they use matching test module names.\n            finalizers.append(self.__take_sys_modules_snapshot().restore)\n            finalizers.append(SysPathsSnapshot().restore)\n\n            # Important note:\n            # - our tests should not leave any other references/registrations\n            #   laying around other than possibly loaded test modules\n            #   referenced from sys.modules, as nothing will clean those up\n            #   automatically\n\n            rec = []\n\n            class Collect:\n                def pytest_configure(x, config):\n                    rec.append(self.make_hook_recorder(config.pluginmanager))\n\n            plugins.append(Collect())\n            ret = pytest.main(list(args), plugins=plugins)\n            if len(rec) == 1:\n                reprec = rec.pop()\n            else:\n\n                class reprec:  # type: ignore\n                    pass\n\n            reprec.ret = ret\n\n            # typically we reraise keyboard interrupts from the child run\n            # because it's our user requesting interruption of the testing\n            if ret == ExitCode.INTERRUPTED and not no_reraise_ctrlc:\n                calls = reprec.getcalls(\"pytest_keyboard_interrupt\")\n                if calls and calls[-1].excinfo.type == KeyboardInterrupt:\n                    raise KeyboardInterrupt()\n            return reprec\n        finally:\n            for finalizer in finalizers:\n                finalizer()\n\n    def runpytest_inprocess(self, *args, **kwargs) -> RunResult:\n        \"\"\"Return result of running pytest in-process, providing a similar\n        interface to what self.runpytest() provides.\n        \"\"\"\n        syspathinsert = kwargs.pop(\"syspathinsert\", False)\n\n        if syspathinsert:\n            self.syspathinsert()\n        now = time.time()\n        capture = _get_multicapture(\"sys\")\n        capture.start_capturing()\n        try:\n            try:\n                reprec = self.inline_run(*args, **kwargs)\n            except SystemExit as e:\n                ret = e.args[0]\n                try:\n                    ret = ExitCode(e.args[0])\n                except ValueError:\n                    pass\n\n                class reprec:  # type: ignore\n                    ret = ret\n\n            except Exception:\n                traceback.print_exc()\n\n                class reprec:  # type: ignore\n                    ret = ExitCode(3)\n\n        finally:\n            out, err = capture.readouterr()\n            capture.stop_capturing()\n            sys.stdout.write(out)\n            sys.stderr.write(err)\n\n        res = RunResult(\n            reprec.ret, out.splitlines(), err.splitlines(), time.time() - now\n        )\n        res.reprec = reprec  # type: ignore\n        return res\n\n    def runpytest(self, *args, **kwargs) -> RunResult:\n        \"\"\"Run pytest inline or in a subprocess, depending on the command line\n        option \"--runpytest\" and return a :py:class:`RunResult`.\n\n        \"\"\"\n        args = self._ensure_basetemp(args)\n        if self._method == \"inprocess\":\n            return self.runpytest_inprocess(*args, **kwargs)\n        elif self._method == \"subprocess\":\n            return self.runpytest_subprocess(*args, **kwargs)\n        raise RuntimeError(\"Unrecognized runpytest option: {}\".format(self._method))\n\n    def _ensure_basetemp(self, args):\n        args = list(args)\n        for x in args:\n            if str(x).startswith(\"--basetemp\"):\n                break\n        else:\n            args.append(\"--basetemp=%s\" % self.tmpdir.dirpath(\"basetemp\"))\n        return args\n\n    def parseconfig(self, *args: Union[str, py.path.local]) -> Config:\n        \"\"\"Return a new pytest Config instance from given commandline args.\n\n        This invokes the pytest bootstrapping code in _pytest.config to create\n        a new :py:class:`_pytest.core.PluginManager` and call the\n        pytest_cmdline_parse hook to create a new\n        :py:class:`_pytest.config.Config` instance.\n\n        If :py:attr:`plugins` has been populated they should be plugin modules\n        to be registered with the PluginManager.\n\n        \"\"\"\n        args = self._ensure_basetemp(args)\n\n        import _pytest.config\n\n        config = _pytest.config._prepareconfig(args, self.plugins)  # type: Config\n        # we don't know what the test will do with this half-setup config\n        # object and thus we make sure it gets unconfigured properly in any\n        # case (otherwise capturing could still be active, for example)\n        self.request.addfinalizer(config._ensure_unconfigure)\n        return config\n\n    def parseconfigure(self, *args):\n        \"\"\"Return a new pytest configured Config instance.\n\n        This returns a new :py:class:`_pytest.config.Config` instance like\n        :py:meth:`parseconfig`, but also calls the pytest_configure hook.\n        \"\"\"\n        config = self.parseconfig(*args)\n        config._do_configure()\n        return config\n\n    def getitem(self, source, funcname=\"test_func\"):\n        \"\"\"Return the test item for a test function.\n\n        This writes the source to a python file and runs pytest's collection on\n        the resulting module, returning the test item for the requested\n        function name.\n\n        :param source: the module source\n\n        :param funcname: the name of the test function for which to return a\n            test item\n\n        \"\"\"\n        items = self.getitems(source)\n        for item in items:\n            if item.name == funcname:\n                return item\n        assert 0, \"{!r} item not found in module:\\n{}\\nitems: {}\".format(\n            funcname, source, items\n        )\n\n    def getitems(self, source):\n        \"\"\"Return all test items collected from the module.\n\n        This writes the source to a python file and runs pytest's collection on\n        the resulting module, returning all test items contained within.\n\n        \"\"\"\n        modcol = self.getmodulecol(source)\n        return self.genitems([modcol])\n\n    def getmodulecol(self, source, configargs=(), withinit=False):\n        \"\"\"Return the module collection node for ``source``.\n\n        This writes ``source`` to a file using :py:meth:`makepyfile` and then\n        runs the pytest collection on it, returning the collection node for the\n        test module.\n\n        :param source: the source code of the module to collect\n\n        :param configargs: any extra arguments to pass to\n            :py:meth:`parseconfigure`\n\n        :param withinit: whether to also write an ``__init__.py`` file to the\n            same directory to ensure it is a package\n\n        \"\"\"\n        if isinstance(source, Path):\n            path = self.tmpdir.join(str(source))\n            assert not withinit, \"not supported for paths\"\n        else:\n            kw = {self._name: Source(source).strip()}\n            path = self.makepyfile(**kw)\n        if withinit:\n            self.makepyfile(__init__=\"#\")\n        self.config = config = self.parseconfigure(path, *configargs)\n        return self.getnode(config, path)\n\n    def collect_by_name(\n        self, modcol: Module, name: str\n    ) -> Optional[Union[Item, Collector]]:\n        \"\"\"Return the collection node for name from the module collection.\n\n        This will search a module collection node for a collection node\n        matching the given name.\n\n        :param modcol: a module collection node; see :py:meth:`getmodulecol`\n\n        :param name: the name of the node to return\n        \"\"\"\n        if modcol not in self._mod_collections:\n            self._mod_collections[modcol] = list(modcol.collect())\n        for colitem in self._mod_collections[modcol]:\n            if colitem.name == name:\n                return colitem\n        return None\n\n    def popen(\n        self,\n        cmdargs,\n        stdout=subprocess.PIPE,\n        stderr=subprocess.PIPE,\n        stdin=CLOSE_STDIN,\n        **kw\n    ):\n        \"\"\"Invoke subprocess.Popen.\n\n        This calls subprocess.Popen making sure the current working directory\n        is in the PYTHONPATH.\n\n        You probably want to use :py:meth:`run` instead.\n\n        \"\"\"\n        env = os.environ.copy()\n        env[\"PYTHONPATH\"] = os.pathsep.join(\n            filter(None, [os.getcwd(), env.get(\"PYTHONPATH\", \"\")])\n        )\n        kw[\"env\"] = env\n\n        if stdin is Testdir.CLOSE_STDIN:\n            kw[\"stdin\"] = subprocess.PIPE\n        elif isinstance(stdin, bytes):\n            kw[\"stdin\"] = subprocess.PIPE\n        else:\n            kw[\"stdin\"] = stdin\n\n        popen = subprocess.Popen(cmdargs, stdout=stdout, stderr=stderr, **kw)\n        if stdin is Testdir.CLOSE_STDIN:\n            popen.stdin.close()\n        elif isinstance(stdin, bytes):\n            popen.stdin.write(stdin)\n\n        return popen\n\n    def run(self, *cmdargs, timeout=None, stdin=CLOSE_STDIN) -> RunResult:\n        \"\"\"Run a command with arguments.\n\n        Run a process using subprocess.Popen saving the stdout and stderr.\n\n        :param args: the sequence of arguments to pass to `subprocess.Popen()`\n        :kwarg timeout: the period in seconds after which to timeout and raise\n            :py:class:`Testdir.TimeoutExpired`\n        :kwarg stdin: optional standard input.  Bytes are being send, closing\n            the pipe, otherwise it is passed through to ``popen``.\n            Defaults to ``CLOSE_STDIN``, which translates to using a pipe\n            (``subprocess.PIPE``) that gets closed.\n\n        Returns a :py:class:`RunResult`.\n\n        \"\"\"\n        __tracebackhide__ = True\n\n        cmdargs = tuple(\n            str(arg) if isinstance(arg, py.path.local) else arg for arg in cmdargs\n        )\n        p1 = self.tmpdir.join(\"stdout\")\n        p2 = self.tmpdir.join(\"stderr\")\n        print(\"running:\", *cmdargs)\n        print(\"     in:\", py.path.local())\n        f1 = open(str(p1), \"w\", encoding=\"utf8\")\n        f2 = open(str(p2), \"w\", encoding=\"utf8\")\n        try:\n            now = time.time()\n            popen = self.popen(\n                cmdargs,\n                stdin=stdin,\n                stdout=f1,\n                stderr=f2,\n                close_fds=(sys.platform != \"win32\"),\n            )\n            if isinstance(stdin, bytes):\n                popen.stdin.close()\n\n            def handle_timeout():\n                __tracebackhide__ = True\n\n                timeout_message = (\n                    \"{seconds} second timeout expired running:\"\n                    \" {command}\".format(seconds=timeout, command=cmdargs)\n                )\n\n                popen.kill()\n                popen.wait()\n                raise self.TimeoutExpired(timeout_message)\n\n            if timeout is None:\n                ret = popen.wait()\n            else:\n                try:\n                    ret = popen.wait(timeout)\n                except subprocess.TimeoutExpired:\n                    handle_timeout()\n        finally:\n            f1.close()\n            f2.close()\n        f1 = open(str(p1), encoding=\"utf8\")\n        f2 = open(str(p2), encoding=\"utf8\")\n        try:\n            out = f1.read().splitlines()\n            err = f2.read().splitlines()\n        finally:\n            f1.close()\n            f2.close()\n        self._dump_lines(out, sys.stdout)\n        self._dump_lines(err, sys.stderr)\n        try:\n            ret = ExitCode(ret)\n        except ValueError:\n            pass\n        return RunResult(ret, out, err, time.time() - now)\n\n    def _dump_lines(self, lines, fp):\n        try:\n            for line in lines:\n                print(line, file=fp)\n        except UnicodeEncodeError:\n            print(\"couldn't print to {} because of encoding\".format(fp))\n\n    def _getpytestargs(self):\n        return sys.executable, \"-mpytest\"\n\n    def runpython(self, script) -> RunResult:\n        \"\"\"Run a python script using sys.executable as interpreter.\n\n        Returns a :py:class:`RunResult`.\n\n        \"\"\"\n        return self.run(sys.executable, script)\n\n    def runpython_c(self, command):\n        \"\"\"Run python -c \"command\", return a :py:class:`RunResult`.\"\"\"\n        return self.run(sys.executable, \"-c\", command)\n\n    def runpytest_subprocess(self, *args, timeout=None) -> RunResult:\n        \"\"\"Run pytest as a subprocess with given arguments.\n\n        Any plugins added to the :py:attr:`plugins` list will be added using the\n        ``-p`` command line option.  Additionally ``--basetemp`` is used to put\n        any temporary files and directories in a numbered directory prefixed\n        with \"runpytest-\" to not conflict with the normal numbered pytest\n        location for temporary files and directories.\n\n        :param args: the sequence of arguments to pass to the pytest subprocess\n        :param timeout: the period in seconds after which to timeout and raise\n            :py:class:`Testdir.TimeoutExpired`\n\n        Returns a :py:class:`RunResult`.\n        \"\"\"\n        __tracebackhide__ = True\n        p = make_numbered_dir(root=Path(self.tmpdir), prefix=\"runpytest-\")\n        args = (\"--basetemp=%s\" % p,) + args\n        plugins = [x for x in self.plugins if isinstance(x, str)]\n        if plugins:\n            args = (\"-p\", plugins[0]) + args\n        args = self._getpytestargs() + args\n        return self.run(*args, timeout=timeout)\n\n    def spawn_pytest(\n        self, string: str, expect_timeout: float = 10.0\n    ) -> \"pexpect.spawn\":\n        \"\"\"Run pytest using pexpect.\n\n        This makes sure to use the right pytest and sets up the temporary\n        directory locations.\n\n        The pexpect child is returned.\n\n        \"\"\"\n        basetemp = self.tmpdir.mkdir(\"temp-pexpect\")\n        invoke = \" \".join(map(str, self._getpytestargs()))\n        cmd = \"{} --basetemp={} {}\".format(invoke, basetemp, string)\n        return self.spawn(cmd, expect_timeout=expect_timeout)\n\n    def spawn(self, cmd: str, expect_timeout: float = 10.0) -> \"pexpect.spawn\":\n        \"\"\"Run a command using pexpect.\n\n        The pexpect child is returned.\n\n        \"\"\"\n        pexpect = pytest.importorskip(\"pexpect\", \"3.0\")\n        if hasattr(sys, \"pypy_version_info\") and \"64\" in platform.machine():\n            pytest.skip(\"pypy-64 bit not supported\")\n        if not hasattr(pexpect, \"spawn\"):\n            pytest.skip(\"pexpect.spawn not available\")\n        logfile = self.tmpdir.join(\"spawn.out\").open(\"wb\")\n\n        child = pexpect.spawn(cmd, logfile=logfile)\n        self.request.addfinalizer(logfile.close)\n        child.timeout = expect_timeout\n        return child",
+        "start_line": 531,
+        "start_column": 16332,
+        "end_line": 0,
+        "end_column": 45402,
+        "start_byte": 16332,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.pytester.Testdir.__test__",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "__test__ = False",
+        "start_line": 549,
+        "start_column": 17058,
+        "end_line": 4,
+        "end_column": 17074,
+        "start_byte": 17058,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.CLOSE_STDIN",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "CLOSE_STDIN = object",
+        "start_line": 551,
+        "start_column": 17080,
+        "end_line": 4,
+        "end_column": 17100,
+        "start_byte": 17080,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.TimeoutExpired",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "class TimeoutExpired(Exception):\n        pass",
+        "start_line": 553,
+        "start_column": 17106,
+        "end_line": 4,
+        "end_column": 17151,
+        "start_byte": 17106,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.__init__",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def __init__(self, request: FixtureRequest, tmpdir_factory: TempdirFactory) -> None:\n        self.request = request\n        self._mod_collections = (\n            WeakKeyDictionary()\n        )  # type: WeakKeyDictionary[Module, List[Union[Item, Collector]]]\n        if request.function:\n            name = request.function.__name__  # type: str\n        else:\n            name = request.node.name\n        self._name = name\n        self.tmpdir = tmpdir_factory.mktemp(name, numbered=True)\n        self.test_tmproot = tmpdir_factory.mktemp(\"tmp-\" + name, numbered=True)\n        self.plugins = []  # type: List[Union[str, _PluggyPlugin]]\n        self._cwd_snapshot = CwdSnapshot()\n        self._sys_path_snapshot = SysPathsSnapshot()\n        self._sys_modules_snapshot = self.__take_sys_modules_snapshot()\n        self.chdir()\n        self.request.addfinalizer(self.finalize)\n        self._method = self.request.config.getoption(\"--runpytest\")\n\n        mp = self.monkeypatch = MonkeyPatch()\n        mp.setenv(\"PYTEST_DEBUG_TEMPROOT\", str(self.test_tmproot))\n        # Ensure no unexpected caching via tox.\n        mp.delenv(\"TOX_ENV_DIR\", raising=False)\n        # Discard outer pytest options.\n        mp.delenv(\"PYTEST_ADDOPTS\", raising=False)\n        # Ensure no user config is used.\n        tmphome = str(self.tmpdir)\n        mp.setenv(\"HOME\", tmphome)\n        mp.setenv(\"USERPROFILE\", tmphome)\n        # Do not use colors for inner runs by default.\n        mp.setenv(\"PY_COLORS\", \"0\")",
+        "start_line": 556,
+        "start_column": 17157,
+        "end_line": 4,
+        "end_column": 18640,
+        "start_byte": 17157,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.__repr__",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def __repr__(self):\n        return \"<Testdir {!r}>\".format(self.tmpdir)",
+        "start_line": 589,
+        "start_column": 18646,
+        "end_line": 4,
+        "end_column": 18717,
+        "start_byte": 18646,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.__str__",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def __str__(self):\n        return str(self.tmpdir)",
+        "start_line": 592,
+        "start_column": 18723,
+        "end_line": 4,
+        "end_column": 18773,
+        "start_byte": 18723,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.finalize",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def finalize(self):\n        \"\"\"Clean up global state artifacts.\n\n        Some methods modify the global interpreter state and this tries to\n        clean this up.  It does not remove the temporary directory however so\n        it can be looked at after the test run has finished.\n\n        \"\"\"\n        self._sys_modules_snapshot.restore()\n        self._sys_path_snapshot.restore()\n        self._cwd_snapshot.restore()\n        self.monkeypatch.undo()",
+        "start_line": 595,
+        "start_column": 18779,
+        "end_line": 4,
+        "end_column": 19226,
+        "start_byte": 18779,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.__take_sys_modules_snapshot",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def __take_sys_modules_snapshot(self):\n        # some zope modules used by twisted-related tests keep internal state\n        # and can't be deleted; we had some trouble in the past with\n        # `zope.interface` for example\n        def preserve_module(name):\n            return name.startswith(\"zope\")\n\n        return SysModulesSnapshot(preserve=preserve_module)",
+        "start_line": 608,
+        "start_column": 19232,
+        "end_line": 4,
+        "end_column": 19595,
+        "start_byte": 19232,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.make_hook_recorder",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def make_hook_recorder(self, pluginmanager):\n        \"\"\"Create a new :py:class:`HookRecorder` for a PluginManager.\"\"\"\n        pluginmanager.reprec = reprec = HookRecorder(pluginmanager)\n        self.request.addfinalizer(reprec.finish_recording)\n        return reprec",
+        "start_line": 617,
+        "start_column": 19601,
+        "end_line": 4,
+        "end_column": 19867,
+        "start_byte": 19601,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.chdir",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def chdir(self):\n        \"\"\"Cd into the temporary directory.\n\n        This is done automatically upon instantiation.\n\n        \"\"\"\n        self.tmpdir.chdir()",
+        "start_line": 623,
+        "start_column": 19873,
+        "end_line": 4,
+        "end_column": 20030,
+        "start_byte": 19873,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir._makefile",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def _makefile(self, ext, lines, files, encoding=\"utf-8\"):\n        items = list(files.items())\n\n        def to_text(s):\n            return s.decode(encoding) if isinstance(s, bytes) else str(s)\n\n        if lines:\n            source = \"\\n\".join(to_text(x) for x in lines)\n            basename = self._name\n            items.insert(0, (basename, source))\n\n        ret = None\n        for basename, value in items:\n            p = self.tmpdir.join(basename).new(ext=ext)\n            p.dirpath().ensure_dir()\n            source = Source(value)\n            source = \"\\n\".join(to_text(line) for line in source.lines)\n            p.write(source.strip().encode(encoding), \"wb\")\n            if ret is None:\n                ret = p\n        return ret",
+        "start_line": 631,
+        "start_column": 20036,
+        "end_line": 4,
+        "end_column": 20774,
+        "start_byte": 20036,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.makefile",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def makefile(self, ext, *args, **kwargs):\n        r\"\"\"Create new file(s) in the testdir.\n\n        :param str ext: The extension the file(s) should use, including the dot, e.g. `.py`.\n        :param list[str] args: All args will be treated as strings and joined using newlines.\n           The result will be written as contents to the file.  The name of the\n           file will be based on the test function requesting this fixture.\n        :param kwargs: Each keyword is the name of a file, while the value of it will\n           be written as contents of the file.\n\n        Examples:\n\n        .. code-block:: python\n\n            testdir.makefile(\".txt\", \"line1\", \"line2\")\n\n            testdir.makefile(\".ini\", pytest=\"[pytest]\\naddopts=-rs\\n\")\n\n        \"\"\"\n        return self._makefile(ext, args, kwargs)",
+        "start_line": 653,
+        "start_column": 20780,
+        "end_line": 4,
+        "end_column": 21586,
+        "start_byte": 20780,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.makeconftest",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def makeconftest(self, source):\n        \"\"\"Write a contest.py file with 'source' as contents.\"\"\"\n        return self.makepyfile(conftest=source)",
+        "start_line": 674,
+        "start_column": 21592,
+        "end_line": 4,
+        "end_column": 21736,
+        "start_byte": 21592,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.makeini",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def makeini(self, source):\n        \"\"\"Write a tox.ini file with 'source' as contents.\"\"\"\n        return self.makefile(\".ini\", tox=source)",
+        "start_line": 678,
+        "start_column": 21742,
+        "end_line": 4,
+        "end_column": 21879,
+        "start_byte": 21742,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.getinicfg",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def getinicfg(self, source):\n        \"\"\"Return the pytest section from the tox.ini config file.\"\"\"\n        p = self.makeini(source)\n        return py.iniconfig.IniConfig(p)[\"pytest\"]",
+        "start_line": 682,
+        "start_column": 21885,
+        "end_line": 4,
+        "end_column": 22067,
+        "start_byte": 21885,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.makepyfile",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def makepyfile(self, *args, **kwargs):\n        r\"\"\"Shortcut for .makefile() with a .py extension.\n        Defaults to the test name with a '.py' extension, e.g test_foobar.py, overwriting\n        existing files.\n\n        Examples:\n\n        .. code-block:: python\n\n            def test_something(testdir):\n                # initial file is created test_something.py\n                testdir.makepyfile(\"foobar\")\n                # to create multiple files, pass kwargs accordingly\n                testdir.makepyfile(custom=\"foobar\")\n                # at this point, both 'test_something.py' & 'custom.py' exist in the test directory\n\n        \"\"\"\n        return self._makefile(\".py\", args, kwargs)",
+        "start_line": 687,
+        "start_column": 22073,
+        "end_line": 4,
+        "end_column": 22766,
+        "start_byte": 22073,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.maketxtfile",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def maketxtfile(self, *args, **kwargs):\n        r\"\"\"Shortcut for .makefile() with a .txt extension.\n        Defaults to the test name with a '.txt' extension, e.g test_foobar.txt, overwriting\n        existing files.\n\n        Examples:\n\n        .. code-block:: python\n\n            def test_something(testdir):\n                # initial file is created test_something.txt\n                testdir.maketxtfile(\"foobar\")\n                # to create multiple files, pass kwargs accordingly\n                testdir.maketxtfile(custom=\"foobar\")\n                # at this point, both 'test_something.txt' & 'custom.txt' exist in the test directory\n\n        \"\"\"\n        return self._makefile(\".txt\", args, kwargs)",
+        "start_line": 706,
+        "start_column": 22772,
+        "end_line": 4,
+        "end_column": 23475,
+        "start_byte": 22772,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.syspathinsert",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def syspathinsert(self, path=None):\n        \"\"\"Prepend a directory to sys.path, defaults to :py:attr:`tmpdir`.\n\n        This is undone automatically when this object dies at the end of each\n        test.\n        \"\"\"\n        if path is None:\n            path = self.tmpdir\n\n        self.monkeypatch.syspath_prepend(str(path))",
+        "start_line": 725,
+        "start_column": 23481,
+        "end_line": 4,
+        "end_column": 23805,
+        "start_byte": 23481,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.mkdir",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def mkdir(self, name):\n        \"\"\"Create a new (sub)directory.\"\"\"\n        return self.tmpdir.mkdir(name)",
+        "start_line": 736,
+        "start_column": 23811,
+        "end_line": 4,
+        "end_column": 23915,
+        "start_byte": 23811,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.mkpydir",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def mkpydir(self, name):\n        \"\"\"Create a new python package.\n\n        This creates a (sub)directory with an empty ``__init__.py`` file so it\n        gets recognised as a python package.\n\n        \"\"\"\n        p = self.mkdir(name)\n        p.ensure(\"__init__.py\")\n        return p",
+        "start_line": 740,
+        "start_column": 23921,
+        "end_line": 4,
+        "end_column": 24201,
+        "start_byte": 23921,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.copy_example",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def copy_example(self, name=None):\n        \"\"\"Copy file from project's directory into the testdir.\n\n        :param str name: The name of the file to copy.\n        :return: path to the copied directory (inside ``self.tmpdir``).\n\n        \"\"\"\n        import warnings\n        from _pytest.warning_types import PYTESTER_COPY_EXAMPLE\n\n        warnings.warn(PYTESTER_COPY_EXAMPLE, stacklevel=2)\n        example_dir = self.request.config.getini(\"pytester_example_dir\")\n        if example_dir is None:\n            raise ValueError(\"pytester_example_dir is unset, can't copy examples\")\n        example_dir = self.request.config.rootdir.join(example_dir)\n\n        for extra_element in self.request.node.iter_markers(\"pytester_example_path\"):\n            assert extra_element.args\n            example_dir = example_dir.join(*extra_element.args)\n\n        if name is None:\n            func_name = self._name\n            maybe_dir = example_dir / func_name\n            maybe_file = example_dir / (func_name + \".py\")\n\n            if maybe_dir.isdir():\n                example_path = maybe_dir\n            elif maybe_file.isfile():\n                example_path = maybe_file\n            else:\n                raise LookupError(\n                    \"{} cant be found as module or package in {}\".format(\n                        func_name, example_dir.bestrelpath(self.request.config.rootdir)\n                    )\n                )\n        else:\n            example_path = example_dir.join(name)\n\n        if example_path.isdir() and not example_path.join(\"__init__.py\").isfile():\n            example_path.copy(self.tmpdir)\n            return self.tmpdir\n        elif example_path.isfile():\n            result = self.tmpdir.join(example_path.basename)\n            example_path.copy(result)\n            return result\n        else:\n            raise LookupError(\n                'example \"{}\" is not found as a file or directory'.format(example_path)\n            )",
+        "start_line": 751,
+        "start_column": 24207,
+        "end_line": 4,
+        "end_column": 26148,
+        "start_byte": 24207,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.Session",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "Session = Session",
+        "start_line": 801,
+        "start_column": 26154,
+        "end_line": 4,
+        "end_column": 26171,
+        "start_byte": 26154,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.getnode",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def getnode(self, config, arg):\n        \"\"\"Return the collection node of a file.\n\n        :param config: :py:class:`_pytest.config.Config` instance, see\n           :py:meth:`parseconfig` and :py:meth:`parseconfigure` to create the\n           configuration\n\n        :param arg: a :py:class:`py.path.local` instance of the file\n\n        \"\"\"\n        session = Session.from_config(config)\n        assert \"::\" not in str(arg)\n        p = py.path.local(arg)\n        config.hook.pytest_sessionstart(session=session)\n        res = session.perform_collect([str(p)], genitems=False)[0]\n        config.hook.pytest_sessionfinish(session=session, exitstatus=ExitCode.OK)\n        return res",
+        "start_line": 803,
+        "start_column": 26177,
+        "end_line": 4,
+        "end_column": 26853,
+        "start_byte": 26177,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.getpathnode",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def getpathnode(self, path):\n        \"\"\"Return the collection node of a file.\n\n        This is like :py:meth:`getnode` but uses :py:meth:`parseconfigure` to\n        create the (configured) pytest Config instance.\n\n        :param path: a :py:class:`py.path.local` instance of the file\n\n        \"\"\"\n        config = self.parseconfigure(path)\n        session = Session.from_config(config)\n        x = session.fspath.bestrelpath(path)\n        config.hook.pytest_sessionstart(session=session)\n        res = session.perform_collect([x], genitems=False)[0]\n        config.hook.pytest_sessionfinish(session=session, exitstatus=ExitCode.OK)\n        return res",
+        "start_line": 821,
+        "start_column": 26859,
+        "end_line": 4,
+        "end_column": 27509,
+        "start_byte": 26859,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.genitems",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def genitems(self, colitems):\n        \"\"\"Generate all test items from a collection node.\n\n        This recurses into the collection node and returns a list of all the\n        test items contained within.\n\n        \"\"\"\n        session = colitems[0].session\n        result = []\n        for colitem in colitems:\n            result.extend(session.genitems(colitem))\n        return result",
+        "start_line": 838,
+        "start_column": 27515,
+        "end_line": 4,
+        "end_column": 27897,
+        "start_byte": 27515,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.runitem",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def runitem(self, source):\n        \"\"\"Run the \"test_func\" Item.\n\n        The calling test instance (class containing the test method) must\n        provide a ``.getrunner()`` method which should return a runner which\n        can run the test protocol for a single item, e.g.\n        :py:func:`_pytest.runner.runtestprotocol`.\n\n        \"\"\"\n        # used from runner functional tests\n        item = self.getitem(source)\n        # the test class where we are called from wants to provide the runner\n        testclassinstance = self.request.instance\n        runner = testclassinstance.getrunner()\n        return runner(item)",
+        "start_line": 851,
+        "start_column": 27903,
+        "end_line": 4,
+        "end_column": 28523,
+        "start_byte": 27903,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.inline_runsource",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def inline_runsource(self, source, *cmdlineargs):\n        \"\"\"Run a test module in process using ``pytest.main()``.\n\n        This run writes \"source\" into a temporary file and runs\n        ``pytest.main()`` on it, returning a :py:class:`HookRecorder` instance\n        for the result.\n\n        :param source: the source code of the test module\n\n        :param cmdlineargs: any extra command line arguments to use\n\n        :return: :py:class:`HookRecorder` instance of the result\n\n        \"\"\"\n        p = self.makepyfile(source)\n        values = list(cmdlineargs) + [p]\n        return self.inline_run(*values)",
+        "start_line": 867,
+        "start_column": 28529,
+        "end_line": 4,
+        "end_column": 29135,
+        "start_byte": 28529,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.inline_genitems",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def inline_genitems(self, *args):\n        \"\"\"Run ``pytest.main(['--collectonly'])`` in-process.\n\n        Runs the :py:func:`pytest.main` function to run all of pytest inside\n        the test process itself like :py:meth:`inline_run`, but returns a\n        tuple of the collected items and a :py:class:`HookRecorder` instance.\n\n        \"\"\"\n        rec = self.inline_run(\"--collect-only\", *args)\n        items = [x.item for x in rec.getcalls(\"pytest_itemcollected\")]\n        return items, rec",
+        "start_line": 885,
+        "start_column": 29141,
+        "end_line": 4,
+        "end_column": 29631,
+        "start_byte": 29141,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.inline_run",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def inline_run(self, *args, plugins=(), no_reraise_ctrlc: bool = False):\n        \"\"\"Run ``pytest.main()`` in-process, returning a HookRecorder.\n\n        Runs the :py:func:`pytest.main` function to run all of pytest inside\n        the test process itself.  This means it can return a\n        :py:class:`HookRecorder` instance which gives more detailed results\n        from that run than can be done by matching stdout/stderr from\n        :py:meth:`runpytest`.\n\n        :param args: command line arguments to pass to :py:func:`pytest.main`\n\n        :kwarg plugins: extra plugin instances the ``pytest.main()`` instance should use.\n\n        :kwarg no_reraise_ctrlc: typically we reraise keyboard interrupts from the child run. If\n            True, the KeyboardInterrupt exception is captured.\n\n        :return: a :py:class:`HookRecorder` instance\n        \"\"\"\n        # (maybe a cpython bug?) the importlib cache sometimes isn't updated\n        # properly between file creation and inline_run (especially if imports\n        # are interspersed with file creation)\n        importlib.invalidate_caches()\n\n        plugins = list(plugins)\n        finalizers = []\n        try:\n            # Any sys.module or sys.path changes done while running pytest\n            # inline should be reverted after the test run completes to avoid\n            # clashing with later inline tests run within the same pytest test,\n            # e.g. just because they use matching test module names.\n            finalizers.append(self.__take_sys_modules_snapshot().restore)\n            finalizers.append(SysPathsSnapshot().restore)\n\n            # Important note:\n            # - our tests should not leave any other references/registrations\n            #   laying around other than possibly loaded test modules\n            #   referenced from sys.modules, as nothing will clean those up\n            #   automatically\n\n            rec = []\n\n            class Collect:\n                def pytest_configure(x, config):\n                    rec.append(self.make_hook_recorder(config.pluginmanager))\n\n            plugins.append(Collect())\n            ret = pytest.main(list(args), plugins=plugins)\n            if len(rec) == 1:\n                reprec = rec.pop()\n            else:\n\n                class reprec:  # type: ignore\n                    pass\n\n            reprec.ret = ret\n\n            # typically we reraise keyboard interrupts from the child run\n            # because it's our user requesting interruption of the testing\n            if ret == ExitCode.INTERRUPTED and not no_reraise_ctrlc:\n                calls = reprec.getcalls(\"pytest_keyboard_interrupt\")\n                if calls and calls[-1].excinfo.type == KeyboardInterrupt:\n                    raise KeyboardInterrupt()\n            return reprec\n        finally:\n            for finalizer in finalizers:\n                finalizer()",
+        "start_line": 897,
+        "start_column": 29637,
+        "end_line": 4,
+        "end_column": 32502,
+        "start_byte": 29637,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.runpytest_inprocess",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def runpytest_inprocess(self, *args, **kwargs) -> RunResult:\n        \"\"\"Return result of running pytest in-process, providing a similar\n        interface to what self.runpytest() provides.\n        \"\"\"\n        syspathinsert = kwargs.pop(\"syspathinsert\", False)\n\n        if syspathinsert:\n            self.syspathinsert()\n        now = time.time()\n        capture = _get_multicapture(\"sys\")\n        capture.start_capturing()\n        try:\n            try:\n                reprec = self.inline_run(*args, **kwargs)\n            except SystemExit as e:\n                ret = e.args[0]\n                try:\n                    ret = ExitCode(e.args[0])\n                except ValueError:\n                    pass\n\n                class reprec:  # type: ignore\n                    ret = ret\n\n            except Exception:\n                traceback.print_exc()\n\n                class reprec:  # type: ignore\n                    ret = ExitCode(3)\n\n        finally:\n            out, err = capture.readouterr()\n            capture.stop_capturing()\n            sys.stdout.write(out)\n            sys.stderr.write(err)\n\n        res = RunResult(\n            reprec.ret, out.splitlines(), err.splitlines(), time.time() - now\n        )\n        res.reprec = reprec  # type: ignore\n        return res",
+        "start_line": 964,
+        "start_column": 32508,
+        "end_line": 4,
+        "end_column": 33788,
+        "start_byte": 32508,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.runpytest",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def runpytest(self, *args, **kwargs) -> RunResult:\n        \"\"\"Run pytest inline or in a subprocess, depending on the command line\n        option \"--runpytest\" and return a :py:class:`RunResult`.\n\n        \"\"\"\n        args = self._ensure_basetemp(args)\n        if self._method == \"inprocess\":\n            return self.runpytest_inprocess(*args, **kwargs)\n        elif self._method == \"subprocess\":\n            return self.runpytest_subprocess(*args, **kwargs)\n        raise RuntimeError(\"Unrecognized runpytest option: {}\".format(self._method))",
+        "start_line": 1006,
+        "start_column": 33794,
+        "end_line": 4,
+        "end_column": 34335,
+        "start_byte": 33794,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir._ensure_basetemp",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def _ensure_basetemp(self, args):\n        args = list(args)\n        for x in args:\n            if str(x).startswith(\"--basetemp\"):\n                break\n        else:\n            args.append(\"--basetemp=%s\" % self.tmpdir.dirpath(\"basetemp\"))\n        return args",
+        "start_line": 1018,
+        "start_column": 34341,
+        "end_line": 4,
+        "end_column": 34602,
+        "start_byte": 34341,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.parseconfig",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def parseconfig(self, *args: Union[str, py.path.local]) -> Config:\n        \"\"\"Return a new pytest Config instance from given commandline args.\n\n        This invokes the pytest bootstrapping code in _pytest.config to create\n        a new :py:class:`_pytest.core.PluginManager` and call the\n        pytest_cmdline_parse hook to create a new\n        :py:class:`_pytest.config.Config` instance.\n\n        If :py:attr:`plugins` has been populated they should be plugin modules\n        to be registered with the PluginManager.\n\n        \"\"\"\n        args = self._ensure_basetemp(args)\n\n        import _pytest.config\n\n        config = _pytest.config._prepareconfig(args, self.plugins)  # type: Config\n        # we don't know what the test will do with this half-setup config\n        # object and thus we make sure it gets unconfigured properly in any\n        # case (otherwise capturing could still be active, for example)\n        self.request.addfinalizer(config._ensure_unconfigure)\n        return config",
+        "start_line": 1027,
+        "start_column": 34608,
+        "end_line": 4,
+        "end_column": 35604,
+        "start_byte": 34608,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.parseconfigure",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def parseconfigure(self, *args):\n        \"\"\"Return a new pytest configured Config instance.\n\n        This returns a new :py:class:`_pytest.config.Config` instance like\n        :py:meth:`parseconfig`, but also calls the pytest_configure hook.\n        \"\"\"\n        config = self.parseconfig(*args)\n        config._do_configure()\n        return config",
+        "start_line": 1050,
+        "start_column": 35610,
+        "end_line": 4,
+        "end_column": 35957,
+        "start_byte": 35610,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.getitem",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def getitem(self, source, funcname=\"test_func\"):\n        \"\"\"Return the test item for a test function.\n\n        This writes the source to a python file and runs pytest's collection on\n        the resulting module, returning the test item for the requested\n        function name.\n\n        :param source: the module source\n\n        :param funcname: the name of the test function for which to return a\n            test item\n\n        \"\"\"\n        items = self.getitems(source)\n        for item in items:\n            if item.name == funcname:\n                return item\n        assert 0, \"{!r} item not found in module:\\n{}\\nitems: {}\".format(\n            funcname, source, items\n        )",
+        "start_line": 1060,
+        "start_column": 35963,
+        "end_line": 4,
+        "end_column": 36646,
+        "start_byte": 35963,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.getitems",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def getitems(self, source):\n        \"\"\"Return all test items collected from the module.\n\n        This writes the source to a python file and runs pytest's collection on\n        the resulting module, returning all test items contained within.\n\n        \"\"\"\n        modcol = self.getmodulecol(source)\n        return self.genitems([modcol])",
+        "start_line": 1081,
+        "start_column": 36652,
+        "end_line": 4,
+        "end_column": 36988,
+        "start_byte": 36652,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.getmodulecol",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def getmodulecol(self, source, configargs=(), withinit=False):\n        \"\"\"Return the module collection node for ``source``.\n\n        This writes ``source`` to a file using :py:meth:`makepyfile` and then\n        runs the pytest collection on it, returning the collection node for the\n        test module.\n\n        :param source: the source code of the module to collect\n\n        :param configargs: any extra arguments to pass to\n            :py:meth:`parseconfigure`\n\n        :param withinit: whether to also write an ``__init__.py`` file to the\n            same directory to ensure it is a package\n\n        \"\"\"\n        if isinstance(source, Path):\n            path = self.tmpdir.join(str(source))\n            assert not withinit, \"not supported for paths\"\n        else:\n            kw = {self._name: Source(source).strip()}\n            path = self.makepyfile(**kw)\n        if withinit:\n            self.makepyfile(__init__=\"#\")\n        self.config = config = self.parseconfigure(path, *configargs)\n        return self.getnode(config, path)",
+        "start_line": 1091,
+        "start_column": 36994,
+        "end_line": 4,
+        "end_column": 38033,
+        "start_byte": 36994,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.collect_by_name",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def collect_by_name(\n        self, modcol: Module, name: str\n    ) -> Optional[Union[Item, Collector]]:\n        \"\"\"Return the collection node for name from the module collection.\n\n        This will search a module collection node for a collection node\n        matching the given name.\n\n        :param modcol: a module collection node; see :py:meth:`getmodulecol`\n\n        :param name: the name of the node to return\n        \"\"\"\n        if modcol not in self._mod_collections:\n            self._mod_collections[modcol] = list(modcol.collect())\n        for colitem in self._mod_collections[modcol]:\n            if colitem.name == name:\n                return colitem\n        return None",
+        "start_line": 1118,
+        "start_column": 38039,
+        "end_line": 4,
+        "end_column": 38723,
+        "start_byte": 38039,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.popen",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def popen(\n        self,\n        cmdargs,\n        stdout=subprocess.PIPE,\n        stderr=subprocess.PIPE,\n        stdin=CLOSE_STDIN,\n        **kw\n    ):\n        \"\"\"Invoke subprocess.Popen.\n\n        This calls subprocess.Popen making sure the current working directory\n        is in the PYTHONPATH.\n\n        You probably want to use :py:meth:`run` instead.\n\n        \"\"\"\n        env = os.environ.copy()\n        env[\"PYTHONPATH\"] = os.pathsep.join(\n            filter(None, [os.getcwd(), env.get(\"PYTHONPATH\", \"\")])\n        )\n        kw[\"env\"] = env\n\n        if stdin is Testdir.CLOSE_STDIN:\n            kw[\"stdin\"] = subprocess.PIPE\n        elif isinstance(stdin, bytes):\n            kw[\"stdin\"] = subprocess.PIPE\n        else:\n            kw[\"stdin\"] = stdin\n\n        popen = subprocess.Popen(cmdargs, stdout=stdout, stderr=stderr, **kw)\n        if stdin is Testdir.CLOSE_STDIN:\n            popen.stdin.close()\n        elif isinstance(stdin, bytes):\n            popen.stdin.write(stdin)\n\n        return popen",
+        "start_line": 1137,
+        "start_column": 38729,
+        "end_line": 4,
+        "end_column": 39736,
+        "start_byte": 38729,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.run",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def run(self, *cmdargs, timeout=None, stdin=CLOSE_STDIN) -> RunResult:\n        \"\"\"Run a command with arguments.\n\n        Run a process using subprocess.Popen saving the stdout and stderr.\n\n        :param args: the sequence of arguments to pass to `subprocess.Popen()`\n        :kwarg timeout: the period in seconds after which to timeout and raise\n            :py:class:`Testdir.TimeoutExpired`\n        :kwarg stdin: optional standard input.  Bytes are being send, closing\n            the pipe, otherwise it is passed through to ``popen``.\n            Defaults to ``CLOSE_STDIN``, which translates to using a pipe\n            (``subprocess.PIPE``) that gets closed.\n\n        Returns a :py:class:`RunResult`.\n\n        \"\"\"\n        __tracebackhide__ = True\n\n        cmdargs = tuple(\n            str(arg) if isinstance(arg, py.path.local) else arg for arg in cmdargs\n        )\n        p1 = self.tmpdir.join(\"stdout\")\n        p2 = self.tmpdir.join(\"stderr\")\n        print(\"running:\", *cmdargs)\n        print(\"     in:\", py.path.local())\n        f1 = open(str(p1), \"w\", encoding=\"utf8\")\n        f2 = open(str(p2), \"w\", encoding=\"utf8\")\n        try:\n            now = time.time()\n            popen = self.popen(\n                cmdargs,\n                stdin=stdin,\n                stdout=f1,\n                stderr=f2,\n                close_fds=(sys.platform != \"win32\"),\n            )\n            if isinstance(stdin, bytes):\n                popen.stdin.close()\n\n            def handle_timeout():\n                __tracebackhide__ = True\n\n                timeout_message = (\n                    \"{seconds} second timeout expired running:\"\n                    \" {command}\".format(seconds=timeout, command=cmdargs)\n                )\n\n                popen.kill()\n                popen.wait()\n                raise self.TimeoutExpired(timeout_message)\n\n            if timeout is None:\n                ret = popen.wait()\n            else:\n                try:\n                    ret = popen.wait(timeout)\n                except subprocess.TimeoutExpired:\n                    handle_timeout()\n        finally:\n            f1.close()\n            f2.close()\n        f1 = open(str(p1), encoding=\"utf8\")\n        f2 = open(str(p2), encoding=\"utf8\")\n        try:\n            out = f1.read().splitlines()\n            err = f2.read().splitlines()\n        finally:\n            f1.close()\n            f2.close()\n        self._dump_lines(out, sys.stdout)\n        self._dump_lines(err, sys.stderr)\n        try:\n            ret = ExitCode(ret)\n        except ValueError:\n            pass\n        return RunResult(ret, out, err, time.time() - now)",
+        "start_line": 1174,
+        "start_column": 39742,
+        "end_line": 4,
+        "end_column": 42365,
+        "start_byte": 39742,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir._dump_lines",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def _dump_lines(self, lines, fp):\n        try:\n            for line in lines:\n                print(line, file=fp)\n        except UnicodeEncodeError:\n            print(\"couldn't print to {} because of encoding\".format(fp))",
+        "start_line": 1251,
+        "start_column": 42371,
+        "end_line": 4,
+        "end_column": 42593,
+        "start_byte": 42371,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir._getpytestargs",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def _getpytestargs(self):\n        return sys.executable, \"-mpytest\"",
+        "start_line": 1258,
+        "start_column": 42599,
+        "end_line": 4,
+        "end_column": 42666,
+        "start_byte": 42599,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.runpython",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def runpython(self, script) -> RunResult:\n        \"\"\"Run a python script using sys.executable as interpreter.\n\n        Returns a :py:class:`RunResult`.\n\n        \"\"\"\n        return self.run(sys.executable, script)",
+        "start_line": 1261,
+        "start_column": 42672,
+        "end_line": 4,
+        "end_column": 42884,
+        "start_byte": 42672,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.runpython_c",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def runpython_c(self, command):\n        \"\"\"Run python -c \"command\", return a :py:class:`RunResult`.\"\"\"\n        return self.run(sys.executable, \"-c\", command)",
+        "start_line": 1269,
+        "start_column": 42890,
+        "end_line": 4,
+        "end_column": 43047,
+        "start_byte": 42890,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.runpytest_subprocess",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def runpytest_subprocess(self, *args, timeout=None) -> RunResult:\n        \"\"\"Run pytest as a subprocess with given arguments.\n\n        Any plugins added to the :py:attr:`plugins` list will be added using the\n        ``-p`` command line option.  Additionally ``--basetemp`` is used to put\n        any temporary files and directories in a numbered directory prefixed\n        with \"runpytest-\" to not conflict with the normal numbered pytest\n        location for temporary files and directories.\n\n        :param args: the sequence of arguments to pass to the pytest subprocess\n        :param timeout: the period in seconds after which to timeout and raise\n            :py:class:`Testdir.TimeoutExpired`\n\n        Returns a :py:class:`RunResult`.\n        \"\"\"\n        __tracebackhide__ = True\n        p = make_numbered_dir(root=Path(self.tmpdir), prefix=\"runpytest-\")\n        args = (\"--basetemp=%s\" % p,) + args\n        plugins = [x for x in self.plugins if isinstance(x, str)]\n        if plugins:\n            args = (\"-p\", plugins[0]) + args\n        args = self._getpytestargs() + args\n        return self.run(*args, timeout=timeout)",
+        "start_line": 1273,
+        "start_column": 43053,
+        "end_line": 4,
+        "end_column": 44182,
+        "start_byte": 43053,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.spawn_pytest",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def spawn_pytest(\n        self, string: str, expect_timeout: float = 10.0\n    ) -> \"pexpect.spawn\":\n        \"\"\"Run pytest using pexpect.\n\n        This makes sure to use the right pytest and sets up the temporary\n        directory locations.\n\n        The pexpect child is returned.\n\n        \"\"\"\n        basetemp = self.tmpdir.mkdir(\"temp-pexpect\")\n        invoke = \" \".join(map(str, self._getpytestargs()))\n        cmd = \"{} --basetemp={} {}\".format(invoke, basetemp, string)\n        return self.spawn(cmd, expect_timeout=expect_timeout)",
+        "start_line": 1297,
+        "start_column": 44188,
+        "end_line": 4,
+        "end_column": 44724,
+        "start_byte": 44188,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.pytester.Testdir.spawn",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "def spawn(self, cmd: str, expect_timeout: float = 10.0) -> \"pexpect.spawn\":\n        \"\"\"Run a command using pexpect.\n\n        The pexpect child is returned.\n\n        \"\"\"\n        pexpect = pytest.importorskip(\"pexpect\", \"3.0\")\n        if hasattr(sys, \"pypy_version_info\") and \"64\" in platform.machine():\n            pytest.skip(\"pypy-64 bit not supported\")\n        if not hasattr(pexpect, \"spawn\"):\n            pytest.skip(\"pexpect.spawn not available\")\n        logfile = self.tmpdir.join(\"spawn.out\").open(\"wb\")\n\n        child = pexpect.spawn(cmd, logfile=logfile)\n        self.request.addfinalizer(logfile.close)\n        child.timeout = expect_timeout\n        return child",
+        "start_line": 1313,
+        "start_column": 44730,
+        "end_line": 4,
+        "end_column": 45402,
+        "start_byte": 44730,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.tmpdir.TempPathFactory",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "le\nfrom typing import Union\nfrom weakref import WeakKeyDictionary\n\nimport py\n\nimport pytest\nfrom _pytest._code import Source\nfrom _pytest.capture import _get_multicapture\nfrom _pytest.compat import TYPE_CHECKING\nfrom _pytest.config import _PluggyPlugin\nfrom _pytest.config import Config\nfrom _pytest.config import ExitCode\nfrom _pytest.fixtures import FixtureRequest\nfrom _pytest.main import Session\nfrom _pytest.monkeypatch import MonkeyPatch\nfrom _pytest.nodes import Collector\nfrom _pytest.nodes import Item\nfrom _pytest.pathlib import make_numbered_dir\nfrom _pytest.pathlib import Path\nfrom _pytest.python import Module\nfrom _pytest.reports import TestReport\nfrom _pytest.tmpdir import TempdirFactory\n\nif TYPE_CHECKING:\n    from typing import Type\n\n    import pexpect\n\n\nIGNORE_PAM = [  # filenames added when obtaining details about the current user\n    \"/var/lib/sss/mc/passwd\"\n]\n\n\ndef pytest_addoption(parser):\n    parser.addoption(\n        \"--lsof\",\n        action=\"store_true\",\n        dest=\"lsof\",\n        default=False,\n        help=\"run FD checks if lsof is available\",\n    )\n\n    parser.addoption(\n        \"--runpytest\",\n        default=\"inprocess\",\n        dest=\"runpytest\",\n        choices=(\"inprocess\", \"subprocess\"),\n        help=(\n            \"run pytest sub runs in tests using an 'inprocess' \"\n            \"or 'subprocess' (python -m main) method\"\n        ),\n    )\n\n    parser.addini(\n        \"pytester_example_dir\", help=\"directory to take the pytester example files from\"\n    )\n\n\ndef pytest_configure(config):\n    if config.getvalue(\"lsof\"):\n        checker = LsofFdLeakChecker()\n        if checker.matching_platform():\n            config.pluginmanager.register(checker)\n\n    config.addinivalue_line(\n        \"markers\",\n        \"pytester_example_path(*path_segments): join the given path \"\n        \"segments to `pytester_example_dir` for this test.\",\n    )\n\n\nclass LsofFdLeakChecker:\n    def get_open_files(self):\n        out = self._exec_lsof()\n        open_files = self._parse_lsof_output(out)\n        return open_files\n\n    def _exec_lsof(self):\n        pid = os.getpid()\n        # py3: use subprocess.DEVNULL directly.\n        with open(os.devnull, \"wb\") as devnull:\n            return subprocess.check_output(\n                (\"lsof\", \"-Ffn0\", \"-p\", str(pid)), stderr=devnull\n            ).decode()\n\n    def _parse_lsof_output(self, out):\n        def isopen(line):\n            return line.startswith(\"f\") and (\n                \"deleted\" not in line\n                and \"mem\" not in line\n                and \"txt\" not in line\n                and \"cwd\" not in line\n            )\n\n        open_files = []\n\n        for line in out.split(\"\\n\"):\n            if isopen(line):\n                fields = line.split(\"\\0\")\n                fd = fields[0][1:]\n                filename = fields[1][1:]\n                if filename in IGNORE_PAM:\n                    continue\n                if filename.startswith(\"/\"):\n                    open_files.append((fd, filename))\n\n        return open_files\n\n    def matching_platform(self):\n        try:\n            subprocess.check_output((\"lsof\", \"-v\"))\n        except (OSError, subprocess.CalledProcessError):\n            return False\n        else:\n            return True\n\n    @pytest.hookimpl(hookwrapper=True, tryfirst=True)\n    def pytest_runtes",
+        "start_line": 19,
+        "start_column": 453,
+        "end_line": 0,
+        "end_column": 3759,
+        "start_byte": 453,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.tmpdir.TempPathFactory._given_basetemp",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "port TYPE_CHECKING\nfrom _pytest.config import _PluggyPlugin\nfrom _pytest.config import Config\nfrom _pytest.config import ExitCode\nfrom _pytest.fixtures import FixtureRequest\nfrom _pytest.main import Session\nfrom _pytest.monkeypatch import MonkeyPatch\nfrom _pytest.nodes import Collector\nfrom _pytest.nodes import Item\nfrom _pytest.pathlib import make_numbered_dir\nfrom _pytest.pathlib import Path\nfrom _pytest.python import Module\nfrom _pytest.reports import TestReport\nfrom _pytest.tmpdir i",
+        "start_line": 25,
+        "start_column": 646,
+        "end_line": 4,
+        "end_column": 1137,
+        "start_byte": 646,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.tmpdir.TempPathFactory._trace",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": " TempdirFactory\n\ni",
+        "start_line": 35,
+        "start_column": 1142,
+        "end_line": 4,
+        "end_column": 1160,
+        "start_byte": 1142,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.tmpdir.TempPathFactory._basetemp",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "E_CHECKING:\n    from typing import Type\n\n    import pe",
+        "start_line": 36,
+        "start_column": 1165,
+        "end_line": 4,
+        "end_column": 1219,
+        "start_byte": 1165,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.tmpdir.TempPathFactory.from_config",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "\n\nIGNORE_PAM = [  # filenames added when obtaining details about the current user\n    \"/var/lib/sss/mc/passwd\"\n]\n\n\ndef pytest_addoption(parser):\n    parser.addoption(\n        \"--lsof\",\n        action=\"store_true\",\n        dest=\"lsof\",\n        default=",
+        "start_line": 38,
+        "start_column": 1225,
+        "end_line": 4,
+        "end_column": 1476,
+        "start_byte": 1225,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.tmpdir.TempPathFactory._ensure_relative_to_basetemp",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "\n        help=\"run FD checks if lsof is available\",\n    )\n\n    parser.addoption(\n        \"--runpytest\",\n        default=\"inprocess\",\n        dest=\"runpytest\",\n        choices=(\"inprocess\", \"subprocess\"),\n        help=(\n            \"run pytest sub runs in tests using an 'inprocess' \"\n            \"or 'subprocess' (python -m mai",
+        "start_line": 47,
+        "start_column": 1482,
+        "end_line": 4,
+        "end_column": 1809,
+        "start_byte": 1482,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.tmpdir.TempPathFactory.mktemp",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "hod\"\n        ),\n    )\n\n    parser.addini(\n        \"pytester_example_dir\", help=\"directory to take the pytester example files from\"\n    )\n\n\ndef pytest_configure(config):\n    if config.getvalue(\"lsof\"):\n        checker = LsofFdLeakChecker()\n        if checker.matching_platform():\n            config.pluginmanager.register(checker)\n\n    config.addinivalue_line(\n        \"markers\",\n        \"pytester_example_path(*path_segments): join the given path \"\n        \"segments to `pytester_example_dir` for this test.\",\n    )\n\n\nclass LsofFdLeakChecker:\n    def get_open_files(self):\n        out = self._exec_lsof()\n        open_files = self._parse_lsof_output(out)\n        return open_files\n\n    def _exec_lsof(self):\n        pid = os.getpid()\n        # py3: use subprocess.DEVNULL directly.\n        with open(os.devnull, \"wb\") as devnull:\n            return subprocess.check_output(\n                (\"lsof\", \"-Ffn0\", \"-p\", str(pi",
+        "start_line": 55,
+        "start_column": 1815,
+        "end_line": 4,
+        "end_column": 2735,
+        "start_byte": 1815,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.tmpdir.TempPathFactory.getbasetemp",
+        "file_path": "src/_pytest/pytester.py",
+        "file_content": "tderr=devnull\n            ).decode()\n\n    def _parse_lsof_output(self, out):\n        def isopen(line):\n            return line.startswith(\"f\") and (\n                \"deleted\" not in line\n                and \"mem\" not in line\n                and \"txt\" not in line\n                and \"cwd\" not in line\n            )\n\n        open_files = []\n\n        for line in out.split(\"\\n\"):\n            if isopen(line):\n                fields = line.split(\"\\0\")\n                fd = fields[0][1:]\n                filename = fields[1][1:]\n                if filename in IGNORE_PAM:\n                    continue\n                if filename.startswith(\"/\"):\n                    open_files.append((fd, filename))\n\n        return open_files\n\n    def matching_platform(self):\n        try:\n            subprocess.check_output((\"lsof\", \"-v\"))\n        except (OSError, subprocess.CalledProcessError):\n            return False\n        else:\n            return True\n\n    @pytest.hookimpl(hookwrapper=True, tryfirst=True)\n    def pytest_runtes",
+        "start_line": 79,
+        "start_column": 2741,
+        "end_line": 4,
+        "end_column": 3759,
+        "start_byte": 2741,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.terminal.TerminalReporter.write_fspath_result",
+        "file_path": "src/_pytest/terminal.py",
+        "file_content": "def write_fspath_result(self, nodeid, res, **markup):\n        fspath = self.config.rootdir.join(nodeid.split(\"::\")[0])\n        # NOTE: explicitly check for None to work around py bug, and for less\n        # overhead in general (https://github.com/pytest-dev/py/pull/207).\n        if self.currentfspath is None or fspath != self.currentfspath:\n            if self.currentfspath is not None and self._show_progress_info:\n                self._write_progress_information_filling_space()\n            self.currentfspath = fspath\n            fspath = self.startdir.bestrelpath(fspath)\n            self._tw.line()\n            self._tw.write(fspath + \" \")\n        self._tw.write(res, flush=True, **markup)",
+        "start_line": 335,
+        "start_column": 9989,
+        "end_line": 4,
+        "end_column": 10686,
+        "start_byte": 9989,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.terminal.TerminalReporter._locationline",
+        "file_path": "src/_pytest/terminal.py",
+        "file_content": "def _locationline(self, nodeid, fspath, lineno, domain):\n        def mkrel(nodeid):\n            line = self.config.cwd_relative_nodeid(nodeid)\n            if domain and line.endswith(domain):\n                line = line[: -len(domain)]\n                values = domain.split(\"[\")\n                values[0] = values[0].replace(\".\", \"::\")  # don't replace '.' in params\n                line += \"[\".join(values)\n            return line\n\n        # collect_fspath comes from testid which has a \"/\"-normalized path\n\n        if fspath:\n            res = mkrel(nodeid)\n            if self.verbosity >= 2 and nodeid.split(\"::\")[0] != fspath.replace(\n                \"\\\\\", nodes.SEP\n            ):\n                res += \" <- \" + self.startdir.bestrelpath(fspath)\n        else:\n            res = \"[location]\"\n        return res + \" \"",
+        "start_line": 776,
+        "start_column": 27160,
+        "end_line": 4,
+        "end_column": 27982,
+        "start_byte": 27160,
+        "end_byte": 4
+      }
+    ],
+    "root_caused_symbols": []
+  }
+}

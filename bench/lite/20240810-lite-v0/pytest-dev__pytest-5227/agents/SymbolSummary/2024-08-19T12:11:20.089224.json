@@ -1,0 +1,1035 @@
+{
+  "name": "SymbolSummary",
+  "model": "gpt-4o-2024-08-06",
+  "metadata": {},
+  "issue": "<description>:Improve default logging format\nCurrently it is:\r\n\r\n> DEFAULT_LOG_FORMAT = \"%(filename)-25s %(lineno)4d %(levelname)-8s %(message)s\"\r\n\r\nI think `name` (module name) would be very useful here, instead of just the base filename.\r\n\r\n(It might also be good to have the relative path there (maybe at the end), but it is usually still very long (but e.g. `$VIRTUAL_ENV` could be substituted therein))\r\n\r\nCurrently it would look like this:\r\n```\r\nutils.py                   114 DEBUG    (0.000) SELECT \"app_url\".\"id\", \"app_url\".\"created\", \"app_url\".\"url\" FROM \"app_url\" WHERE \"app_url\".\"id\" = 2; args=(2,)\r\nmultipart.py               604 DEBUG    Calling on_field_start with no data\r\n```\r\n\r\n\r\nUsing `DEFAULT_LOG_FORMAT = \"%(levelname)-8s %(name)s:%(filename)s:%(lineno)d %(message)s\"` instead:\r\n\r\n```\r\nDEBUG    django.db.backends:utils.py:114 (0.000) SELECT \"app_url\".\"id\", \"app_url\".\"created\", \"app_url\".\"url\" FROM \"app_url\" WHERE \"app_url\".\"id\" = 2; args=(2,)\r\nDEBUG    multipart.multipart:multipart.py:604 Calling on_field_start with no data\r\n```\n</description>",
+  "request": {
+    "symbols": {
+      "related_symbols": [
+        {
+          "name": "_pytest.assertion.pytest_addoption",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "port create_terminal_writer\nfrom _pytest.pathlib import Path\n\nDEFAULT_LOG_FORMAT = \"%(filename)-25s %(lineno)4d %(levelname)-8s %(message)s\"\nDEFAULT_LOG_DATE_FORMAT = \"%H:%M:%S\"\n\n\nclass ColoredLevelFormatter(logging.Formatter):\n    \"\"\"\n    Colorize the %(levelname)..s part of the log format passed to __init__.\n    \"\"\"\n\n    LOGLEVEL_COLOROPTS = {\n        logging.CRITICAL: {\"red\"},\n        logging.ERROR: {\"red\", \"bold\"},\n        logging.WARNING: {\"yellow\"},\n        logging.WARN: {\"yellow\"},\n        logging.INFO: {\"green\"},\n        logging.DEBUG: {\"purple\"},\n        logging.NOTSET: se",
+          "start_line": 16,
+          "start_column": 323,
+          "end_line": 0,
+          "end_column": 911,
+          "start_byte": 323,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.cacheprovider.pytest_addoption",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "   log_level = config.getoption(setting_name)\n        if log_level is None:\n            log_level = config.getini(setting_name)\n        if log_level:\n            break\n    else:\n        return\n\n    if isinstance(log_level, six.string_types):\n        log_level = log_level.upper()\n    try:\n        return int(getattr(logging, log_level, log_level))\n    except ValueError:\n        # Python logging does not recognise this as a logging level\n        raise pytest.UsageError(\n            \"'{}' is not recognized as a logging level name for \"\n            \"'{}'. Please consider passing the \"\n            \"logging level num instead.\".format(log_level, setting_name)\n        )\n\n\n# run after terminalreporter/capturemanager are configured\n@pytest.hookimpl(trylast=True)\ndef pytest_configure(config):\n    config.pluginmanager.register(LoggingPlugin(config), \"logging-plugin\")\n\n\nclass LoggingPlugin(object):\n    \"\"\"Attaches to the logging module and captures log messages for each test.\n    \"\"\"\n\n    def __init__(self, config):\n        \"\"\"Creates a new plugin to capture log messages.\n\n        The formatter can be safely shared across all handlers so\n        create a single one for the entire test session here.\n        \"\"\"\n        self._config = config\n\n        # enable verbose output automatically if live logging is enabled\n        if self._log_cli_enabled() and config.getoption(\"verbose\") < 1:\n            config.option.verbose = 1\n\n        self.print_logs = get_option_ini(config, \"log_print\")\n        self.formatter = logging.Formatter(\n            get_option_ini(config, \"log_format\"),\n            get_option_ini(config, \"log_date_format\"),\n        )\n        self.log_level = get_actual_log_level(config, \"log_level\")\n\n        self.log_file_level = get_actual_log_",
+          "start_line": 302,
+          "start_column": 11191,
+          "end_line": 0,
+          "end_column": 12956,
+          "start_byte": 11191,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.capture.pytest_addoption",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "ssage)s\"\nDEFAULT_LOG_DATE_FORMAT = \"%H:%M:%S\"\n\n\nclass ColoredLevelFormatter(logging.Formatter):\n    \"\"\"\n    Colorize the %(levelname)..s part of the log format passed to __init__.\n    \"\"\"\n\n    LOGLEVEL_COLOROPTS = {\n        logging.CRITICAL: {\"red\"},\n        logging.ERROR: {\"red\", \"bold\"},\n        logging.WARNING: {\"yellow\"},\n        logging.WARN: {\"yellow\"},\n        logging.INFO: {\"green\"},\n        logging.DEBUG: {\"purple\"},\n        logging.NOTSET: set(),\n    }\n    LEVELNAM",
+          "start_line": 25,
+          "start_column": 455,
+          "end_line": 0,
+          "end_column": 934,
+          "start_byte": 455,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.debugging.pytest_addoption",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "ing.CRITICAL: {\"red\"},\n        logging.ERROR: {\"red\", \"bold\"},\n        logging.WARNING: {\"yellow\"},\n        logging.WARN: {\"yellow\"},\n        logging.INFO: {\"green\"},\n        logging.DEBUG: {\"purple\"},\n        logging.NOTSET: set(),\n    }\n    LEVELNAME_FMT_REGEX = re.compile(r\"%\\(levelname\\)([+-]?\\d*s)\")\n\n    def __init__(self, terminalwriter, *args, **kwargs):\n        super(ColoredLevelFormatter, self).__init__(*args, **kwargs)\n        if six.PY2:\n            self._original_fmt = self._fmt\n        else:\n            self._original_fmt = self._style._fmt\n        self._level_to_fmt_mapping = {}\n\n        levelname_fmt_match = self.LEVELNAME_FMT_REGEX.search(self._fmt)\n        if not levelname",
+          "start_line": 26,
+          "start_column": 683,
+          "end_line": 0,
+          "end_column": 1381,
+          "start_byte": 683,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.doctest.pytest_addoption",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "alwriter, *args, **kwargs):\n        super(ColoredLevelFormatter, self).__init__(*args, **kwargs)\n        if six.PY2:\n            self._original_fmt = self._fmt\n        else:\n            self._original_fmt = self._style._fmt\n        self._level_to_fmt_mapping = {}\n\n        levelname_fmt_match = self.LEVELNAME_FMT_REGEX.search(self._fmt)\n        if not levelname_fmt_match:\n            return\n        levelname_fmt = levelname_fmt_match.group()\n\n        for level, color_opts in self.LOGLEVEL_COLOROPTS.items():\n            formatted_levelname = levelname_fmt % {\n                \"levelname\": logging.getLevelName(level)\n            }\n\n            # add ANSI escape sequences around the formatted levelname\n            color_kwargs = {name: True for name in color_opts}\n            colorized_formatted_levelname = terminalwriter.markup(\n                formatted_levelname, **color_kwargs\n            )\n            self._level_to_fmt_mapping[level] = self.LEVELNAME_FMT_REGEX.sub(\n                colorized_formatted_levelname, self._fmt\n            )\n\n    def format(self, record):\n        fmt = self._level_to_fmt_mapping.get(record.levelno, self._original_fmt)\n        if six.PY2:\n            self._fmt = fmt\n        else:\n            self._style._fmt = fmt\n        return super(ColoredLevelFormatter, self).format(record)\n\n\ndef get_option_ini(config, *names):\n    for name in names:\n        ret = config.getoption(",
+          "start_line": 37,
+          "start_column": 1019,
+          "end_line": 0,
+          "end_column": 2437,
+          "start_byte": 1019,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.helpconfig.pytest_addoption",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "velname_fmt_match = self.LEVELNAME_FMT_REGEX.search(self._fmt)\n        if not levelname_fmt_match:\n            return\n        levelname_fmt = levelname_fmt_match.group()\n\n        for level, color_opts in self.LOGLEVEL_COLOROPTS.items():\n            formatted_levelname = levelname_fmt % {\n                \"levelname\": logging.getLevelName(level)\n            }\n\n            # add ANSI escape sequences around the formatted levelname\n            color_kwargs = {name: True for name in color_opts}\n            colorized_formatted_levelname = terminalwriter.markup(\n                formatted_levelname, **color_kwargs\n            )\n            self._level_to_fmt_mapping[level] = self.LEVELNAME_FMT_REGEX.sub(\n                colorized_formatted_levelname, self._fmt\n            )\n\n    def format(self, record):\n        fmt = self._level_to_fmt_mapping.get(record.levelno, self._original_fmt)\n        if six.PY2:\n            self._fmt = fmt\n        else:\n            self._style._fmt = fmt\n        return super(ColoredLevelFormatter, self).format(record)\n\n\ndef get_option_ini(config, *names):\n    for name in names:\n        ret = config.getoption(name)  # 'default' arg won't work as expected\n        if ret is None:\n            ret = config.getini(name)\n        if ret:\n            return ret\n\n\ndef pytest_addoption(p",
+          "start_line": 42,
+          "start_column": 1294,
+          "end_line": 0,
+          "end_column": 2608,
+          "start_byte": 1294,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.hookspec.pytest_addoption",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "     if six.PY2:\n            self._original_fmt = self._fmt\n        else:\n            self._original_fmt = self._style._fmt\n        self._level_to_fmt_mapping = {}\n\n        levelname_fmt_match = self.LEVELNAME_FMT_REGEX.search(self._fmt)\n        if not levelname_fmt_match:\n            return\n        levelname_fmt = levelname_fmt_match.group()\n\n        for level, color_opts in self.LOGLEVEL_COLOROPTS.items():\n            formatted_levelname = levelname_fmt % {\n                \"levelname\": logging.getLevelName(level)\n            }\n\n            # add ANSI escape sequences around the formatted levelname\n            color_kwargs = {name: True for name in color_opts}\n            colorized_formatted_levelname = terminalwriter.markup(\n                formatted_levelname, **color_kwargs\n            )\n            self._level_to_fmt_mapping[level] = self.LEVELNAME_FMT_REGEX.sub(\n                colorized_formatted_levelname, self._fmt\n            )\n\n    def format(self, record):\n        fmt = self._level_to_fmt_mapping.get(record.levelno, self._original_fmt)\n        if six.PY2:\n            self._fmt = fmt\n        else:\n            self._style._fmt = fmt\n        return super(ColoredLevelFormatter, self).format(record)\n\n\ndef get_option_ini(config, *na",
+          "start_line": 37,
+          "start_column": 1119,
+          "end_line": 0,
+          "end_column": 2377,
+          "start_byte": 1119,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.junitxml.pytest_addoption",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "   log_level = config.getini(setting_name)\n        if log_level:\n            break\n    else:\n        return\n\n    if isinstance(log_level, six.string_types):\n        log_level = log_level.upper()\n    try:\n        return int(getattr(logging, log_level, log_level))\n    except ValueError:\n        # Python logging does not recognise this as a logging level\n        raise pytest.UsageError(\n            \"'{}' is not recognized as a logging level name for \"\n            \"'{}'. Please consider passing the \"\n            \"logging level num instead.\".format(log_level, setting_name)\n        )\n\n\n# run after terminalreporter/capturemanager are configured\n@pytest.hookimpl(trylast=True)\ndef pytest_configure(config):\n    config.pluginmanager.register(LoggingPlugin(config), \"logging-plugin\")\n\n\nclass LoggingPlugin(object):\n    \"\"\"Attaches to the logging module and captures log messages for each test.\n    \"\"\"\n\n    def __init__(self, config):\n        \"\"\"Creates a new plugin to capture log messages.\n\n        The formatter can be safely shared across all handlers so\n        create a single one for the entire test session here.\n        \"\"\"\n        self._config = config\n\n        # enable verbose output automatically i",
+          "start_line": 347,
+          "start_column": 11276,
+          "end_line": 0,
+          "end_column": 12485,
+          "start_byte": 11276,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.logging.ColoredLevelFormatter",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "class ColoredLevelFormatter(logging.Formatter):\n    \"\"\"\n    Colorize the %(levelname)..s part of the log format passed to __init__.\n    \"\"\"\n\n    LOGLEVEL_COLOROPTS = {\n        logging.CRITICAL: {\"red\"},\n        logging.ERROR: {\"red\", \"bold\"},\n        logging.WARNING: {\"yellow\"},\n        logging.WARN: {\"yellow\"},\n        logging.INFO: {\"green\"},\n        logging.DEBUG: {\"purple\"},\n        logging.NOTSET: set(),\n    }\n    LEVELNAME_FMT_REGEX = re.compile(r\"%\\(levelname\\)([+-]?\\d*s)\")\n\n    def __init__(self, terminalwriter, *args, **kwargs):\n        super(ColoredLevelFormatter, self).__init__(*args, **kwargs)\n        if six.PY2:\n            self._original_fmt = self._fmt\n        else:\n            self._original_fmt = self._style._fmt\n        self._level_to_fmt_mapping = {}\n\n        levelname_fmt_match = self.LEVELNAME_FMT_REGEX.search(self._fmt)\n        if not levelname_fmt_match:\n            return\n        levelname_fmt = levelname_fmt_match.group()\n\n        for level, color_opts in self.LOGLEVEL_COLOROPTS.items():\n            formatted_levelname = levelname_fmt % {\n                \"levelname\": logging.getLevelName(level)\n            }\n\n            # add ANSI escape sequences around the formatted levelname\n            color_kwargs = {name: True for name in color_opts}\n            colorized_formatted_levelname = terminalwriter.markup(\n                formatted_levelname, **color_kwargs\n            )\n            self._level_to_fmt_mapping[level] = self.LEVELNAME_FMT_REGEX.sub(\n                colorized_formatted_levelname, self._fmt\n            )\n\n    def format(self, record):\n        fmt = self._level_to_fmt_mapping.get(record.levelno, self._original_fmt)\n        if six.PY2:\n            self._fmt = fmt\n        else:\n            self._style._fmt = fmt\n        return super(ColoredLevelFormatter, self).format(record)",
+          "start_line": 21,
+          "start_column": 503,
+          "end_line": 0,
+          "end_column": 2344,
+          "start_byte": 503,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.logging.ColoredLevelFormatter.LOGLEVEL_COLOROPTS",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "LOGLEVEL_COLOROPTS = {\n        logging.CRITICAL: {\"red\"},\n        logging.ERROR: {\"red\", \"bold\"},\n        logging.WARNING: {\"yellow\"},\n        logging.WARN: {\"yellow\"},\n        logging.INFO: {\"green\"},\n        logging.DEBUG: {\"purple\"},\n        logging.NOTSET: set(),\n    }",
+          "start_line": 26,
+          "start_column": 648,
+          "end_line": 4,
+          "end_column": 921,
+          "start_byte": 648,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.logging.ColoredLevelFormatter.LEVELNAME_FMT_REGEX",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "LEVELNAME_FMT_REGEX = re.compile(r\"%\\(levelname\\)([+-]?\\d*s)\")",
+          "start_line": 35,
+          "start_column": 926,
+          "end_line": 4,
+          "end_column": 988,
+          "start_byte": 926,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.logging.ColoredLevelFormatter.__init__",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "def __init__(self, terminalwriter, *args, **kwargs):\n        super(ColoredLevelFormatter, self).__init__(*args, **kwargs)\n        if six.PY2:\n            self._original_fmt = self._fmt\n        else:\n            self._original_fmt = self._style._fmt\n        self._level_to_fmt_mapping = {}\n\n        levelname_fmt_match = self.LEVELNAME_FMT_REGEX.search(self._fmt)\n        if not levelname_fmt_match:\n            return\n        levelname_fmt = levelname_fmt_match.group()\n\n        for level, color_opts in self.LOGLEVEL_COLOROPTS.items():\n            formatted_levelname = levelname_fmt % {\n                \"levelname\": logging.getLevelName(level)\n            }\n\n            # add ANSI escape sequences around the formatted levelname\n            color_kwargs = {name: True for name in color_opts}\n            colorized_formatted_levelname = terminalwriter.markup(\n                formatted_levelname, **color_kwargs\n            )\n            self._level_to_fmt_mapping[level] = self.LEVELNAME_FMT_REGEX.sub(\n                colorized_formatted_levelname, self._fmt\n            )",
+          "start_line": 37,
+          "start_column": 994,
+          "end_line": 4,
+          "end_column": 2070,
+          "start_byte": 994,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.logging.ColoredLevelFormatter.format",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "def format(self, record):\n        fmt = self._level_to_fmt_mapping.get(record.levelno, self._original_fmt)\n        if six.PY2:\n            self._fmt = fmt\n        else:\n            self._style._fmt = fmt\n        return super(ColoredLevelFormatter, self).format(record)",
+          "start_line": 64,
+          "start_column": 2076,
+          "end_line": 4,
+          "end_column": 2344,
+          "start_byte": 2076,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.logging.pytest_addoption",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "def pytest_addoption(parser):\n    \"\"\"Add options to control log capturing.\"\"\"\n    group = parser.getgroup(\"logging\")\n\n    def add_option_ini(option, dest, default=None, type=None, **kwargs):\n        parser.addini(\n            dest, default=default, type=type, help=\"default value for \" + option\n        )\n        group.addoption(option, dest=dest, **kwargs)\n\n    add_option_ini(\n        \"--no-print-logs\",\n        dest=\"log_print\",\n        action=\"store_const\",\n        const=False,\n        default=True,\n        type=\"bool\",\n        help=\"disable printing caught logs on failed tests.\",\n    )\n    add_option_ini(\n        \"--log-level\",\n        dest=\"log_level\",\n        default=None,\n        help=\"logging level used by the logging module\",\n    )\n    add_option_ini(\n        \"--log-format\",\n        dest=\"log_format\",\n        default=DEFAULT_LOG_FORMAT,\n        help=\"log format as used by the logging module.\",\n    )\n    add_option_ini(\n        \"--log-date-format\",\n        dest=\"log_date_format\",\n        default=DEFAULT_LOG_DATE_FORMAT,\n        help=\"log date format as used by the logging module.\",\n    )\n    parser.addini(\n        \"log_cli\",\n        default=False,\n        type=\"bool\",\n        help='enable log display during test run (also known as \"live logging\").',\n    )\n    add_option_ini(\n        \"--log-cli-level\", dest=\"log_cli_level\", default=None, help=\"cli logging level.\"\n    )\n    add_option_ini(\n        \"--log-cli-format\",\n        dest=\"log_cli_format\",\n        default=None,\n        help=\"log format as used by the logging module.\",\n    )\n    add_option_ini(\n        \"--log-cli-date-format\",\n        dest=\"log_cli_date_format\",\n        default=None,\n        help=\"log date format as used by the logging module.\",\n    )\n    add_option_ini(\n        \"--log-file\",\n        dest=\"log_file\",\n        default=None,\n        help=\"path to a file when logging will be written to.\",\n    )\n    add_option_ini(\n        \"--log-file-level\",\n        dest=\"log_file_level\",\n        default=None,\n        help=\"log file logging level.\",\n    )\n    add_option_ini(\n        \"--log-file-format\",\n        dest=\"log_file_format\",\n        default=DEFAULT_LOG_FORMAT,\n        help=\"log format as used by the logging module.\",\n    )\n    add_option_ini(\n        \"--log-file-date-format\",\n        dest=\"log_file_date_format\",\n        default=DEFAULT_LOG_DATE_FORMAT,\n        help=\"log date format as used by the logging module.\",\n    )",
+          "start_line": 82,
+          "start_column": 2586,
+          "end_line": 0,
+          "end_column": 5014,
+          "start_byte": 2586,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.logging.LoggingPlugin",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "class LoggingPlugin(object):\n    \"\"\"Attaches to the logging module and captures log messages for each test.\n    \"\"\"\n\n    def __init__(self, config):\n        \"\"\"Creates a new plugin to capture log messages.\n\n        The formatter can be safely shared across all handlers so\n        create a single one for the entire test session here.\n        \"\"\"\n        self._config = config\n\n        # enable verbose output automatically if live logging is enabled\n        if self._log_cli_enabled() and config.getoption(\"verbose\") < 1:\n            config.option.verbose = 1\n\n        self.print_logs = get_option_ini(config, \"log_print\")\n        self.formatter = logging.Formatter(\n            get_option_ini(config, \"log_format\"),\n            get_option_ini(config, \"log_date_format\"),\n        )\n        self.log_level = get_actual_log_level(config, \"log_level\")\n\n        self.log_file_level = get_actual_log_level(config, \"log_file_level\")\n        self.log_file_format = get_option_ini(config, \"log_file_format\", \"log_format\")\n        self.log_file_date_format = get_option_ini(\n            config, \"log_file_date_format\", \"log_date_format\"\n        )\n        self.log_file_formatter = logging.Formatter(\n            self.log_file_format, datefmt=self.log_file_date_format\n        )\n\n        log_file = get_option_ini(config, \"log_file\")\n        if log_file:\n            self.log_file_handler = logging.FileHandler(\n                log_file, mode=\"w\", encoding=\"UTF-8\"\n            )\n            self.log_file_handler.setFormatter(self.log_file_formatter)\n        else:\n            self.log_file_handler = None\n\n        self.log_cli_handler = None\n\n        self.live_logs_context = lambda: dummy_context_manager()\n        # Note that the lambda for the live_logs_context is needed because\n        # live_logs_context can otherwise not be entered multiple times due\n        # to limitations of contextlib.contextmanager.\n\n        if self._log_cli_enabled():\n            self._setup_cli_logging()\n\n    def _setup_cli_logging(self):\n        config = self._config\n        terminal_reporter = config.pluginmanager.get_plugin(\"terminalreporter\")\n        if terminal_reporter is None:\n            # terminal reporter is disabled e.g. by pytest-xdist.\n            return\n\n        capture_manager = config.pluginmanager.get_plugin(\"capturemanager\")\n        # if capturemanager plugin is disabled, live logging still works.\n        log_cli_handler = _LiveLoggingStreamHandler(terminal_reporter, capture_manager)\n        log_cli_format = get_option_ini(config, \"log_cli_format\", \"log_format\")\n        log_cli_date_format = get_option_ini(\n            config, \"log_cli_date_format\", \"log_date_format\"\n        )\n        if (\n            config.option.color != \"no\"\n            and ColoredLevelFormatter.LEVELNAME_FMT_REGEX.search(log_cli_format)\n        ):\n            log_cli_formatter = ColoredLevelFormatter(\n                create_terminal_writer(config),\n                log_cli_format,\n                datefmt=log_cli_date_format,\n            )\n        else:\n            log_cli_formatter = logging.Formatter(\n                log_cli_format, datefmt=log_cli_date_format\n            )\n        log_cli_level = get_actual_log_level(config, \"log_cli_level\", \"log_level\")\n        self.log_cli_handler = log_cli_handler\n        self.live_logs_context = lambda: catching_logs(\n            log_cli_handler, formatter=log_cli_formatter, level=log_cli_level\n        )\n\n    def set_log_path(self, fname):\n        \"\"\"Public method, which can set filename parameter for\n        Logging.FileHandler(). Also creates parent directory if\n        it does not exist.\n\n        .. warning::\n            Please considered as an experimental API.\n        \"\"\"\n        fname = Path(fname)\n\n        if not fname.is_absolute():\n            fname = Path(self._config.rootdir, fname)\n\n        if not fname.parent.exists():\n            fname.parent.mkdir(exist_ok=True, parents=True)\n\n        self.log_file_handler = logging.FileHandler(\n            str(fname), mode=\"w\", encoding=\"UTF-8\"\n        )\n        self.log_file_handler.setFormatter(self.log_file_formatter)\n\n    def _log_cli_enabled(self):\n        \"\"\"Return True if log_cli should be considered enabled, either explicitly\n        or because --log-cli-level was given in the command-line.\n        \"\"\"\n        return self._config.getoption(\n            \"--log-cli-level\"\n        ) is not None or self._config.getini(\"log_cli\")\n\n    @pytest.hookimpl(hookwrapper=True, tryfirst=True)\n    def pytest_collection(self):\n        with self.live_logs_context():\n            if self.log_cli_handler:\n                self.log_cli_handler.set_when(\"collection\")\n\n            if self.log_file_handler is not None:\n                with catching_logs(self.log_file_handler, level=self.log_file_level):\n                    yield\n            else:\n                yield\n\n    @contextmanager\n    def _runtest_for(self, item, when):\n        with self._runtest_for_main(item, when):\n            if self.log_file_handler is not None:\n                with catching_logs(self.log_file_handler, level=self.log_file_level):\n                    yield\n            else:\n                yield\n\n    @contextmanager\n    def _runtest_for_main(self, item, when):\n        \"\"\"Implements the internals of pytest_runtest_xxx() hook.\"\"\"\n        with catching_logs(\n            LogCaptureHandler(), formatter=self.formatter, level=self.log_level\n        ) as log_handler:\n            if self.log_cli_handler:\n                self.log_cli_handler.set_when(when)\n\n            if item is None:\n                yield  # run the test\n                return\n\n            if not hasattr(item, \"catch_log_handlers\"):\n                item.catch_log_handlers = {}\n            item.catch_log_handlers[when] = log_handler\n            item.catch_log_handler = log_handler\n            try:\n                yield  # run test\n            finally:\n                if when == \"teardown\":\n                    del item.catch_log_handler\n                    del item.catch_log_handlers\n\n            if self.print_logs:\n                # Add a captured log section to the report.\n                log = log_handler.stream.getvalue().strip()\n                item.add_report_section(when, \"log\", log)\n\n    @pytest.hookimpl(hookwrapper=True)\n    def pytest_runtest_setup(self, item):\n        with self._runtest_for(item, \"setup\"):\n            yield\n\n    @pytest.hookimpl(hookwrapper=True)\n    def pytest_runtest_call(self, item):\n        with self._runtest_for(item, \"call\"):\n            yield\n\n    @pytest.hookimpl(hookwrapper=True)\n    def pytest_runtest_teardown(self, item):\n        with self._runtest_for(item, \"teardown\"):\n            yield\n\n    @pytest.hookimpl(hookwrapper=True)\n    def pytest_runtest_logstart(self):\n        if self.log_cli_handler:\n            self.log_cli_handler.reset()\n        with self._runtest_for(None, \"start\"):\n            yield\n\n    @pytest.hookimpl(hookwrapper=True)\n    def pytest_runtest_logfinish(self):\n        with self._runtest_for(None, \"finish\"):\n            yield\n\n    @pytest.hookimpl(hookwrapper=True)\n    def pytest_runtest_logreport(self):\n        with self._runtest_for(None, \"logreport\"):\n            yield\n\n    @pytest.hookimpl(hookwrapper=True, tryfirst=True)\n    def pytest_sessionfinish(self):\n        with self.live_logs_context():\n            if self.log_cli_handler:\n                self.log_cli_handler.set_when(\"sessionfinish\")\n            if self.log_file_handler is not None:\n                try:\n                    with catching_logs(\n                        self.log_file_handler, level=self.log_file_level\n                    ):\n                        yield\n                finally:\n                    # Close the FileHandler explicitly.\n                    # (logging.shutdown might have lost the weakref?!)\n                    self.log_file_handler.close()\n            else:\n                yield\n\n    @pytest.hookimpl(hookwrapper=True, tryfirst=True)\n    def pytest_sessionstart(self):\n        with self.live_logs_context():\n            if self.log_cli_handler:\n                self.log_cli_handler.set_when(\"sessionstart\")\n            if self.log_file_handler is not None:\n                with catching_logs(self.log_file_handler, level=self.log_file_level):\n                    yield\n            else:\n                yield\n\n    @pytest.hookimpl(hookwrapper=True)\n    def pytest_runtestloop(self, session):\n        \"\"\"Runs all collected test items.\"\"\"\n        with self.live_logs_context():\n            if self.log_file_handler is not None:\n                with catching_logs(self.log_file_handler, level=self.log_file_level):\n                    yield  # run all the tests\n            else:\n                yield  # run all the tests",
+          "start_line": 378,
+          "start_column": 12060,
+          "end_line": 0,
+          "end_column": 20813,
+          "start_byte": 12060,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.logging.LoggingPlugin.__init__",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "def __init__(self, config):\n        \"\"\"Creates a new plugin to capture log messages.\n\n        The formatter can be safely shared across all handlers so\n        create a single one for the entire test session here.\n        \"\"\"\n        self._config = config\n\n        # enable verbose output automatically if live logging is enabled\n        if self._log_cli_enabled() and config.getoption(\"verbose\") < 1:\n            config.option.verbose = 1\n\n        self.print_logs = get_option_ini(config, \"log_print\")\n        self.formatter = logging.Formatter(\n            get_option_ini(config, \"log_format\"),\n            get_option_ini(config, \"log_date_format\"),\n        )\n        self.log_level = get_actual_log_level(config, \"log_level\")\n\n        self.log_file_level = get_actual_log_level(config, \"log_file_level\")\n        self.log_file_format = get_option_ini(config, \"log_file_format\", \"log_format\")\n        self.log_file_date_format = get_option_ini(\n            config, \"log_file_date_format\", \"log_date_format\"\n        )\n        self.log_file_formatter = logging.Formatter(\n            self.log_file_format, datefmt=self.log_file_date_format\n        )\n\n        log_file = get_option_ini(config, \"log_file\")\n        if log_file:\n            self.log_file_handler = logging.FileHandler(\n                log_file, mode=\"w\", encoding=\"UTF-8\"\n            )\n            self.log_file_handler.setFormatter(self.log_file_formatter)\n        else:\n            self.log_file_handler = None\n\n        self.log_cli_handler = None\n\n        self.live_logs_context = lambda: dummy_context_manager()\n        # Note that the lambda for the live_logs_context is needed because\n        # live_logs_context can otherwise not be entered multiple times due\n        # to limitations of contextlib.contextmanager.\n\n        if self._log_cli_enabled():\n            self._setup_cli_logging()",
+          "start_line": 382,
+          "start_column": 12181,
+          "end_line": 4,
+          "end_column": 14040,
+          "start_byte": 12181,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.logging.LoggingPlugin._setup_cli_logging",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "def _setup_cli_logging(self):\n        config = self._config\n        terminal_reporter = config.pluginmanager.get_plugin(\"terminalreporter\")\n        if terminal_reporter is None:\n            # terminal reporter is disabled e.g. by pytest-xdist.\n            return\n\n        capture_manager = config.pluginmanager.get_plugin(\"capturemanager\")\n        # if capturemanager plugin is disabled, live logging still works.\n        log_cli_handler = _LiveLoggingStreamHandler(terminal_reporter, capture_manager)\n        log_cli_format = get_option_ini(config, \"log_cli_format\", \"log_format\")\n        log_cli_date_format = get_option_ini(\n            config, \"log_cli_date_format\", \"log_date_format\"\n        )\n        if (\n            config.option.color != \"no\"\n            and ColoredLevelFormatter.LEVELNAME_FMT_REGEX.search(log_cli_format)\n        ):\n            log_cli_formatter = ColoredLevelFormatter(\n                create_terminal_writer(config),\n                log_cli_format,\n                datefmt=log_cli_date_format,\n            )\n        else:\n            log_cli_formatter = logging.Formatter(\n                log_cli_format, datefmt=log_cli_date_format\n            )\n        log_cli_level = get_actual_log_level(config, \"log_cli_level\", \"log_level\")\n        self.log_cli_handler = log_cli_handler\n        self.live_logs_context = lambda: catching_logs(\n            log_cli_handler, formatter=log_cli_formatter, level=log_cli_level\n        )",
+          "start_line": 429,
+          "start_column": 14046,
+          "end_line": 4,
+          "end_column": 15496,
+          "start_byte": 14046,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.logging.LoggingPlugin.set_log_path",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "def set_log_path(self, fname):\n        \"\"\"Public method, which can set filename parameter for\n        Logging.FileHandler(). Also creates parent directory if\n        it does not exist.\n\n        .. warning::\n            Please considered as an experimental API.\n        \"\"\"\n        fname = Path(fname)\n\n        if not fname.is_absolute():\n            fname = Path(self._config.rootdir, fname)\n\n        if not fname.parent.exists():\n            fname.parent.mkdir(exist_ok=True, parents=True)\n\n        self.log_file_handler = logging.FileHandler(\n            str(fname), mode=\"w\", encoding=\"UTF-8\"\n        )\n        self.log_file_handler.setFormatter(self.log_file_formatter)",
+          "start_line": 462,
+          "start_column": 15502,
+          "end_line": 4,
+          "end_column": 16175,
+          "start_byte": 15502,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.logging.LoggingPlugin._log_cli_enabled",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "def _log_cli_enabled(self):\n        \"\"\"Return True if log_cli should be considered enabled, either explicitly\n        or because --log-cli-level was given in the command-line.\n        \"\"\"\n        return self._config.getoption(\n            \"--log-cli-level\"\n        ) is not None or self._config.getini(\"log_cli\")",
+          "start_line": 483,
+          "start_column": 16181,
+          "end_line": 4,
+          "end_column": 16493,
+          "start_byte": 16181,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.logging.LoggingPlugin.pytest_collection",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "@pytest.hookimpl(hookwrapper=True, tryfirst=True)\n    def pytest_collection(self):\n        with self.live_logs_context():\n            if self.log_cli_handler:\n                self.log_cli_handler.set_when(\"collection\")\n\n            if self.log_file_handler is not None:\n                with catching_logs(self.log_file_handler, level=self.log_file_level):\n                    yield\n            else:\n                yield",
+          "start_line": 491,
+          "start_column": 16499,
+          "end_line": 4,
+          "end_column": 16920,
+          "start_byte": 16499,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.logging.LoggingPlugin._runtest_for",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "@contextmanager\n    def _runtest_for(self, item, when):\n        with self._runtest_for_main(item, when):\n            if self.log_file_handler is not None:\n                with catching_logs(self.log_file_handler, level=self.log_file_level):\n                    yield\n            else:\n                yield",
+          "start_line": 503,
+          "start_column": 16926,
+          "end_line": 4,
+          "end_column": 17232,
+          "start_byte": 16926,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.logging.LoggingPlugin._runtest_for_main",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "@contextmanager\n    def _runtest_for_main(self, item, when):\n        \"\"\"Implements the internals of pytest_runtest_xxx() hook.\"\"\"\n        with catching_logs(\n            LogCaptureHandler(), formatter=self.formatter, level=self.log_level\n        ) as log_handler:\n            if self.log_cli_handler:\n                self.log_cli_handler.set_when(when)\n\n            if item is None:\n                yield  # run the test\n                return\n\n            if not hasattr(item, \"catch_log_handlers\"):\n                item.catch_log_handlers = {}\n            item.catch_log_handlers[when] = log_handler\n            item.catch_log_handler = log_handler\n            try:\n                yield  # run test\n            finally:\n                if when == \"teardown\":\n                    del item.catch_log_handler\n                    del item.catch_log_handlers\n\n            if self.print_logs:\n                # Add a captured log section to the report.\n                log = log_handler.stream.getvalue().strip()\n                item.add_report_section(when, \"log\", log)",
+          "start_line": 512,
+          "start_column": 17238,
+          "end_line": 4,
+          "end_column": 18305,
+          "start_byte": 17238,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.logging.LoggingPlugin.pytest_runtest_setup",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "@pytest.hookimpl(hookwrapper=True)\n    def pytest_runtest_setup(self, item):\n        with self._runtest_for(item, \"setup\"):\n            yield",
+          "start_line": 541,
+          "start_column": 18311,
+          "end_line": 4,
+          "end_column": 18452,
+          "start_byte": 18311,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.logging.LoggingPlugin.pytest_runtest_call",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "@pytest.hookimpl(hookwrapper=True)\n    def pytest_runtest_call(self, item):\n        with self._runtest_for(item, \"call\"):\n            yield",
+          "start_line": 546,
+          "start_column": 18458,
+          "end_line": 4,
+          "end_column": 18597,
+          "start_byte": 18458,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.logging.LoggingPlugin.pytest_runtest_teardown",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "@pytest.hookimpl(hookwrapper=True)\n    def pytest_runtest_teardown(self, item):\n        with self._runtest_for(item, \"teardown\"):\n            yield",
+          "start_line": 551,
+          "start_column": 18603,
+          "end_line": 4,
+          "end_column": 18750,
+          "start_byte": 18603,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.logging.LoggingPlugin.pytest_runtest_logstart",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "@pytest.hookimpl(hookwrapper=True)\n    def pytest_runtest_logstart(self):\n        if self.log_cli_handler:\n            self.log_cli_handler.reset()\n        with self._runtest_for(None, \"start\"):\n            yield",
+          "start_line": 556,
+          "start_column": 18756,
+          "end_line": 4,
+          "end_column": 18968,
+          "start_byte": 18756,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.logging.LoggingPlugin.pytest_runtest_logfinish",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "@pytest.hookimpl(hookwrapper=True)\n    def pytest_runtest_logfinish(self):\n        with self._runtest_for(None, \"finish\"):\n            yield",
+          "start_line": 563,
+          "start_column": 18974,
+          "end_line": 4,
+          "end_column": 19114,
+          "start_byte": 18974,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.logging.LoggingPlugin.pytest_runtest_logreport",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "@pytest.hookimpl(hookwrapper=True)\n    def pytest_runtest_logreport(self):\n        with self._runtest_for(None, \"logreport\"):\n            yield",
+          "start_line": 568,
+          "start_column": 19120,
+          "end_line": 4,
+          "end_column": 19263,
+          "start_byte": 19120,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.logging.LoggingPlugin.pytest_sessionfinish",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "@pytest.hookimpl(hookwrapper=True, tryfirst=True)\n    def pytest_sessionfinish(self):\n        with self.live_logs_context():\n            if self.log_cli_handler:\n                self.log_cli_handler.set_when(\"sessionfinish\")\n            if self.log_file_handler is not None:\n                try:\n                    with catching_logs(\n                        self.log_file_handler, level=self.log_file_level\n                    ):\n                        yield\n                finally:\n                    # Close the FileHandler explicitly.\n                    # (logging.shutdown might have lost the weakref?!)\n                    self.log_file_handler.close()\n            else:\n                yield",
+          "start_line": 573,
+          "start_column": 19269,
+          "end_line": 4,
+          "end_column": 19972,
+          "start_byte": 19269,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.logging.LoggingPlugin.pytest_sessionstart",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "@pytest.hookimpl(hookwrapper=True, tryfirst=True)\n    def pytest_sessionstart(self):\n        with self.live_logs_context():\n            if self.log_cli_handler:\n                self.log_cli_handler.set_when(\"sessionstart\")\n            if self.log_file_handler is not None:\n                with catching_logs(self.log_file_handler, level=self.log_file_level):\n                    yield\n            else:\n                yield",
+          "start_line": 591,
+          "start_column": 19978,
+          "end_line": 4,
+          "end_column": 20402,
+          "start_byte": 19978,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.logging.LoggingPlugin.pytest_runtestloop",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "@pytest.hookimpl(hookwrapper=True)\n    def pytest_runtestloop(self, session):\n        \"\"\"Runs all collected test items.\"\"\"\n        with self.live_logs_context():\n            if self.log_file_handler is not None:\n                with catching_logs(self.log_file_handler, level=self.log_file_level):\n                    yield  # run all the tests\n            else:\n                yield  # run all the tests",
+          "start_line": 602,
+          "start_column": 20408,
+          "end_line": 4,
+          "end_column": 20813,
+          "start_byte": 20408,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.main.pytest_addoption",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "llow\"},\n        logging.WARN: {\"yellow\"},\n        logging.INFO: {\"green\"},\n        logging.DEBUG: {\"purple\"},\n        logging.NOTSET: set(),\n    }\n    LEVELNAME_FMT_REGEX = re.compile(r\"%\\(levelname\\)([+-]?\\d*s)\")\n\n    def __init__(self, terminalwriter, *args, **kwargs):\n        super(ColoredLevelFormatter, self).__init__(*args, **kwargs)\n        if six.PY2:\n            self._original_fmt = self._fmt\n        else:\n            self._original_fmt = self._style._fmt\n        self._level_to_fmt_mapping = {}\n\n        levelname_fmt_match = self.LEVELNAME_FMT_REGEX.search(self._fmt)\n        if not levelname_fmt_match:\n            return\n        levelname_fmt = levelname_fmt_match.group()\n\n        for level, color_opts in self.LOGLEVEL_COLOROPTS.items():\n            formatted_levelname = levelname_fmt % {\n                \"levelname\": logging.getLevelName(level)\n            }\n\n            # add ANSI escape sequences around the formatted levelname\n            color_kwargs = {name: True for name in color_opts}\n            colorized_formatted_levelname = terminalwriter.markup(\n                formatted_levelname, **color_kwargs\n            )\n            self._level_to_fmt_mapping[level] = self.LEVELNAME_FMT_REGEX.sub(\n                colorized_formatted_levelname, self._fmt\n            )\n\n    def format(self, record):\n        fmt = self._level_to_fmt_mapping.get(record.levelno, self._original_fmt)\n        if six.PY2:\n            self._fmt = fmt\n        else:\n            self._style._fmt = fmt\n        return super(ColoredLevelFormatter, self).format(record)\n\n\ndef get_option_ini(config, *names):\n    for name in names:\n        ret = config.getoption(name)  # 'default' arg won't work as expected\n        if ret is None:\n            ret = config.getini(name)\n        if ret:\n            return ret\n\n\ndef pytest_addoption(parser):\n    \"\"\"Add options to control log capturing.\"\"\"\n    group = parser.getgroup(\"logging\")\n\n    def add_option_ini(option, dest, default=None, type=None, **kwargs):\n        parser.addini(\n            dest, default=default, type=type, help=\"default value for \" + option\n        )\n        group.addoption(option, dest=dest, **kwargs)\n\n    add_option_ini(\n        \"--no-print-logs\",\n        dest=\"log_print\",\n        action=\"store_const\",\n        const=False,\n        default=True,\n        type=\"bool\",\n        help=\"disable printing caught logs on failed tests.\",\n    )\n    add_option_ini(\n        \"--log-level\",\n        dest=\"log_level\",\n        default=None,\n        help=\"logging level used by the logging module\",\n    )\n    add_option_ini(\n        \"--log-format\",\n        dest=\"log_format\",\n        default=DEFAULT_LOG_FORMAT,\n        help=\"log format as used by the logging module.\",\n    )\n    add_option_ini(\n        \"--log-date-format\",\n        dest=\"log_date_format\",\n        default=DEFAULT_LOG_DATE_FORMAT,\n        help=\"log date format as used by the logging module.\",\n    )\n    parser.addini(\n        \"log_cli\",\n        default=False,\n        type=\"bool\",\n        help='enable log display during test run (also known as \"live logging\").',\n    )\n    add_option_ini(\n        \"--log-cli-level\", dest=\"log_cli_level\", default=None, help=\"cli logging level.\"\n    )\n    add_option_ini(\n        \"--log-cli-format\",\n        dest=\"log_cli_format\",\n        default=None,\n        help=\"log format as used by the logging module.\",\n    )\n    add_option_ini(\n        \"--log-cli-date-format\",\n        dest=\"log_cli_date_format\",\n        default=None,\n        help=\"log date format as used by the logging module.\",\n    )\n    add_option_ini(\n        \"--log-file\",\n        dest=\"log_file\",\n        default=None,\n        help=\"path to a file when logging will be written to.\",\n    )\n    add_option_ini(\n        \"--log-file-level\",\n        dest=\"log_file_level\",\n        default=None,\n        help=\"log file logging level.\",\n    )\n    add_option_ini(\n        \"--log-file-format\",\n        dest=\"log_file_format\",\n        default=DEFAULT_LOG_FORMAT,\n        help=\"log format as used by the logging module.\",\n    )\n    add_option_ini(\n        \"--log-file-date-format\",\n        dest=\"log_file_date_format\",\n        default=DEFAULT_LOG_DATE_FORMAT,\n        help=\"log date format as used by the logging module.\",\n    )\n\n\n@contextmanager\ndef catch",
+          "start_line": 35,
+          "start_column": 775,
+          "end_line": 0,
+          "end_column": 5042,
+          "start_byte": 775,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.mark.pytest_addoption",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "if not levelname_fmt_match:\n            return\n        levelname_fmt = levelname_fmt_match.group()\n\n        for level, color_opts in self.LOGLEVEL_COLOROPTS.items():\n            formatted_levelname = levelname_fmt % {\n                \"levelname\": logging.getLevelName(level)\n            }\n\n            # add ANSI escape sequences around the formatted levelname\n            color_kwargs = {name: True for name in color_opts}\n            colorized_formatted_levelname = terminalwriter.markup(\n                formatted_levelname, **color_kwargs\n            )\n            self._level_to_fmt_mapping[level] = self.LEVELNAME_FMT_REGEX.sub(\n                colorized_formatted_levelname, self._fmt\n            )\n\n    def format(self, record):\n        fmt = self._level_to_fmt_mapping.get(record.levelno, self._original_fmt)\n        if six.PY2:\n            self._fmt = fmt\n        else:\n            self._style._fmt = fmt\n        return super(ColoredLevelFormatter, self).format(record)\n\n\ndef get_option_ini(config, *names):\n    for name in names:\n        ret = config.getoption(name)  # 'default' arg won't work as expected\n        if ret is None:\n            ret = config.getini(name)\n        if ret:\n            return ret\n\n\ndef pytest_addoption(parser):\n    \"\"\"Add options to control log capturing.\"\"\"\n    group = parser.getgroup(\"logging\")\n\n    def add_option_ini(option, dest, default=None, type=None, **kwargs):\n        parser.addini(\n            dest, default=default, type=type, help=\"default value for \" + option\n        )\n        group.addoption(opti",
+          "start_line": 39,
+          "start_column": 1365,
+          "end_line": 0,
+          "end_column": 2919,
+          "start_byte": 1365,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.pastebin.pytest_addoption",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "port pytest\nfrom _pytest.compat import dummy_context_manager\nfrom _pytest.config import create_terminal_writer\nfrom _pytest.pathlib import Path\n\nDEFAULT_LOG_FORMAT = \"%(filename)-25s %(lineno)4d %(levelname)-8s %(message)s\"\nDEFAULT_LOG_DATE_FORMAT = \"%H:%M:%S\"\n\n\nclass ColoredLevelFormatter(logging.Formatter):\n    \"\"\"\n    Color",
+          "start_line": 13,
+          "start_column": 240,
+          "end_line": 0,
+          "end_column": 568,
+          "start_byte": 240,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.pytester.pytest_addoption",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "def __init__(self, terminalwriter, *args, **kwargs):\n        super(ColoredLevelFormatter, self).__init__(*args, **kwargs)\n        if six.PY2:\n            self._original_fmt = self._fmt\n        else:\n            self._original_fmt = self._style._fmt\n        self._level_to_fmt_mapping = {}\n\n        levelname_fmt_match = self.LEVELNAME_FMT_REGEX.search(self._fmt)\n        if not levelname_fmt_match:\n            return\n        levelname_fmt = levelname_fmt_match.group()\n\n        for level, color_opts in self.LOGLEVEL_COLOROPTS.items():\n            formatted_levelname = levelname_fmt % {\n                \"level",
+          "start_line": 39,
+          "start_column": 994,
+          "end_line": 0,
+          "end_column": 1605,
+          "start_byte": 994,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.python.pytest_addoption",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "gs\n            )\n            self._level_to_fmt_mapping[level] = self.LEVELNAME_FMT_REGEX.sub(\n                colorized_formatted_levelname, self._fmt\n            )\n\n    def format(self, record):\n        fmt = self._level_to_fmt_mapping.get(record.levelno, self._original_fmt)\n        if six.PY2:\n            self._fmt = fmt\n        else:\n            self._style._fmt = fmt\n        return super(ColoredLevelFormatter, self).format(record)\n\n\ndef get_option_ini(config, *names):\n    for name in names:\n        ret = config.getoption(name)  # 'default' arg won't work as expected\n        if ret is None:\n            ret = config.getini(name)\n        if ret:\n            return ret\n\n\ndef pytest_addoption(parser):\n    \"\"\"Add options to control log capturing.\"\"\"\n    group = parser.getgroup(\"logging\")\n\n    def add_option_ini(option, dest, default=None, type=None, **kwargs):\n        parser.addini(\n            dest, default=default, type=type, help=\"default value for \" + option\n        )\n        group.addoption(option, dest=dest, **kwargs)\n\n    add_option_ini(\n        \"--no-print-logs\",\n        dest=\"log_print\",\n        action=\"store_const\",\n        const=False,\n        default=True,\n        type=\"bool\",\n        help=\"disable printing caught logs on failed tests.\",\n    )\n    add_option_ini(\n        \"--log-level\",\n        dest=\"log_level\",\n        default=None,\n        help=\"logging level used by the logging module\",\n    )\n    add_option_ini(\n        \"--log-format\",\n        dest=\"log_format\",\n        default=DEFAULT_LOG_FORMAT,\n        help=\"log format as used by the logging module.\",\n    )\n    add_option_ini(\n        \"--log-date-format\",\n        dest=\"log_date_format\",\n        default=DEFAULT_LOG_DATE_FORMAT,\n        help=\"log date format as used by the log",
+          "start_line": 63,
+          "start_column": 1905,
+          "end_line": 0,
+          "end_column": 3675,
+          "start_byte": 1905,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.runner.pytest_addoption",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": ".Formatter):\n    \"\"\"\n    Colorize the %(levelname)..s part of the log format passed to __init__.\n    \"\"\"\n\n    LOGLEVEL_COLOROPTS = {\n        logging.CRITICAL: {\"red\"},\n        logging.ERROR: {\"red\", \"bold\"},\n        logging.WARNING: {\"yellow\"},\n        logging.WARN: {\"yellow\"},\n        logging.INFO: {\"green\"},\n",
+          "start_line": 25,
+          "start_column": 538,
+          "end_line": 0,
+          "end_column": 850,
+          "start_byte": 538,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.setuponly.pytest_addoption",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "int_function\n\nimport logging\nimport re\nfrom contextlib import contextmanager\n\nimport py\nimport six\n\nimport pytest\nfrom _pytest.compat import dummy_context_manager\nfrom _pytest.config import create_terminal_writer\nfrom _pytest.pathlib import Path\n\nDEFAULT_LOG_FORMAT = \"%(filename)-25s %(lineno)4d %(levelname)-8s %(message)s\"\nDEFAULT_LOG_DATE_FORMAT = \"%H:%M:%S\"\n\n\nclass ColoredLevelFormatter(loggin",
+          "start_line": 9,
+          "start_column": 138,
+          "end_line": 0,
+          "end_column": 537,
+          "start_byte": 138,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.setupplan.pytest_addoption",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "__ import print_function\n\nimport logging\nimport re\nfrom contextlib import contextmanager\n\nimport py\nimport six\n\nimport pytest\nfrom _pytest.compat import dummy_context_manager\nfrom _pytest.config import create_terminal_writer\nfrom _pytest.pathlib import Path\n\nDEFAULT_LOG_FORMAT",
+          "start_line": 7,
+          "start_column": 126,
+          "end_line": 0,
+          "end_column": 403,
+          "start_byte": 126,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.skipping.pytest_addoption",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "om _pytest.pathlib import Path\n\nDEFAULT_LOG_FORMAT = \"%(filename)-25s %(lineno)4d %(levelname)-8s %(message)s\"\nDEFAULT_LOG_DATE_FORMAT = \"%H:%M:%S\"\n\n\nclass ColoredLevelFormatter(logging.Formatter):\n    \"\"\"\n    Colorize the %(levelname)..s part of the log format passed to __init__.\n    \"\"\"\n\n    LOGLEVEL_COLOROPTS = {\n        logging.CRITICAL: {\"red\"},\n        logging.ERROR: {\"red\", \"bold\"},\n        logging.WARNING: {\"yellow\"},\n        logging.WARN: {\"yellow\"},\n        logging.",
+          "start_line": 12,
+          "start_column": 353,
+          "end_line": 0,
+          "end_column": 833,
+          "start_byte": 353,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.stepwise.pytest_addoption",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "ontrol log capturing. \"\"\"\nfrom __future__ import absolute_import\nfrom __future__ import division\nfrom __future__ import print_function\n\nimport logging\nimport re\nfrom contextlib import contextmanager\n\nimport py\nimport six\n\nimport pytest\nfrom _pytest.compat import dummy_context_manager\nfrom _pytest.config import create_terminal_writer\nfrom _pytest.pathlib import Path\n\nDEFAULT_LOG_FORMAT = \"%(filename)-25s %(lineno)4d %(levelname)-8s %(message)s\"\nDEFAULT_LOG_DAT",
+          "start_line": 3,
+          "start_column": 16,
+          "end_line": 0,
+          "end_column": 479,
+          "start_byte": 16,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.terminal.pytest_addoption",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "S.items():\n            formatted_levelname = levelname_fmt % {\n                \"levelname\": logging.getLevelName(level)\n            }\n\n            # add ANSI escape sequences around the formatted levelname\n            color_kwargs = {name: True for name in color_opts}\n            colorized_formatted_levelname = terminalwriter.markup(\n                formatted_levelname, **color_kwargs\n            )\n            self._level_to_fmt_mapping[level] = self.LEVELNAME_FMT_REGEX.sub(\n                colorized_formatted_levelname, self._fmt\n            )\n\n    def format(self, record):\n        fmt = self._level_to_fmt_mapping.get(record.levelno, self._original_fmt)\n        if six.PY2:\n            self._fmt = fmt\n        else:\n            self._style._fmt = fmt\n        return super(ColoredLevelFormatter, self).format(record)\n\n\ndef get_option_ini(config, *names):\n    for name in names:\n        ret = config.getoption(name)  # 'default' arg won't work as expected\n        if ret is None:\n            ret = config.getini(name)\n        if ret:\n            return ret\n\n\ndef pytest_addoption(parser):\n    \"\"\"Add options to control log capturing.\"\"\"\n    group = parser.getgroup(\"logging\")\n\n    def add_option_ini(option, dest, default=None, type=None, **kwargs):\n        parser.addini(\n            dest, default=default, type=type, help=\"default value for \" + option\n        )\n        group.addoption(option, dest=dest, **kwargs)\n\n    add_option_ini(\n        \"--no-print-logs\",\n        dest=\"log_print\",\n        action=\"store_const\",\n        const=False,\n        default=True,\n        type=\"bool\",\n        help=\"disable printing caught logs on failed tests.\",\n    )\n    add_option_ini(\n        \"--log-level\",\n        dest=\"log_level\",\n        default=None,\n        help=\"logging level used by the logging module\",\n    )\n    add_option_ini(\n        \"--log-format\",\n        dest=\"log_format\",\n        default=DEFAULT_LOG_FORMAT,\n        help=\"log format as used by the logging module.\",\n    )\n    add_option_ini(\n        \"--log-date-format\",\n        dest=\"log_date_format\",\n        default=DEFAULT_LOG_DATE_FORMAT,\n        help=\"log date format as used by the logging module.\",\n    )\n    parser.addini(\n        \"log_cli\",\n        default=False,\n        type=\"bool\",\n        help='enable log display during test run (also known as \"live logging\").',\n    )\n    add_option_ini(\n        \"--log-cli-level\", dest=\"log_cli_level\", default=None, help=\"cli logging level.\"\n    )\n    add_option_ini(\n        \"--log-cli-format\",\n        dest=\"log_cli_format\",\n        default=None,\n        help=\"log format as used by the logging module.\",\n    )\n    add_option_",
+          "start_line": 57,
+          "start_column": 1520,
+          "end_line": 0,
+          "end_column": 4162,
+          "start_byte": 1520,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.warnings.pytest_addoption",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "LevelFormatter, self).__init__(*args, **kwargs)\n        if six.PY2:\n            self._original_fmt = self._fmt\n        else:\n            self._original_fmt = self._style._fmt\n        self._level_to_fmt_mapping = {}\n\n        levelname_fmt_match = self.LEVELNAME_FMT_REGEX.search(self._fmt)\n        if not levelname_fmt_match:\n            return\n        levelname_fmt = levelname_fmt_match.group()\n\n        for level, color_opts in self.LOGLEVEL_COLOROPTS.items():",
+          "start_line": 38,
+          "start_column": 1068,
+          "end_line": 0,
+          "end_column": 1530,
+          "start_byte": 1068,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.resultlog.pytest_addoption",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "mport py\nimport six\n\nimport pytest\nfrom _pytest.compat import dummy_context_manager\nfrom _pytest.config import create_terminal_writer\nfrom _pytest.pathlib import Path\n\nDEFAULT_LOG_FORMAT = \"%(filename)-25s %(lineno)4d %(levelname)-8s %(message)s\"\nDEFAULT_LOG_DATE_FORMAT = \"%H:%M:%S\"\n\n\nclass ColoredLevelFormatter(lo",
+          "start_line": 12,
+          "start_column": 217,
+          "end_line": 0,
+          "end_column": 533,
+          "start_byte": 217,
+          "end_byte": 0
+        }
+      ],
+      "root_caused_symbols": [
+        {
+          "name": "_pytest.logging.DEFAULT_LOG_FORMAT",
+          "file_path": "src/_pytest/logging.py",
+          "file_content": "DEFAULT_LOG_FORMAT = \"%(filename)-25s %(lineno)4d %(levelname)-8s %(message)s\"",
+          "start_line": 17,
+          "start_column": 385,
+          "end_line": 0,
+          "end_column": 463,
+          "start_byte": 385,
+          "end_byte": 0
+        }
+      ]
+    },
+    "symbols_evaluate": {
+      "scratch_pad": "The issue is requesting an improvement in the logging format for better contextual log outputs by including the module name (`name`) instead of or in addition to the base filename (`filename`). The desired format is `% (levelname)-8s %(name)s:%(filename)s:%(lineno)d %(message)s`. \n\nThe `_pytest.logging.DEFAULT_LOG_FORMAT` in `src/_pytest/logging.py` currently defines the format as `% (filename)-25s %(lineno)4d %(levelname)-8s %(message)s`, only displaying the filename, line number, log level, and message.\n\nTo address this request, we need to change the `DEFAULT_LOG_FORMAT` to include `(name)`. The module name will provide additional context about where the log entry originated, allowing for enhanced debugging and log analysis.\n\nIn the provided symbols, the primary focus should be on updating `_pytest.logging.DEFAULT_LOG_FORMAT` to match the required format. The remaining symbols should be checked to confirm they rely on `DEFAULT_LOG_FORMAT`, and to verify no other changes are required regarding this update.",
+      "symbols": [
+        {
+          "name": "_pytest.logging.DEFAULT_LOG_FORMAT",
+          "file_path": "src/_pytest/logging.py",
+          "reason": "The logging format needs to be updated to include the module name as requested in the issue."
+        }
+      ],
+      "more_info": [],
+      "is_done": true,
+      "symbols_scratch_pad": [
+        "This symbol directly defines the existing `DEFAULT_LOG_FORMAT`, which aligns with what the issue is about. It currently omits the `name` and uses only `filename`. To fix the issue, this single symbol needs modification to include `name`.",
+        "This appears to be similar content about defining options, possibly re-declarations or option functions. The relevant part for format updates is likely still centralized in the `DEFAULT_LOG_FORMAT`. ",
+        "These lines appear to be higher-level logic related to log handlers and plugin configurations. Again, the main concern here would be where formats like `DEFAULT_LOG_FORMAT` get applied.",
+        "Appears to continue with the options handling patterns similar to previously shown setups. Not directly related to changing `DEFAULT_LOG_FORMAT` itself.",
+        "This seems to show part of logic related to formatting, likely repetition of option specification patterns seen in other functions or extending log functionality, rather than defining `DEFAULT_LOG_FORMAT` specifically.",
+        "This could be an extended handling of terminal colors based on the logging levels, which adds a display factor but doesn't inherently change the file format definitions relevant for `DEFAULT_LOG_FORMAT`.",
+        "Already examined in the context of color handling, reiterating the importance of different logging formatting depending on color specifics (class handling coloring)."
+      ]
+    }
+  },
+  "response": {
+    "file_paths": [
+      "src/_pytest/logging.py"
+    ],
+    "symbols": [
+      "_pytest.logging.DEFAULT_LOG_FORMAT"
+    ],
+    "code_spans": {
+      "_pytest.assertion.pytest_addoption": {
+        "name": "_pytest.assertion.pytest_addoption",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "port create_terminal_writer\nfrom _pytest.pathlib import Path\n\nDEFAULT_LOG_FORMAT = \"%(filename)-25s %(lineno)4d %(levelname)-8s %(message)s\"\nDEFAULT_LOG_DATE_FORMAT = \"%H:%M:%S\"\n\n\nclass ColoredLevelFormatter(logging.Formatter):\n    \"\"\"\n    Colorize the %(levelname)..s part of the log format passed to __init__.\n    \"\"\"\n\n    LOGLEVEL_COLOROPTS = {\n        logging.CRITICAL: {\"red\"},\n        logging.ERROR: {\"red\", \"bold\"},\n        logging.WARNING: {\"yellow\"},\n        logging.WARN: {\"yellow\"},\n        logging.INFO: {\"green\"},\n        logging.DEBUG: {\"purple\"},\n        logging.NOTSET: se",
+        "start_line": 16,
+        "start_column": 323,
+        "end_line": 0,
+        "end_column": 911,
+        "start_byte": 323,
+        "end_byte": 0
+      },
+      "_pytest.cacheprovider.pytest_addoption": {
+        "name": "_pytest.cacheprovider.pytest_addoption",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "   log_level = config.getoption(setting_name)\n        if log_level is None:\n            log_level = config.getini(setting_name)\n        if log_level:\n            break\n    else:\n        return\n\n    if isinstance(log_level, six.string_types):\n        log_level = log_level.upper()\n    try:\n        return int(getattr(logging, log_level, log_level))\n    except ValueError:\n        # Python logging does not recognise this as a logging level\n        raise pytest.UsageError(\n            \"'{}' is not recognized as a logging level name for \"\n            \"'{}'. Please consider passing the \"\n            \"logging level num instead.\".format(log_level, setting_name)\n        )\n\n\n# run after terminalreporter/capturemanager are configured\n@pytest.hookimpl(trylast=True)\ndef pytest_configure(config):\n    config.pluginmanager.register(LoggingPlugin(config), \"logging-plugin\")\n\n\nclass LoggingPlugin(object):\n    \"\"\"Attaches to the logging module and captures log messages for each test.\n    \"\"\"\n\n    def __init__(self, config):\n        \"\"\"Creates a new plugin to capture log messages.\n\n        The formatter can be safely shared across all handlers so\n        create a single one for the entire test session here.\n        \"\"\"\n        self._config = config\n\n        # enable verbose output automatically if live logging is enabled\n        if self._log_cli_enabled() and config.getoption(\"verbose\") < 1:\n            config.option.verbose = 1\n\n        self.print_logs = get_option_ini(config, \"log_print\")\n        self.formatter = logging.Formatter(\n            get_option_ini(config, \"log_format\"),\n            get_option_ini(config, \"log_date_format\"),\n        )\n        self.log_level = get_actual_log_level(config, \"log_level\")\n\n        self.log_file_level = get_actual_log_",
+        "start_line": 302,
+        "start_column": 11191,
+        "end_line": 0,
+        "end_column": 12956,
+        "start_byte": 11191,
+        "end_byte": 0
+      },
+      "_pytest.capture.pytest_addoption": {
+        "name": "_pytest.capture.pytest_addoption",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "ssage)s\"\nDEFAULT_LOG_DATE_FORMAT = \"%H:%M:%S\"\n\n\nclass ColoredLevelFormatter(logging.Formatter):\n    \"\"\"\n    Colorize the %(levelname)..s part of the log format passed to __init__.\n    \"\"\"\n\n    LOGLEVEL_COLOROPTS = {\n        logging.CRITICAL: {\"red\"},\n        logging.ERROR: {\"red\", \"bold\"},\n        logging.WARNING: {\"yellow\"},\n        logging.WARN: {\"yellow\"},\n        logging.INFO: {\"green\"},\n        logging.DEBUG: {\"purple\"},\n        logging.NOTSET: set(),\n    }\n    LEVELNAM",
+        "start_line": 25,
+        "start_column": 455,
+        "end_line": 0,
+        "end_column": 934,
+        "start_byte": 455,
+        "end_byte": 0
+      },
+      "_pytest.debugging.pytest_addoption": {
+        "name": "_pytest.debugging.pytest_addoption",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "ing.CRITICAL: {\"red\"},\n        logging.ERROR: {\"red\", \"bold\"},\n        logging.WARNING: {\"yellow\"},\n        logging.WARN: {\"yellow\"},\n        logging.INFO: {\"green\"},\n        logging.DEBUG: {\"purple\"},\n        logging.NOTSET: set(),\n    }\n    LEVELNAME_FMT_REGEX = re.compile(r\"%\\(levelname\\)([+-]?\\d*s)\")\n\n    def __init__(self, terminalwriter, *args, **kwargs):\n        super(ColoredLevelFormatter, self).__init__(*args, **kwargs)\n        if six.PY2:\n            self._original_fmt = self._fmt\n        else:\n            self._original_fmt = self._style._fmt\n        self._level_to_fmt_mapping = {}\n\n        levelname_fmt_match = self.LEVELNAME_FMT_REGEX.search(self._fmt)\n        if not levelname",
+        "start_line": 26,
+        "start_column": 683,
+        "end_line": 0,
+        "end_column": 1381,
+        "start_byte": 683,
+        "end_byte": 0
+      },
+      "_pytest.doctest.pytest_addoption": {
+        "name": "_pytest.doctest.pytest_addoption",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "alwriter, *args, **kwargs):\n        super(ColoredLevelFormatter, self).__init__(*args, **kwargs)\n        if six.PY2:\n            self._original_fmt = self._fmt\n        else:\n            self._original_fmt = self._style._fmt\n        self._level_to_fmt_mapping = {}\n\n        levelname_fmt_match = self.LEVELNAME_FMT_REGEX.search(self._fmt)\n        if not levelname_fmt_match:\n            return\n        levelname_fmt = levelname_fmt_match.group()\n\n        for level, color_opts in self.LOGLEVEL_COLOROPTS.items():\n            formatted_levelname = levelname_fmt % {\n                \"levelname\": logging.getLevelName(level)\n            }\n\n            # add ANSI escape sequences around the formatted levelname\n            color_kwargs = {name: True for name in color_opts}\n            colorized_formatted_levelname = terminalwriter.markup(\n                formatted_levelname, **color_kwargs\n            )\n            self._level_to_fmt_mapping[level] = self.LEVELNAME_FMT_REGEX.sub(\n                colorized_formatted_levelname, self._fmt\n            )\n\n    def format(self, record):\n        fmt = self._level_to_fmt_mapping.get(record.levelno, self._original_fmt)\n        if six.PY2:\n            self._fmt = fmt\n        else:\n            self._style._fmt = fmt\n        return super(ColoredLevelFormatter, self).format(record)\n\n\ndef get_option_ini(config, *names):\n    for name in names:\n        ret = config.getoption(",
+        "start_line": 37,
+        "start_column": 1019,
+        "end_line": 0,
+        "end_column": 2437,
+        "start_byte": 1019,
+        "end_byte": 0
+      },
+      "_pytest.helpconfig.pytest_addoption": {
+        "name": "_pytest.helpconfig.pytest_addoption",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "velname_fmt_match = self.LEVELNAME_FMT_REGEX.search(self._fmt)\n        if not levelname_fmt_match:\n            return\n        levelname_fmt = levelname_fmt_match.group()\n\n        for level, color_opts in self.LOGLEVEL_COLOROPTS.items():\n            formatted_levelname = levelname_fmt % {\n                \"levelname\": logging.getLevelName(level)\n            }\n\n            # add ANSI escape sequences around the formatted levelname\n            color_kwargs = {name: True for name in color_opts}\n            colorized_formatted_levelname = terminalwriter.markup(\n                formatted_levelname, **color_kwargs\n            )\n            self._level_to_fmt_mapping[level] = self.LEVELNAME_FMT_REGEX.sub(\n                colorized_formatted_levelname, self._fmt\n            )\n\n    def format(self, record):\n        fmt = self._level_to_fmt_mapping.get(record.levelno, self._original_fmt)\n        if six.PY2:\n            self._fmt = fmt\n        else:\n            self._style._fmt = fmt\n        return super(ColoredLevelFormatter, self).format(record)\n\n\ndef get_option_ini(config, *names):\n    for name in names:\n        ret = config.getoption(name)  # 'default' arg won't work as expected\n        if ret is None:\n            ret = config.getini(name)\n        if ret:\n            return ret\n\n\ndef pytest_addoption(p",
+        "start_line": 42,
+        "start_column": 1294,
+        "end_line": 0,
+        "end_column": 2608,
+        "start_byte": 1294,
+        "end_byte": 0
+      },
+      "_pytest.hookspec.pytest_addoption": {
+        "name": "_pytest.hookspec.pytest_addoption",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "     if six.PY2:\n            self._original_fmt = self._fmt\n        else:\n            self._original_fmt = self._style._fmt\n        self._level_to_fmt_mapping = {}\n\n        levelname_fmt_match = self.LEVELNAME_FMT_REGEX.search(self._fmt)\n        if not levelname_fmt_match:\n            return\n        levelname_fmt = levelname_fmt_match.group()\n\n        for level, color_opts in self.LOGLEVEL_COLOROPTS.items():\n            formatted_levelname = levelname_fmt % {\n                \"levelname\": logging.getLevelName(level)\n            }\n\n            # add ANSI escape sequences around the formatted levelname\n            color_kwargs = {name: True for name in color_opts}\n            colorized_formatted_levelname = terminalwriter.markup(\n                formatted_levelname, **color_kwargs\n            )\n            self._level_to_fmt_mapping[level] = self.LEVELNAME_FMT_REGEX.sub(\n                colorized_formatted_levelname, self._fmt\n            )\n\n    def format(self, record):\n        fmt = self._level_to_fmt_mapping.get(record.levelno, self._original_fmt)\n        if six.PY2:\n            self._fmt = fmt\n        else:\n            self._style._fmt = fmt\n        return super(ColoredLevelFormatter, self).format(record)\n\n\ndef get_option_ini(config, *na",
+        "start_line": 37,
+        "start_column": 1119,
+        "end_line": 0,
+        "end_column": 2377,
+        "start_byte": 1119,
+        "end_byte": 0
+      },
+      "_pytest.junitxml.pytest_addoption": {
+        "name": "_pytest.junitxml.pytest_addoption",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "   log_level = config.getini(setting_name)\n        if log_level:\n            break\n    else:\n        return\n\n    if isinstance(log_level, six.string_types):\n        log_level = log_level.upper()\n    try:\n        return int(getattr(logging, log_level, log_level))\n    except ValueError:\n        # Python logging does not recognise this as a logging level\n        raise pytest.UsageError(\n            \"'{}' is not recognized as a logging level name for \"\n            \"'{}'. Please consider passing the \"\n            \"logging level num instead.\".format(log_level, setting_name)\n        )\n\n\n# run after terminalreporter/capturemanager are configured\n@pytest.hookimpl(trylast=True)\ndef pytest_configure(config):\n    config.pluginmanager.register(LoggingPlugin(config), \"logging-plugin\")\n\n\nclass LoggingPlugin(object):\n    \"\"\"Attaches to the logging module and captures log messages for each test.\n    \"\"\"\n\n    def __init__(self, config):\n        \"\"\"Creates a new plugin to capture log messages.\n\n        The formatter can be safely shared across all handlers so\n        create a single one for the entire test session here.\n        \"\"\"\n        self._config = config\n\n        # enable verbose output automatically i",
+        "start_line": 347,
+        "start_column": 11276,
+        "end_line": 0,
+        "end_column": 12485,
+        "start_byte": 11276,
+        "end_byte": 0
+      },
+      "_pytest.logging.ColoredLevelFormatter": {
+        "name": "_pytest.logging.ColoredLevelFormatter",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "class ColoredLevelFormatter(logging.Formatter):\n    \"\"\"\n    Colorize the %(levelname)..s part of the log format passed to __init__.\n    \"\"\"\n\n    LOGLEVEL_COLOROPTS = {\n        logging.CRITICAL: {\"red\"},\n        logging.ERROR: {\"red\", \"bold\"},\n        logging.WARNING: {\"yellow\"},\n        logging.WARN: {\"yellow\"},\n        logging.INFO: {\"green\"},\n        logging.DEBUG: {\"purple\"},\n        logging.NOTSET: set(),\n    }\n    LEVELNAME_FMT_REGEX = re.compile(r\"%\\(levelname\\)([+-]?\\d*s)\")\n\n    def __init__(self, terminalwriter, *args, **kwargs):\n        super(ColoredLevelFormatter, self).__init__(*args, **kwargs)\n        if six.PY2:\n            self._original_fmt = self._fmt\n        else:\n            self._original_fmt = self._style._fmt\n        self._level_to_fmt_mapping = {}\n\n        levelname_fmt_match = self.LEVELNAME_FMT_REGEX.search(self._fmt)\n        if not levelname_fmt_match:\n            return\n        levelname_fmt = levelname_fmt_match.group()\n\n        for level, color_opts in self.LOGLEVEL_COLOROPTS.items():\n            formatted_levelname = levelname_fmt % {\n                \"levelname\": logging.getLevelName(level)\n            }\n\n            # add ANSI escape sequences around the formatted levelname\n            color_kwargs = {name: True for name in color_opts}\n            colorized_formatted_levelname = terminalwriter.markup(\n                formatted_levelname, **color_kwargs\n            )\n            self._level_to_fmt_mapping[level] = self.LEVELNAME_FMT_REGEX.sub(\n                colorized_formatted_levelname, self._fmt\n            )\n\n    def format(self, record):\n        fmt = self._level_to_fmt_mapping.get(record.levelno, self._original_fmt)\n        if six.PY2:\n            self._fmt = fmt\n        else:\n            self._style._fmt = fmt\n        return super(ColoredLevelFormatter, self).format(record)",
+        "start_line": 21,
+        "start_column": 503,
+        "end_line": 0,
+        "end_column": 2344,
+        "start_byte": 503,
+        "end_byte": 0
+      },
+      "_pytest.logging.ColoredLevelFormatter.LOGLEVEL_COLOROPTS": {
+        "name": "_pytest.logging.ColoredLevelFormatter.LOGLEVEL_COLOROPTS",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "LOGLEVEL_COLOROPTS = {\n        logging.CRITICAL: {\"red\"},\n        logging.ERROR: {\"red\", \"bold\"},\n        logging.WARNING: {\"yellow\"},\n        logging.WARN: {\"yellow\"},\n        logging.INFO: {\"green\"},\n        logging.DEBUG: {\"purple\"},\n        logging.NOTSET: set(),\n    }",
+        "start_line": 26,
+        "start_column": 648,
+        "end_line": 4,
+        "end_column": 921,
+        "start_byte": 648,
+        "end_byte": 4
+      },
+      "_pytest.logging.ColoredLevelFormatter.LEVELNAME_FMT_REGEX": {
+        "name": "_pytest.logging.ColoredLevelFormatter.LEVELNAME_FMT_REGEX",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "LEVELNAME_FMT_REGEX = re.compile(r\"%\\(levelname\\)([+-]?\\d*s)\")",
+        "start_line": 35,
+        "start_column": 926,
+        "end_line": 4,
+        "end_column": 988,
+        "start_byte": 926,
+        "end_byte": 4
+      },
+      "_pytest.logging.ColoredLevelFormatter.__init__": {
+        "name": "_pytest.logging.ColoredLevelFormatter.__init__",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "def __init__(self, terminalwriter, *args, **kwargs):\n        super(ColoredLevelFormatter, self).__init__(*args, **kwargs)\n        if six.PY2:\n            self._original_fmt = self._fmt\n        else:\n            self._original_fmt = self._style._fmt\n        self._level_to_fmt_mapping = {}\n\n        levelname_fmt_match = self.LEVELNAME_FMT_REGEX.search(self._fmt)\n        if not levelname_fmt_match:\n            return\n        levelname_fmt = levelname_fmt_match.group()\n\n        for level, color_opts in self.LOGLEVEL_COLOROPTS.items():\n            formatted_levelname = levelname_fmt % {\n                \"levelname\": logging.getLevelName(level)\n            }\n\n            # add ANSI escape sequences around the formatted levelname\n            color_kwargs = {name: True for name in color_opts}\n            colorized_formatted_levelname = terminalwriter.markup(\n                formatted_levelname, **color_kwargs\n            )\n            self._level_to_fmt_mapping[level] = self.LEVELNAME_FMT_REGEX.sub(\n                colorized_formatted_levelname, self._fmt\n            )",
+        "start_line": 37,
+        "start_column": 994,
+        "end_line": 4,
+        "end_column": 2070,
+        "start_byte": 994,
+        "end_byte": 4
+      },
+      "_pytest.logging.ColoredLevelFormatter.format": {
+        "name": "_pytest.logging.ColoredLevelFormatter.format",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "def format(self, record):\n        fmt = self._level_to_fmt_mapping.get(record.levelno, self._original_fmt)\n        if six.PY2:\n            self._fmt = fmt\n        else:\n            self._style._fmt = fmt\n        return super(ColoredLevelFormatter, self).format(record)",
+        "start_line": 64,
+        "start_column": 2076,
+        "end_line": 4,
+        "end_column": 2344,
+        "start_byte": 2076,
+        "end_byte": 4
+      },
+      "_pytest.logging.pytest_addoption": {
+        "name": "_pytest.logging.pytest_addoption",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "def pytest_addoption(parser):\n    \"\"\"Add options to control log capturing.\"\"\"\n    group = parser.getgroup(\"logging\")\n\n    def add_option_ini(option, dest, default=None, type=None, **kwargs):\n        parser.addini(\n            dest, default=default, type=type, help=\"default value for \" + option\n        )\n        group.addoption(option, dest=dest, **kwargs)\n\n    add_option_ini(\n        \"--no-print-logs\",\n        dest=\"log_print\",\n        action=\"store_const\",\n        const=False,\n        default=True,\n        type=\"bool\",\n        help=\"disable printing caught logs on failed tests.\",\n    )\n    add_option_ini(\n        \"--log-level\",\n        dest=\"log_level\",\n        default=None,\n        help=\"logging level used by the logging module\",\n    )\n    add_option_ini(\n        \"--log-format\",\n        dest=\"log_format\",\n        default=DEFAULT_LOG_FORMAT,\n        help=\"log format as used by the logging module.\",\n    )\n    add_option_ini(\n        \"--log-date-format\",\n        dest=\"log_date_format\",\n        default=DEFAULT_LOG_DATE_FORMAT,\n        help=\"log date format as used by the logging module.\",\n    )\n    parser.addini(\n        \"log_cli\",\n        default=False,\n        type=\"bool\",\n        help='enable log display during test run (also known as \"live logging\").',\n    )\n    add_option_ini(\n        \"--log-cli-level\", dest=\"log_cli_level\", default=None, help=\"cli logging level.\"\n    )\n    add_option_ini(\n        \"--log-cli-format\",\n        dest=\"log_cli_format\",\n        default=None,\n        help=\"log format as used by the logging module.\",\n    )\n    add_option_ini(\n        \"--log-cli-date-format\",\n        dest=\"log_cli_date_format\",\n        default=None,\n        help=\"log date format as used by the logging module.\",\n    )\n    add_option_ini(\n        \"--log-file\",\n        dest=\"log_file\",\n        default=None,\n        help=\"path to a file when logging will be written to.\",\n    )\n    add_option_ini(\n        \"--log-file-level\",\n        dest=\"log_file_level\",\n        default=None,\n        help=\"log file logging level.\",\n    )\n    add_option_ini(\n        \"--log-file-format\",\n        dest=\"log_file_format\",\n        default=DEFAULT_LOG_FORMAT,\n        help=\"log format as used by the logging module.\",\n    )\n    add_option_ini(\n        \"--log-file-date-format\",\n        dest=\"log_file_date_format\",\n        default=DEFAULT_LOG_DATE_FORMAT,\n        help=\"log date format as used by the logging module.\",\n    )",
+        "start_line": 82,
+        "start_column": 2586,
+        "end_line": 0,
+        "end_column": 5014,
+        "start_byte": 2586,
+        "end_byte": 0
+      },
+      "_pytest.logging.LoggingPlugin": {
+        "name": "_pytest.logging.LoggingPlugin",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "class LoggingPlugin(object):\n    \"\"\"Attaches to the logging module and captures log messages for each test.\n    \"\"\"\n\n    def __init__(self, config):\n        \"\"\"Creates a new plugin to capture log messages.\n\n        The formatter can be safely shared across all handlers so\n        create a single one for the entire test session here.\n        \"\"\"\n        self._config = config\n\n        # enable verbose output automatically if live logging is enabled\n        if self._log_cli_enabled() and config.getoption(\"verbose\") < 1:\n            config.option.verbose = 1\n\n        self.print_logs = get_option_ini(config, \"log_print\")\n        self.formatter = logging.Formatter(\n            get_option_ini(config, \"log_format\"),\n            get_option_ini(config, \"log_date_format\"),\n        )\n        self.log_level = get_actual_log_level(config, \"log_level\")\n\n        self.log_file_level = get_actual_log_level(config, \"log_file_level\")\n        self.log_file_format = get_option_ini(config, \"log_file_format\", \"log_format\")\n        self.log_file_date_format = get_option_ini(\n            config, \"log_file_date_format\", \"log_date_format\"\n        )\n        self.log_file_formatter = logging.Formatter(\n            self.log_file_format, datefmt=self.log_file_date_format\n        )\n\n        log_file = get_option_ini(config, \"log_file\")\n        if log_file:\n            self.log_file_handler = logging.FileHandler(\n                log_file, mode=\"w\", encoding=\"UTF-8\"\n            )\n            self.log_file_handler.setFormatter(self.log_file_formatter)\n        else:\n            self.log_file_handler = None\n\n        self.log_cli_handler = None\n\n        self.live_logs_context = lambda: dummy_context_manager()\n        # Note that the lambda for the live_logs_context is needed because\n        # live_logs_context can otherwise not be entered multiple times due\n        # to limitations of contextlib.contextmanager.\n\n        if self._log_cli_enabled():\n            self._setup_cli_logging()\n\n    def _setup_cli_logging(self):\n        config = self._config\n        terminal_reporter = config.pluginmanager.get_plugin(\"terminalreporter\")\n        if terminal_reporter is None:\n            # terminal reporter is disabled e.g. by pytest-xdist.\n            return\n\n        capture_manager = config.pluginmanager.get_plugin(\"capturemanager\")\n        # if capturemanager plugin is disabled, live logging still works.\n        log_cli_handler = _LiveLoggingStreamHandler(terminal_reporter, capture_manager)\n        log_cli_format = get_option_ini(config, \"log_cli_format\", \"log_format\")\n        log_cli_date_format = get_option_ini(\n            config, \"log_cli_date_format\", \"log_date_format\"\n        )\n        if (\n            config.option.color != \"no\"\n            and ColoredLevelFormatter.LEVELNAME_FMT_REGEX.search(log_cli_format)\n        ):\n            log_cli_formatter = ColoredLevelFormatter(\n                create_terminal_writer(config),\n                log_cli_format,\n                datefmt=log_cli_date_format,\n            )\n        else:\n            log_cli_formatter = logging.Formatter(\n                log_cli_format, datefmt=log_cli_date_format\n            )\n        log_cli_level = get_actual_log_level(config, \"log_cli_level\", \"log_level\")\n        self.log_cli_handler = log_cli_handler\n        self.live_logs_context = lambda: catching_logs(\n            log_cli_handler, formatter=log_cli_formatter, level=log_cli_level\n        )\n\n    def set_log_path(self, fname):\n        \"\"\"Public method, which can set filename parameter for\n        Logging.FileHandler(). Also creates parent directory if\n        it does not exist.\n\n        .. warning::\n            Please considered as an experimental API.\n        \"\"\"\n        fname = Path(fname)\n\n        if not fname.is_absolute():\n            fname = Path(self._config.rootdir, fname)\n\n        if not fname.parent.exists():\n            fname.parent.mkdir(exist_ok=True, parents=True)\n\n        self.log_file_handler = logging.FileHandler(\n            str(fname), mode=\"w\", encoding=\"UTF-8\"\n        )\n        self.log_file_handler.setFormatter(self.log_file_formatter)\n\n    def _log_cli_enabled(self):\n        \"\"\"Return True if log_cli should be considered enabled, either explicitly\n        or because --log-cli-level was given in the command-line.\n        \"\"\"\n        return self._config.getoption(\n            \"--log-cli-level\"\n        ) is not None or self._config.getini(\"log_cli\")\n\n    @pytest.hookimpl(hookwrapper=True, tryfirst=True)\n    def pytest_collection(self):\n        with self.live_logs_context():\n            if self.log_cli_handler:\n                self.log_cli_handler.set_when(\"collection\")\n\n            if self.log_file_handler is not None:\n                with catching_logs(self.log_file_handler, level=self.log_file_level):\n                    yield\n            else:\n                yield\n\n    @contextmanager\n    def _runtest_for(self, item, when):\n        with self._runtest_for_main(item, when):\n            if self.log_file_handler is not None:\n                with catching_logs(self.log_file_handler, level=self.log_file_level):\n                    yield\n            else:\n                yield\n\n    @contextmanager\n    def _runtest_for_main(self, item, when):\n        \"\"\"Implements the internals of pytest_runtest_xxx() hook.\"\"\"\n        with catching_logs(\n            LogCaptureHandler(), formatter=self.formatter, level=self.log_level\n        ) as log_handler:\n            if self.log_cli_handler:\n                self.log_cli_handler.set_when(when)\n\n            if item is None:\n                yield  # run the test\n                return\n\n            if not hasattr(item, \"catch_log_handlers\"):\n                item.catch_log_handlers = {}\n            item.catch_log_handlers[when] = log_handler\n            item.catch_log_handler = log_handler\n            try:\n                yield  # run test\n            finally:\n                if when == \"teardown\":\n                    del item.catch_log_handler\n                    del item.catch_log_handlers\n\n            if self.print_logs:\n                # Add a captured log section to the report.\n                log = log_handler.stream.getvalue().strip()\n                item.add_report_section(when, \"log\", log)\n\n    @pytest.hookimpl(hookwrapper=True)\n    def pytest_runtest_setup(self, item):\n        with self._runtest_for(item, \"setup\"):\n            yield\n\n    @pytest.hookimpl(hookwrapper=True)\n    def pytest_runtest_call(self, item):\n        with self._runtest_for(item, \"call\"):\n            yield\n\n    @pytest.hookimpl(hookwrapper=True)\n    def pytest_runtest_teardown(self, item):\n        with self._runtest_for(item, \"teardown\"):\n            yield\n\n    @pytest.hookimpl(hookwrapper=True)\n    def pytest_runtest_logstart(self):\n        if self.log_cli_handler:\n            self.log_cli_handler.reset()\n        with self._runtest_for(None, \"start\"):\n            yield\n\n    @pytest.hookimpl(hookwrapper=True)\n    def pytest_runtest_logfinish(self):\n        with self._runtest_for(None, \"finish\"):\n            yield\n\n    @pytest.hookimpl(hookwrapper=True)\n    def pytest_runtest_logreport(self):\n        with self._runtest_for(None, \"logreport\"):\n            yield\n\n    @pytest.hookimpl(hookwrapper=True, tryfirst=True)\n    def pytest_sessionfinish(self):\n        with self.live_logs_context():\n            if self.log_cli_handler:\n                self.log_cli_handler.set_when(\"sessionfinish\")\n            if self.log_file_handler is not None:\n                try:\n                    with catching_logs(\n                        self.log_file_handler, level=self.log_file_level\n                    ):\n                        yield\n                finally:\n                    # Close the FileHandler explicitly.\n                    # (logging.shutdown might have lost the weakref?!)\n                    self.log_file_handler.close()\n            else:\n                yield\n\n    @pytest.hookimpl(hookwrapper=True, tryfirst=True)\n    def pytest_sessionstart(self):\n        with self.live_logs_context():\n            if self.log_cli_handler:\n                self.log_cli_handler.set_when(\"sessionstart\")\n            if self.log_file_handler is not None:\n                with catching_logs(self.log_file_handler, level=self.log_file_level):\n                    yield\n            else:\n                yield\n\n    @pytest.hookimpl(hookwrapper=True)\n    def pytest_runtestloop(self, session):\n        \"\"\"Runs all collected test items.\"\"\"\n        with self.live_logs_context():\n            if self.log_file_handler is not None:\n                with catching_logs(self.log_file_handler, level=self.log_file_level):\n                    yield  # run all the tests\n            else:\n                yield  # run all the tests",
+        "start_line": 378,
+        "start_column": 12060,
+        "end_line": 0,
+        "end_column": 20813,
+        "start_byte": 12060,
+        "end_byte": 0
+      },
+      "_pytest.logging.LoggingPlugin.__init__": {
+        "name": "_pytest.logging.LoggingPlugin.__init__",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "def __init__(self, config):\n        \"\"\"Creates a new plugin to capture log messages.\n\n        The formatter can be safely shared across all handlers so\n        create a single one for the entire test session here.\n        \"\"\"\n        self._config = config\n\n        # enable verbose output automatically if live logging is enabled\n        if self._log_cli_enabled() and config.getoption(\"verbose\") < 1:\n            config.option.verbose = 1\n\n        self.print_logs = get_option_ini(config, \"log_print\")\n        self.formatter = logging.Formatter(\n            get_option_ini(config, \"log_format\"),\n            get_option_ini(config, \"log_date_format\"),\n        )\n        self.log_level = get_actual_log_level(config, \"log_level\")\n\n        self.log_file_level = get_actual_log_level(config, \"log_file_level\")\n        self.log_file_format = get_option_ini(config, \"log_file_format\", \"log_format\")\n        self.log_file_date_format = get_option_ini(\n            config, \"log_file_date_format\", \"log_date_format\"\n        )\n        self.log_file_formatter = logging.Formatter(\n            self.log_file_format, datefmt=self.log_file_date_format\n        )\n\n        log_file = get_option_ini(config, \"log_file\")\n        if log_file:\n            self.log_file_handler = logging.FileHandler(\n                log_file, mode=\"w\", encoding=\"UTF-8\"\n            )\n            self.log_file_handler.setFormatter(self.log_file_formatter)\n        else:\n            self.log_file_handler = None\n\n        self.log_cli_handler = None\n\n        self.live_logs_context = lambda: dummy_context_manager()\n        # Note that the lambda for the live_logs_context is needed because\n        # live_logs_context can otherwise not be entered multiple times due\n        # to limitations of contextlib.contextmanager.\n\n        if self._log_cli_enabled():\n            self._setup_cli_logging()",
+        "start_line": 382,
+        "start_column": 12181,
+        "end_line": 4,
+        "end_column": 14040,
+        "start_byte": 12181,
+        "end_byte": 4
+      },
+      "_pytest.logging.LoggingPlugin._setup_cli_logging": {
+        "name": "_pytest.logging.LoggingPlugin._setup_cli_logging",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "def _setup_cli_logging(self):\n        config = self._config\n        terminal_reporter = config.pluginmanager.get_plugin(\"terminalreporter\")\n        if terminal_reporter is None:\n            # terminal reporter is disabled e.g. by pytest-xdist.\n            return\n\n        capture_manager = config.pluginmanager.get_plugin(\"capturemanager\")\n        # if capturemanager plugin is disabled, live logging still works.\n        log_cli_handler = _LiveLoggingStreamHandler(terminal_reporter, capture_manager)\n        log_cli_format = get_option_ini(config, \"log_cli_format\", \"log_format\")\n        log_cli_date_format = get_option_ini(\n            config, \"log_cli_date_format\", \"log_date_format\"\n        )\n        if (\n            config.option.color != \"no\"\n            and ColoredLevelFormatter.LEVELNAME_FMT_REGEX.search(log_cli_format)\n        ):\n            log_cli_formatter = ColoredLevelFormatter(\n                create_terminal_writer(config),\n                log_cli_format,\n                datefmt=log_cli_date_format,\n            )\n        else:\n            log_cli_formatter = logging.Formatter(\n                log_cli_format, datefmt=log_cli_date_format\n            )\n        log_cli_level = get_actual_log_level(config, \"log_cli_level\", \"log_level\")\n        self.log_cli_handler = log_cli_handler\n        self.live_logs_context = lambda: catching_logs(\n            log_cli_handler, formatter=log_cli_formatter, level=log_cli_level\n        )",
+        "start_line": 429,
+        "start_column": 14046,
+        "end_line": 4,
+        "end_column": 15496,
+        "start_byte": 14046,
+        "end_byte": 4
+      },
+      "_pytest.logging.LoggingPlugin.set_log_path": {
+        "name": "_pytest.logging.LoggingPlugin.set_log_path",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "def set_log_path(self, fname):\n        \"\"\"Public method, which can set filename parameter for\n        Logging.FileHandler(). Also creates parent directory if\n        it does not exist.\n\n        .. warning::\n            Please considered as an experimental API.\n        \"\"\"\n        fname = Path(fname)\n\n        if not fname.is_absolute():\n            fname = Path(self._config.rootdir, fname)\n\n        if not fname.parent.exists():\n            fname.parent.mkdir(exist_ok=True, parents=True)\n\n        self.log_file_handler = logging.FileHandler(\n            str(fname), mode=\"w\", encoding=\"UTF-8\"\n        )\n        self.log_file_handler.setFormatter(self.log_file_formatter)",
+        "start_line": 462,
+        "start_column": 15502,
+        "end_line": 4,
+        "end_column": 16175,
+        "start_byte": 15502,
+        "end_byte": 4
+      },
+      "_pytest.logging.LoggingPlugin._log_cli_enabled": {
+        "name": "_pytest.logging.LoggingPlugin._log_cli_enabled",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "def _log_cli_enabled(self):\n        \"\"\"Return True if log_cli should be considered enabled, either explicitly\n        or because --log-cli-level was given in the command-line.\n        \"\"\"\n        return self._config.getoption(\n            \"--log-cli-level\"\n        ) is not None or self._config.getini(\"log_cli\")",
+        "start_line": 483,
+        "start_column": 16181,
+        "end_line": 4,
+        "end_column": 16493,
+        "start_byte": 16181,
+        "end_byte": 4
+      },
+      "_pytest.logging.LoggingPlugin.pytest_collection": {
+        "name": "_pytest.logging.LoggingPlugin.pytest_collection",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "@pytest.hookimpl(hookwrapper=True, tryfirst=True)\n    def pytest_collection(self):\n        with self.live_logs_context():\n            if self.log_cli_handler:\n                self.log_cli_handler.set_when(\"collection\")\n\n            if self.log_file_handler is not None:\n                with catching_logs(self.log_file_handler, level=self.log_file_level):\n                    yield\n            else:\n                yield",
+        "start_line": 491,
+        "start_column": 16499,
+        "end_line": 4,
+        "end_column": 16920,
+        "start_byte": 16499,
+        "end_byte": 4
+      },
+      "_pytest.logging.LoggingPlugin._runtest_for": {
+        "name": "_pytest.logging.LoggingPlugin._runtest_for",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "@contextmanager\n    def _runtest_for(self, item, when):\n        with self._runtest_for_main(item, when):\n            if self.log_file_handler is not None:\n                with catching_logs(self.log_file_handler, level=self.log_file_level):\n                    yield\n            else:\n                yield",
+        "start_line": 503,
+        "start_column": 16926,
+        "end_line": 4,
+        "end_column": 17232,
+        "start_byte": 16926,
+        "end_byte": 4
+      },
+      "_pytest.logging.LoggingPlugin._runtest_for_main": {
+        "name": "_pytest.logging.LoggingPlugin._runtest_for_main",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "@contextmanager\n    def _runtest_for_main(self, item, when):\n        \"\"\"Implements the internals of pytest_runtest_xxx() hook.\"\"\"\n        with catching_logs(\n            LogCaptureHandler(), formatter=self.formatter, level=self.log_level\n        ) as log_handler:\n            if self.log_cli_handler:\n                self.log_cli_handler.set_when(when)\n\n            if item is None:\n                yield  # run the test\n                return\n\n            if not hasattr(item, \"catch_log_handlers\"):\n                item.catch_log_handlers = {}\n            item.catch_log_handlers[when] = log_handler\n            item.catch_log_handler = log_handler\n            try:\n                yield  # run test\n            finally:\n                if when == \"teardown\":\n                    del item.catch_log_handler\n                    del item.catch_log_handlers\n\n            if self.print_logs:\n                # Add a captured log section to the report.\n                log = log_handler.stream.getvalue().strip()\n                item.add_report_section(when, \"log\", log)",
+        "start_line": 512,
+        "start_column": 17238,
+        "end_line": 4,
+        "end_column": 18305,
+        "start_byte": 17238,
+        "end_byte": 4
+      },
+      "_pytest.logging.LoggingPlugin.pytest_runtest_setup": {
+        "name": "_pytest.logging.LoggingPlugin.pytest_runtest_setup",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "@pytest.hookimpl(hookwrapper=True)\n    def pytest_runtest_setup(self, item):\n        with self._runtest_for(item, \"setup\"):\n            yield",
+        "start_line": 541,
+        "start_column": 18311,
+        "end_line": 4,
+        "end_column": 18452,
+        "start_byte": 18311,
+        "end_byte": 4
+      },
+      "_pytest.logging.LoggingPlugin.pytest_runtest_call": {
+        "name": "_pytest.logging.LoggingPlugin.pytest_runtest_call",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "@pytest.hookimpl(hookwrapper=True)\n    def pytest_runtest_call(self, item):\n        with self._runtest_for(item, \"call\"):\n            yield",
+        "start_line": 546,
+        "start_column": 18458,
+        "end_line": 4,
+        "end_column": 18597,
+        "start_byte": 18458,
+        "end_byte": 4
+      },
+      "_pytest.logging.LoggingPlugin.pytest_runtest_teardown": {
+        "name": "_pytest.logging.LoggingPlugin.pytest_runtest_teardown",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "@pytest.hookimpl(hookwrapper=True)\n    def pytest_runtest_teardown(self, item):\n        with self._runtest_for(item, \"teardown\"):\n            yield",
+        "start_line": 551,
+        "start_column": 18603,
+        "end_line": 4,
+        "end_column": 18750,
+        "start_byte": 18603,
+        "end_byte": 4
+      },
+      "_pytest.logging.LoggingPlugin.pytest_runtest_logstart": {
+        "name": "_pytest.logging.LoggingPlugin.pytest_runtest_logstart",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "@pytest.hookimpl(hookwrapper=True)\n    def pytest_runtest_logstart(self):\n        if self.log_cli_handler:\n            self.log_cli_handler.reset()\n        with self._runtest_for(None, \"start\"):\n            yield",
+        "start_line": 556,
+        "start_column": 18756,
+        "end_line": 4,
+        "end_column": 18968,
+        "start_byte": 18756,
+        "end_byte": 4
+      },
+      "_pytest.logging.LoggingPlugin.pytest_runtest_logfinish": {
+        "name": "_pytest.logging.LoggingPlugin.pytest_runtest_logfinish",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "@pytest.hookimpl(hookwrapper=True)\n    def pytest_runtest_logfinish(self):\n        with self._runtest_for(None, \"finish\"):\n            yield",
+        "start_line": 563,
+        "start_column": 18974,
+        "end_line": 4,
+        "end_column": 19114,
+        "start_byte": 18974,
+        "end_byte": 4
+      },
+      "_pytest.logging.LoggingPlugin.pytest_runtest_logreport": {
+        "name": "_pytest.logging.LoggingPlugin.pytest_runtest_logreport",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "@pytest.hookimpl(hookwrapper=True)\n    def pytest_runtest_logreport(self):\n        with self._runtest_for(None, \"logreport\"):\n            yield",
+        "start_line": 568,
+        "start_column": 19120,
+        "end_line": 4,
+        "end_column": 19263,
+        "start_byte": 19120,
+        "end_byte": 4
+      },
+      "_pytest.logging.LoggingPlugin.pytest_sessionfinish": {
+        "name": "_pytest.logging.LoggingPlugin.pytest_sessionfinish",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "@pytest.hookimpl(hookwrapper=True, tryfirst=True)\n    def pytest_sessionfinish(self):\n        with self.live_logs_context():\n            if self.log_cli_handler:\n                self.log_cli_handler.set_when(\"sessionfinish\")\n            if self.log_file_handler is not None:\n                try:\n                    with catching_logs(\n                        self.log_file_handler, level=self.log_file_level\n                    ):\n                        yield\n                finally:\n                    # Close the FileHandler explicitly.\n                    # (logging.shutdown might have lost the weakref?!)\n                    self.log_file_handler.close()\n            else:\n                yield",
+        "start_line": 573,
+        "start_column": 19269,
+        "end_line": 4,
+        "end_column": 19972,
+        "start_byte": 19269,
+        "end_byte": 4
+      },
+      "_pytest.logging.LoggingPlugin.pytest_sessionstart": {
+        "name": "_pytest.logging.LoggingPlugin.pytest_sessionstart",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "@pytest.hookimpl(hookwrapper=True, tryfirst=True)\n    def pytest_sessionstart(self):\n        with self.live_logs_context():\n            if self.log_cli_handler:\n                self.log_cli_handler.set_when(\"sessionstart\")\n            if self.log_file_handler is not None:\n                with catching_logs(self.log_file_handler, level=self.log_file_level):\n                    yield\n            else:\n                yield",
+        "start_line": 591,
+        "start_column": 19978,
+        "end_line": 4,
+        "end_column": 20402,
+        "start_byte": 19978,
+        "end_byte": 4
+      },
+      "_pytest.logging.LoggingPlugin.pytest_runtestloop": {
+        "name": "_pytest.logging.LoggingPlugin.pytest_runtestloop",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "@pytest.hookimpl(hookwrapper=True)\n    def pytest_runtestloop(self, session):\n        \"\"\"Runs all collected test items.\"\"\"\n        with self.live_logs_context():\n            if self.log_file_handler is not None:\n                with catching_logs(self.log_file_handler, level=self.log_file_level):\n                    yield  # run all the tests\n            else:\n                yield  # run all the tests",
+        "start_line": 602,
+        "start_column": 20408,
+        "end_line": 4,
+        "end_column": 20813,
+        "start_byte": 20408,
+        "end_byte": 4
+      },
+      "_pytest.main.pytest_addoption": {
+        "name": "_pytest.main.pytest_addoption",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "llow\"},\n        logging.WARN: {\"yellow\"},\n        logging.INFO: {\"green\"},\n        logging.DEBUG: {\"purple\"},\n        logging.NOTSET: set(),\n    }\n    LEVELNAME_FMT_REGEX = re.compile(r\"%\\(levelname\\)([+-]?\\d*s)\")\n\n    def __init__(self, terminalwriter, *args, **kwargs):\n        super(ColoredLevelFormatter, self).__init__(*args, **kwargs)\n        if six.PY2:\n            self._original_fmt = self._fmt\n        else:\n            self._original_fmt = self._style._fmt\n        self._level_to_fmt_mapping = {}\n\n        levelname_fmt_match = self.LEVELNAME_FMT_REGEX.search(self._fmt)\n        if not levelname_fmt_match:\n            return\n        levelname_fmt = levelname_fmt_match.group()\n\n        for level, color_opts in self.LOGLEVEL_COLOROPTS.items():\n            formatted_levelname = levelname_fmt % {\n                \"levelname\": logging.getLevelName(level)\n            }\n\n            # add ANSI escape sequences around the formatted levelname\n            color_kwargs = {name: True for name in color_opts}\n            colorized_formatted_levelname = terminalwriter.markup(\n                formatted_levelname, **color_kwargs\n            )\n            self._level_to_fmt_mapping[level] = self.LEVELNAME_FMT_REGEX.sub(\n                colorized_formatted_levelname, self._fmt\n            )\n\n    def format(self, record):\n        fmt = self._level_to_fmt_mapping.get(record.levelno, self._original_fmt)\n        if six.PY2:\n            self._fmt = fmt\n        else:\n            self._style._fmt = fmt\n        return super(ColoredLevelFormatter, self).format(record)\n\n\ndef get_option_ini(config, *names):\n    for name in names:\n        ret = config.getoption(name)  # 'default' arg won't work as expected\n        if ret is None:\n            ret = config.getini(name)\n        if ret:\n            return ret\n\n\ndef pytest_addoption(parser):\n    \"\"\"Add options to control log capturing.\"\"\"\n    group = parser.getgroup(\"logging\")\n\n    def add_option_ini(option, dest, default=None, type=None, **kwargs):\n        parser.addini(\n            dest, default=default, type=type, help=\"default value for \" + option\n        )\n        group.addoption(option, dest=dest, **kwargs)\n\n    add_option_ini(\n        \"--no-print-logs\",\n        dest=\"log_print\",\n        action=\"store_const\",\n        const=False,\n        default=True,\n        type=\"bool\",\n        help=\"disable printing caught logs on failed tests.\",\n    )\n    add_option_ini(\n        \"--log-level\",\n        dest=\"log_level\",\n        default=None,\n        help=\"logging level used by the logging module\",\n    )\n    add_option_ini(\n        \"--log-format\",\n        dest=\"log_format\",\n        default=DEFAULT_LOG_FORMAT,\n        help=\"log format as used by the logging module.\",\n    )\n    add_option_ini(\n        \"--log-date-format\",\n        dest=\"log_date_format\",\n        default=DEFAULT_LOG_DATE_FORMAT,\n        help=\"log date format as used by the logging module.\",\n    )\n    parser.addini(\n        \"log_cli\",\n        default=False,\n        type=\"bool\",\n        help='enable log display during test run (also known as \"live logging\").',\n    )\n    add_option_ini(\n        \"--log-cli-level\", dest=\"log_cli_level\", default=None, help=\"cli logging level.\"\n    )\n    add_option_ini(\n        \"--log-cli-format\",\n        dest=\"log_cli_format\",\n        default=None,\n        help=\"log format as used by the logging module.\",\n    )\n    add_option_ini(\n        \"--log-cli-date-format\",\n        dest=\"log_cli_date_format\",\n        default=None,\n        help=\"log date format as used by the logging module.\",\n    )\n    add_option_ini(\n        \"--log-file\",\n        dest=\"log_file\",\n        default=None,\n        help=\"path to a file when logging will be written to.\",\n    )\n    add_option_ini(\n        \"--log-file-level\",\n        dest=\"log_file_level\",\n        default=None,\n        help=\"log file logging level.\",\n    )\n    add_option_ini(\n        \"--log-file-format\",\n        dest=\"log_file_format\",\n        default=DEFAULT_LOG_FORMAT,\n        help=\"log format as used by the logging module.\",\n    )\n    add_option_ini(\n        \"--log-file-date-format\",\n        dest=\"log_file_date_format\",\n        default=DEFAULT_LOG_DATE_FORMAT,\n        help=\"log date format as used by the logging module.\",\n    )\n\n\n@contextmanager\ndef catch",
+        "start_line": 35,
+        "start_column": 775,
+        "end_line": 0,
+        "end_column": 5042,
+        "start_byte": 775,
+        "end_byte": 0
+      },
+      "_pytest.mark.pytest_addoption": {
+        "name": "_pytest.mark.pytest_addoption",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "if not levelname_fmt_match:\n            return\n        levelname_fmt = levelname_fmt_match.group()\n\n        for level, color_opts in self.LOGLEVEL_COLOROPTS.items():\n            formatted_levelname = levelname_fmt % {\n                \"levelname\": logging.getLevelName(level)\n            }\n\n            # add ANSI escape sequences around the formatted levelname\n            color_kwargs = {name: True for name in color_opts}\n            colorized_formatted_levelname = terminalwriter.markup(\n                formatted_levelname, **color_kwargs\n            )\n            self._level_to_fmt_mapping[level] = self.LEVELNAME_FMT_REGEX.sub(\n                colorized_formatted_levelname, self._fmt\n            )\n\n    def format(self, record):\n        fmt = self._level_to_fmt_mapping.get(record.levelno, self._original_fmt)\n        if six.PY2:\n            self._fmt = fmt\n        else:\n            self._style._fmt = fmt\n        return super(ColoredLevelFormatter, self).format(record)\n\n\ndef get_option_ini(config, *names):\n    for name in names:\n        ret = config.getoption(name)  # 'default' arg won't work as expected\n        if ret is None:\n            ret = config.getini(name)\n        if ret:\n            return ret\n\n\ndef pytest_addoption(parser):\n    \"\"\"Add options to control log capturing.\"\"\"\n    group = parser.getgroup(\"logging\")\n\n    def add_option_ini(option, dest, default=None, type=None, **kwargs):\n        parser.addini(\n            dest, default=default, type=type, help=\"default value for \" + option\n        )\n        group.addoption(opti",
+        "start_line": 39,
+        "start_column": 1365,
+        "end_line": 0,
+        "end_column": 2919,
+        "start_byte": 1365,
+        "end_byte": 0
+      },
+      "_pytest.pastebin.pytest_addoption": {
+        "name": "_pytest.pastebin.pytest_addoption",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "port pytest\nfrom _pytest.compat import dummy_context_manager\nfrom _pytest.config import create_terminal_writer\nfrom _pytest.pathlib import Path\n\nDEFAULT_LOG_FORMAT = \"%(filename)-25s %(lineno)4d %(levelname)-8s %(message)s\"\nDEFAULT_LOG_DATE_FORMAT = \"%H:%M:%S\"\n\n\nclass ColoredLevelFormatter(logging.Formatter):\n    \"\"\"\n    Color",
+        "start_line": 13,
+        "start_column": 240,
+        "end_line": 0,
+        "end_column": 568,
+        "start_byte": 240,
+        "end_byte": 0
+      },
+      "_pytest.pytester.pytest_addoption": {
+        "name": "_pytest.pytester.pytest_addoption",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "def __init__(self, terminalwriter, *args, **kwargs):\n        super(ColoredLevelFormatter, self).__init__(*args, **kwargs)\n        if six.PY2:\n            self._original_fmt = self._fmt\n        else:\n            self._original_fmt = self._style._fmt\n        self._level_to_fmt_mapping = {}\n\n        levelname_fmt_match = self.LEVELNAME_FMT_REGEX.search(self._fmt)\n        if not levelname_fmt_match:\n            return\n        levelname_fmt = levelname_fmt_match.group()\n\n        for level, color_opts in self.LOGLEVEL_COLOROPTS.items():\n            formatted_levelname = levelname_fmt % {\n                \"level",
+        "start_line": 39,
+        "start_column": 994,
+        "end_line": 0,
+        "end_column": 1605,
+        "start_byte": 994,
+        "end_byte": 0
+      },
+      "_pytest.python.pytest_addoption": {
+        "name": "_pytest.python.pytest_addoption",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "gs\n            )\n            self._level_to_fmt_mapping[level] = self.LEVELNAME_FMT_REGEX.sub(\n                colorized_formatted_levelname, self._fmt\n            )\n\n    def format(self, record):\n        fmt = self._level_to_fmt_mapping.get(record.levelno, self._original_fmt)\n        if six.PY2:\n            self._fmt = fmt\n        else:\n            self._style._fmt = fmt\n        return super(ColoredLevelFormatter, self).format(record)\n\n\ndef get_option_ini(config, *names):\n    for name in names:\n        ret = config.getoption(name)  # 'default' arg won't work as expected\n        if ret is None:\n            ret = config.getini(name)\n        if ret:\n            return ret\n\n\ndef pytest_addoption(parser):\n    \"\"\"Add options to control log capturing.\"\"\"\n    group = parser.getgroup(\"logging\")\n\n    def add_option_ini(option, dest, default=None, type=None, **kwargs):\n        parser.addini(\n            dest, default=default, type=type, help=\"default value for \" + option\n        )\n        group.addoption(option, dest=dest, **kwargs)\n\n    add_option_ini(\n        \"--no-print-logs\",\n        dest=\"log_print\",\n        action=\"store_const\",\n        const=False,\n        default=True,\n        type=\"bool\",\n        help=\"disable printing caught logs on failed tests.\",\n    )\n    add_option_ini(\n        \"--log-level\",\n        dest=\"log_level\",\n        default=None,\n        help=\"logging level used by the logging module\",\n    )\n    add_option_ini(\n        \"--log-format\",\n        dest=\"log_format\",\n        default=DEFAULT_LOG_FORMAT,\n        help=\"log format as used by the logging module.\",\n    )\n    add_option_ini(\n        \"--log-date-format\",\n        dest=\"log_date_format\",\n        default=DEFAULT_LOG_DATE_FORMAT,\n        help=\"log date format as used by the log",
+        "start_line": 63,
+        "start_column": 1905,
+        "end_line": 0,
+        "end_column": 3675,
+        "start_byte": 1905,
+        "end_byte": 0
+      },
+      "_pytest.runner.pytest_addoption": {
+        "name": "_pytest.runner.pytest_addoption",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": ".Formatter):\n    \"\"\"\n    Colorize the %(levelname)..s part of the log format passed to __init__.\n    \"\"\"\n\n    LOGLEVEL_COLOROPTS = {\n        logging.CRITICAL: {\"red\"},\n        logging.ERROR: {\"red\", \"bold\"},\n        logging.WARNING: {\"yellow\"},\n        logging.WARN: {\"yellow\"},\n        logging.INFO: {\"green\"},\n",
+        "start_line": 25,
+        "start_column": 538,
+        "end_line": 0,
+        "end_column": 850,
+        "start_byte": 538,
+        "end_byte": 0
+      },
+      "_pytest.setuponly.pytest_addoption": {
+        "name": "_pytest.setuponly.pytest_addoption",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "int_function\n\nimport logging\nimport re\nfrom contextlib import contextmanager\n\nimport py\nimport six\n\nimport pytest\nfrom _pytest.compat import dummy_context_manager\nfrom _pytest.config import create_terminal_writer\nfrom _pytest.pathlib import Path\n\nDEFAULT_LOG_FORMAT = \"%(filename)-25s %(lineno)4d %(levelname)-8s %(message)s\"\nDEFAULT_LOG_DATE_FORMAT = \"%H:%M:%S\"\n\n\nclass ColoredLevelFormatter(loggin",
+        "start_line": 9,
+        "start_column": 138,
+        "end_line": 0,
+        "end_column": 537,
+        "start_byte": 138,
+        "end_byte": 0
+      },
+      "_pytest.setupplan.pytest_addoption": {
+        "name": "_pytest.setupplan.pytest_addoption",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "__ import print_function\n\nimport logging\nimport re\nfrom contextlib import contextmanager\n\nimport py\nimport six\n\nimport pytest\nfrom _pytest.compat import dummy_context_manager\nfrom _pytest.config import create_terminal_writer\nfrom _pytest.pathlib import Path\n\nDEFAULT_LOG_FORMAT",
+        "start_line": 7,
+        "start_column": 126,
+        "end_line": 0,
+        "end_column": 403,
+        "start_byte": 126,
+        "end_byte": 0
+      },
+      "_pytest.skipping.pytest_addoption": {
+        "name": "_pytest.skipping.pytest_addoption",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "om _pytest.pathlib import Path\n\nDEFAULT_LOG_FORMAT = \"%(filename)-25s %(lineno)4d %(levelname)-8s %(message)s\"\nDEFAULT_LOG_DATE_FORMAT = \"%H:%M:%S\"\n\n\nclass ColoredLevelFormatter(logging.Formatter):\n    \"\"\"\n    Colorize the %(levelname)..s part of the log format passed to __init__.\n    \"\"\"\n\n    LOGLEVEL_COLOROPTS = {\n        logging.CRITICAL: {\"red\"},\n        logging.ERROR: {\"red\", \"bold\"},\n        logging.WARNING: {\"yellow\"},\n        logging.WARN: {\"yellow\"},\n        logging.",
+        "start_line": 12,
+        "start_column": 353,
+        "end_line": 0,
+        "end_column": 833,
+        "start_byte": 353,
+        "end_byte": 0
+      },
+      "_pytest.stepwise.pytest_addoption": {
+        "name": "_pytest.stepwise.pytest_addoption",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "ontrol log capturing. \"\"\"\nfrom __future__ import absolute_import\nfrom __future__ import division\nfrom __future__ import print_function\n\nimport logging\nimport re\nfrom contextlib import contextmanager\n\nimport py\nimport six\n\nimport pytest\nfrom _pytest.compat import dummy_context_manager\nfrom _pytest.config import create_terminal_writer\nfrom _pytest.pathlib import Path\n\nDEFAULT_LOG_FORMAT = \"%(filename)-25s %(lineno)4d %(levelname)-8s %(message)s\"\nDEFAULT_LOG_DAT",
+        "start_line": 3,
+        "start_column": 16,
+        "end_line": 0,
+        "end_column": 479,
+        "start_byte": 16,
+        "end_byte": 0
+      },
+      "_pytest.terminal.pytest_addoption": {
+        "name": "_pytest.terminal.pytest_addoption",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "S.items():\n            formatted_levelname = levelname_fmt % {\n                \"levelname\": logging.getLevelName(level)\n            }\n\n            # add ANSI escape sequences around the formatted levelname\n            color_kwargs = {name: True for name in color_opts}\n            colorized_formatted_levelname = terminalwriter.markup(\n                formatted_levelname, **color_kwargs\n            )\n            self._level_to_fmt_mapping[level] = self.LEVELNAME_FMT_REGEX.sub(\n                colorized_formatted_levelname, self._fmt\n            )\n\n    def format(self, record):\n        fmt = self._level_to_fmt_mapping.get(record.levelno, self._original_fmt)\n        if six.PY2:\n            self._fmt = fmt\n        else:\n            self._style._fmt = fmt\n        return super(ColoredLevelFormatter, self).format(record)\n\n\ndef get_option_ini(config, *names):\n    for name in names:\n        ret = config.getoption(name)  # 'default' arg won't work as expected\n        if ret is None:\n            ret = config.getini(name)\n        if ret:\n            return ret\n\n\ndef pytest_addoption(parser):\n    \"\"\"Add options to control log capturing.\"\"\"\n    group = parser.getgroup(\"logging\")\n\n    def add_option_ini(option, dest, default=None, type=None, **kwargs):\n        parser.addini(\n            dest, default=default, type=type, help=\"default value for \" + option\n        )\n        group.addoption(option, dest=dest, **kwargs)\n\n    add_option_ini(\n        \"--no-print-logs\",\n        dest=\"log_print\",\n        action=\"store_const\",\n        const=False,\n        default=True,\n        type=\"bool\",\n        help=\"disable printing caught logs on failed tests.\",\n    )\n    add_option_ini(\n        \"--log-level\",\n        dest=\"log_level\",\n        default=None,\n        help=\"logging level used by the logging module\",\n    )\n    add_option_ini(\n        \"--log-format\",\n        dest=\"log_format\",\n        default=DEFAULT_LOG_FORMAT,\n        help=\"log format as used by the logging module.\",\n    )\n    add_option_ini(\n        \"--log-date-format\",\n        dest=\"log_date_format\",\n        default=DEFAULT_LOG_DATE_FORMAT,\n        help=\"log date format as used by the logging module.\",\n    )\n    parser.addini(\n        \"log_cli\",\n        default=False,\n        type=\"bool\",\n        help='enable log display during test run (also known as \"live logging\").',\n    )\n    add_option_ini(\n        \"--log-cli-level\", dest=\"log_cli_level\", default=None, help=\"cli logging level.\"\n    )\n    add_option_ini(\n        \"--log-cli-format\",\n        dest=\"log_cli_format\",\n        default=None,\n        help=\"log format as used by the logging module.\",\n    )\n    add_option_",
+        "start_line": 57,
+        "start_column": 1520,
+        "end_line": 0,
+        "end_column": 4162,
+        "start_byte": 1520,
+        "end_byte": 0
+      },
+      "_pytest.warnings.pytest_addoption": {
+        "name": "_pytest.warnings.pytest_addoption",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "LevelFormatter, self).__init__(*args, **kwargs)\n        if six.PY2:\n            self._original_fmt = self._fmt\n        else:\n            self._original_fmt = self._style._fmt\n        self._level_to_fmt_mapping = {}\n\n        levelname_fmt_match = self.LEVELNAME_FMT_REGEX.search(self._fmt)\n        if not levelname_fmt_match:\n            return\n        levelname_fmt = levelname_fmt_match.group()\n\n        for level, color_opts in self.LOGLEVEL_COLOROPTS.items():",
+        "start_line": 38,
+        "start_column": 1068,
+        "end_line": 0,
+        "end_column": 1530,
+        "start_byte": 1068,
+        "end_byte": 0
+      },
+      "_pytest.resultlog.pytest_addoption": {
+        "name": "_pytest.resultlog.pytest_addoption",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "mport py\nimport six\n\nimport pytest\nfrom _pytest.compat import dummy_context_manager\nfrom _pytest.config import create_terminal_writer\nfrom _pytest.pathlib import Path\n\nDEFAULT_LOG_FORMAT = \"%(filename)-25s %(lineno)4d %(levelname)-8s %(message)s\"\nDEFAULT_LOG_DATE_FORMAT = \"%H:%M:%S\"\n\n\nclass ColoredLevelFormatter(lo",
+        "start_line": 12,
+        "start_column": 217,
+        "end_line": 0,
+        "end_column": 533,
+        "start_byte": 217,
+        "end_byte": 0
+      },
+      "_pytest.logging.DEFAULT_LOG_FORMAT": {
+        "name": "_pytest.logging.DEFAULT_LOG_FORMAT",
+        "file_path": "src/_pytest/logging.py",
+        "file_content": "DEFAULT_LOG_FORMAT = \"%(filename)-25s %(lineno)4d %(levelname)-8s %(message)s\"",
+        "start_line": 17,
+        "start_column": 385,
+        "end_line": 0,
+        "end_column": 463,
+        "start_byte": 385,
+        "end_byte": 0
+      }
+    }
+  }
+}

@@ -1,0 +1,244 @@
+{
+  "name": "SymbolsEvaluate",
+  "model": "gpt-4o-2024-08-06",
+  "metadata": {
+    "token_count": 0,
+    "cost": 0
+  },
+  "issue": "<description>:tmpdir creation fails when the username contains illegal characters for directory names\n`tmpdir`, `tmpdir_factory` and `tmp_path_factory` rely on `getpass.getuser()` for determining the `basetemp` directory. I found that the user name returned by `getpass.getuser()` may return characters that are not allowed for directory names. This may lead to errors while creating the temporary directory.\r\n\r\nThe situation in which I reproduced this issue was while being logged in through an ssh connection into my Windows 10 x64 Enterprise version (1909) using an OpenSSH_for_Windows_7.7p1 server. In this configuration the command `python -c \"import getpass; print(getpass.getuser())\"` returns my domain username e.g. `contoso\\john_doe` instead of `john_doe` as when logged in regularly using a local session.\r\n\r\nWhen trying to create a temp directory in pytest through e.g. `tmpdir_factory.mktemp('foobar')` this fails with the following error message:\r\n```\r\nself = WindowsPath('C:/Users/john_doe/AppData/Local/Temp/pytest-of-contoso/john_doe')\r\nmode = 511, parents = False, exist_ok = True\r\n\r\n    def mkdir(self, mode=0o777, parents=False, exist_ok=False):\r\n        \"\"\"\r\n        Create a new directory at this given path.\r\n        \"\"\"\r\n        if self._closed:\r\n            self._raise_closed()\r\n        try:\r\n>           self._accessor.mkdir(self, mode)\r\nE           FileNotFoundError: [WinError 3] The system cannot find the path specified: 'C:\\\\Users\\\\john_doe\\\\AppData\\\\Local\\\\Temp\\\\pytest-of-contoso\\\\john_doe'\r\n\r\nC:\\Python38\\lib\\pathlib.py:1266: FileNotFoundError\r\n```\r\n\r\nI could also reproduce this without the complicated ssh/windows setup with pytest 6.2.2 using the following commands from a `cmd`:\r\n```bat\r\necho def test_tmpdir(tmpdir):>test_tmp.py\r\necho   pass>>test_tmp.py\r\nset LOGNAME=contoso\\john_doe\r\npy.test test_tmp.py\r\n```\r\n\r\nThanks for having a look at this!\n</description>",
+  "request": {
+    "related_symbols": [
+      {
+        "name": "_pytest.tmpdir.TempPathFactory",
+        "file_path": "src/_pytest/tmpdir.py",
+        "file_content": "@final\n@attr.s(init=False)\nclass TempPathFactory:\n    \"\"\"Factory for temporary directories under the common base temp directory.\n\n    The base directory can be configured using the ``--basetemp`` option.\n    \"\"\"\n\n    _given_basetemp = attr.ib(type=Optional[Path])\n    _trace = attr.ib()\n    _basetemp = attr.ib(type=Optional[Path])\n\n    def __init__(\n        self,\n        given_basetemp: Optional[Path],\n        trace,\n        basetemp: Optional[Path] = None,\n        *,\n        _ispytest: bool = False,\n    ) -> None:\n        check_ispytest(_ispytest)\n        if given_basetemp is None:\n            self._given_basetemp = None\n        else:\n            # Use os.path.abspath() to get absolute path instead of resolve() as it\n            # does not work the same in all platforms (see #4427).\n            # Path.absolute() exists, but it is not public (see https://bugs.python.org/issue25012).\n            self._given_basetemp = Path(os.path.abspath(str(given_basetemp)))\n        self._trace = trace\n        self._basetemp = basetemp\n\n    @classmethod\n    def from_config(\n        cls,\n        config: Config,\n        *,\n        _ispytest: bool = False,\n    ) -> \"TempPathFactory\":\n        \"\"\"Create a factory according to pytest configuration.\n\n        :meta private:\n        \"\"\"\n        check_ispytest(_ispytest)\n        return cls(\n            given_basetemp=config.option.basetemp,\n            trace=config.trace.get(\"tmpdir\"),\n            _ispytest=True,\n        )\n\n    def _ensure_relative_to_basetemp(self, basename: str) -> str:\n        basename = os.path.normpath(basename)\n        if (self.getbasetemp() / basename).resolve().parent != self.getbasetemp():\n            raise ValueError(f\"{basename} is not a normalized and relative path\")\n        return basename\n\n    def mktemp(self, basename: str, numbered: bool = True) -> Path:\n        \"\"\"Create a new temporary directory managed by the factory.\n\n        :param basename:\n            Directory base name, must be a relative path.\n\n        :param numbered:\n            If ``True``, ensure the directory is unique by adding a numbered\n            suffix greater than any existing one: ``basename=\"foo-\"`` and ``numbered=True``\n            means that this function will create directories named ``\"foo-0\"``,\n            ``\"foo-1\"``, ``\"foo-2\"`` and so on.\n\n        :returns:\n            The path to the new directory.\n        \"\"\"\n        basename = self._ensure_relative_to_basetemp(basename)\n        if not numbered:\n            p = self.getbasetemp().joinpath(basename)\n            p.mkdir()\n        else:\n            p = make_numbered_dir(root=self.getbasetemp(), prefix=basename)\n            self._trace(\"mktemp\", p)\n        return p\n\n    def getbasetemp(self) -> Path:\n        \"\"\"Return base temporary directory.\"\"\"\n        if self._basetemp is not None:\n            return self._basetemp\n\n        if self._given_basetemp is not None:\n            basetemp = self._given_basetemp\n            ensure_reset_dir(basetemp)\n            basetemp = basetemp.resolve()\n        else:\n            from_env = os.environ.get(\"PYTEST_DEBUG_TEMPROOT\")\n            temproot = Path(from_env or tempfile.gettempdir()).resolve()\n            user = get_user() or \"unknown\"\n            # use a sub-directory in the temproot to speed-up\n            # make_numbered_dir() call\n            rootdir = temproot.joinpath(f\"pytest-of-{user}\")\n            rootdir.mkdir(exist_ok=True)\n            basetemp = make_numbered_dir_with_cleanup(\n                prefix=\"pytest-\", root=rootdir, keep=3, lock_timeout=LOCK_TIMEOUT\n            )\n        assert basetemp is not None, basetemp\n        self._basetemp = t = basetemp\n        self._trace(\"new basetemp\", t)\n        return t",
+        "start_line": 22,
+        "start_column": 585,
+        "end_line": 0,
+        "end_column": 4297,
+        "start_byte": 585,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.tmpdir.TempPathFactory._given_basetemp",
+        "file_path": "src/_pytest/tmpdir.py",
+        "file_content": "_given_basetemp = attr.ib(type=Optional[Path])",
+        "start_line": 30,
+        "start_column": 802,
+        "end_line": 4,
+        "end_column": 848,
+        "start_byte": 802,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.tmpdir.TempPathFactory._trace",
+        "file_path": "src/_pytest/tmpdir.py",
+        "file_content": "_trace = attr.ib()",
+        "start_line": 31,
+        "start_column": 853,
+        "end_line": 4,
+        "end_column": 871,
+        "start_byte": 853,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.tmpdir.TempPathFactory._basetemp",
+        "file_path": "src/_pytest/tmpdir.py",
+        "file_content": "_basetemp = attr.ib(type=Optional[Path])",
+        "start_line": 32,
+        "start_column": 876,
+        "end_line": 4,
+        "end_column": 916,
+        "start_byte": 876,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.tmpdir.TempPathFactory.__init__",
+        "file_path": "src/_pytest/tmpdir.py",
+        "file_content": "def __init__(\n        self,\n        given_basetemp: Optional[Path],\n        trace,\n        basetemp: Optional[Path] = None,\n        *,\n        _ispytest: bool = False,\n    ) -> None:\n        check_ispytest(_ispytest)\n        if given_basetemp is None:\n            self._given_basetemp = None\n        else:\n            # Use os.path.abspath() to get absolute path instead of resolve() as it\n            # does not work the same in all platforms (see #4427).\n            # Path.absolute() exists, but it is not public (see https://bugs.python.org/issue25012).\n            self._given_basetemp = Path(os.path.abspath(str(given_basetemp)))\n        self._trace = trace\n        self._basetemp = basetemp",
+        "start_line": 34,
+        "start_column": 922,
+        "end_line": 4,
+        "end_column": 1619,
+        "start_byte": 922,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.tmpdir.TempPathFactory.from_config",
+        "file_path": "src/_pytest/tmpdir.py",
+        "file_content": "@classmethod\n    def from_config(\n        cls,\n        config: Config,\n        *,\n        _ispytest: bool = False,\n    ) -> \"TempPathFactory\":\n        \"\"\"Create a factory according to pytest configuration.\n\n        :meta private:\n        \"\"\"\n        check_ispytest(_ispytest)\n        return cls(\n            given_basetemp=config.option.basetemp,\n            trace=config.trace.get(\"tmpdir\"),\n            _ispytest=True,\n        )",
+        "start_line": 53,
+        "start_column": 1625,
+        "end_line": 4,
+        "end_column": 2055,
+        "start_byte": 1625,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.tmpdir.TempPathFactory._ensure_relative_to_basetemp",
+        "file_path": "src/_pytest/tmpdir.py",
+        "file_content": "def _ensure_relative_to_basetemp(self, basename: str) -> str:\n        basename = os.path.normpath(basename)\n        if (self.getbasetemp() / basename).resolve().parent != self.getbasetemp():\n            raise ValueError(f\"{basename} is not a normalized and relative path\")\n        return basename",
+        "start_line": 71,
+        "start_column": 2061,
+        "end_line": 4,
+        "end_column": 2357,
+        "start_byte": 2061,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.tmpdir.TempPathFactory.mktemp",
+        "file_path": "src/_pytest/tmpdir.py",
+        "file_content": "def mktemp(self, basename: str, numbered: bool = True) -> Path:\n        \"\"\"Create a new temporary directory managed by the factory.\n\n        :param basename:\n            Directory base name, must be a relative path.\n\n        :param numbered:\n            If ``True``, ensure the directory is unique by adding a numbered\n            suffix greater than any existing one: ``basename=\"foo-\"`` and ``numbered=True``\n            means that this function will create directories named ``\"foo-0\"``,\n            ``\"foo-1\"``, ``\"foo-2\"`` and so on.\n\n        :returns:\n            The path to the new directory.\n        \"\"\"\n        basename = self._ensure_relative_to_basetemp(basename)\n        if not numbered:\n            p = self.getbasetemp().joinpath(basename)\n            p.mkdir()\n        else:\n            p = make_numbered_dir(root=self.getbasetemp(), prefix=basename)\n            self._trace(\"mktemp\", p)\n        return p",
+        "start_line": 77,
+        "start_column": 2363,
+        "end_line": 4,
+        "end_column": 3283,
+        "start_byte": 2363,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.tmpdir.TempPathFactory.getbasetemp",
+        "file_path": "src/_pytest/tmpdir.py",
+        "file_content": "def getbasetemp(self) -> Path:\n        \"\"\"Return base temporary directory.\"\"\"\n        if self._basetemp is not None:\n            return self._basetemp\n\n        if self._given_basetemp is not None:\n            basetemp = self._given_basetemp\n            ensure_reset_dir(basetemp)\n            basetemp = basetemp.resolve()\n        else:\n            from_env = os.environ.get(\"PYTEST_DEBUG_TEMPROOT\")\n            temproot = Path(from_env or tempfile.gettempdir()).resolve()\n            user = get_user() or \"unknown\"\n            # use a sub-directory in the temproot to speed-up\n            # make_numbered_dir() call\n            rootdir = temproot.joinpath(f\"pytest-of-{user}\")\n            rootdir.mkdir(exist_ok=True)\n            basetemp = make_numbered_dir_with_cleanup(\n                prefix=\"pytest-\", root=rootdir, keep=3, lock_timeout=LOCK_TIMEOUT\n            )\n        assert basetemp is not None, basetemp\n        self._basetemp = t = basetemp\n        self._trace(\"new basetemp\", t)\n        return t",
+        "start_line": 101,
+        "start_column": 3289,
+        "end_line": 4,
+        "end_column": 4297,
+        "start_byte": 3289,
+        "end_byte": 4
+      }
+    ],
+    "root_caused_symbols": [
+      {
+        "name": "_pytest.tmpdir.get_user",
+        "file_path": "src/_pytest/tmpdir.py",
+        "file_content": "def get_user() -> Optional[str]:\n    \"\"\"Return the current user name, or None if getuser() does not work\n    in the current environment (see #1010).\"\"\"\n    import getpass\n\n    try:\n        return getpass.getuser()\n    except (ImportError, KeyError):\n        return None",
+        "start_line": 150,
+        "start_column": 5171,
+        "end_line": 0,
+        "end_column": 5440,
+        "start_byte": 5171,
+        "end_byte": 0
+      }
+    ]
+  },
+  "response": {
+    "scratch_pad": "1. Analyze User Instructions:\n\nThe issue describes a problem with the tmpdir creation in pytest when the username contains characters illegal in directory names. Specifically, the username returned by `getpass.getuser()` might include characters such as backslashes (`\\`) which are disallowed in Windows directory paths. This can result in errors during temporary directory creation in pytest.\n\n- The username \"contoso\\\\john_doe\" is returned by `getpass.getuser()` during an SSH connection, leading to the error because '\\\\' is not valid in directory names.\n\n- The expected result is that pytest tmpdir functionality should work even if the username contains disallowed path characters by using a sanitized version of the username.\n\nTo fix this, we need to sanitize the username by replacing or removing illegal characters before it gets used in path creation.\n\n2. Make the evaluate:\n\n- We should examine where the username is being used in paths or temporary directory creation.\n\n- The function `get_user` seems to be at the root of the problem since it directly returns the username from `getpass.getuser`. It should potentially replace characters such as '\\\\' or '/' with a valid substitute (e.g., '-') or remove them completely.\n\n- `TempPathFactory` class contains logic for creating temporary paths. The method `getbasetemp` utilizes the result of `get_user()`. This path handling portion is where username sanitation should occur if not directly handled in `get_user`.\n\nRecommendations:\n- **Modify `get_user()` to sanitize the username** by replacing or removing disallowed characters for directory names.\n\nBy addressing the username before it is placed into paths, this should prevent the issue from occurring.",
+    "symbols": [
+      {
+        "name": "_pytest.tmpdir.get_user",
+        "file_path": "src/_pytest/tmpdir.py",
+        "reason": "This function returns the username which might contain illegal characters for directory paths. It should return a sanitized username, replacing or removing any illegal characters."
+      },
+      {
+        "name": "_pytest.tmpdir.TempPathFactory.getbasetemp",
+        "file_path": "src/_pytest/tmpdir.py",
+        "reason": "This function constructs a path using the username (via `get_user()`). It should ensure that the username is sanitized before use if not already handled in `get_user()`."
+      }
+    ],
+    "more_info": [],
+    "is_done": true,
+    "symbols_scratch_pad": [
+      "The `get_user` function simply returns the username from `getpass.getuser()`. Since this is the source of the potentially problematic username, it should be modified to sanitize the output before returning it to ensure no illegal characters are included in directory paths.",
+      "The `TempPathFactory` class contains the logic to create temporary directories and uses `get_user()` to incorporate the username in the directory path. Specifically in `getbasetemp`, the username is used in constructing paths and thus, it should be ensured that the username is sanitized if not already within `get_user`."
+    ]
+  },
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are an autonomous AI assistant tasked with finding relevant code in an existing \ncodebase based on a reported issue. \nYour task is base on the symbol code to identify how many symbols need to be change to resolve the issue. \n#Input Structure:\n\n* <issue>: Contains the reported issue.\n* <symbol>: the code might to be relevant to the issue.\n\n# Your Task:\n\n1. Analyze User Instructions:\nCarefully read the reported issue within the <issue> tag.\nthink step by step and write out your thoughts in the scratch_pad field.\n1.1 What issue is the user describing?\n1.2 How was this issue caused?\n1.3 If the user described the expected result, what should it be fixed to?\n1.4 If the user did not provide an expected result, what should the expectation be?\n1.5 How should the issue be fixed to meet the expectation?\n\n2. Make the evaluate:\n2.1. Thoroughly analyze each lines in the <symbol> and <symbol> tags.\n2.2. Match the symbol/code/pattern with the key elements, functions, variables, or patterns identified in the reported issue.\n2.3. Evaluate the relevance of each symbol based on how well it aligns with the reported issue and current file context.\n2.4. make the decision how many symbols need to be change to resolve the issue.\n2.5. if you need more file content or symbol information, you can ask the user for more information.\n2.6. relative symbol means, He might be the root cause of the problem, or he could be a part of the process that reproduces the issue.\n\nThink step by step and write out your thoughts in the scratch_pad field.  \n"
+    },
+    {
+      "role": "user",
+      "content": "<issue><description>:tmpdir creation fails when the username contains illegal characters for directory names\n`tmpdir`, `tmpdir_factory` and `tmp_path_factory` rely on `getpass.getuser()` for determining the `basetemp` directory. I found that the user name returned by `getpass.getuser()` may return characters that are not allowed for directory names. This may lead to errors while creating the temporary directory.\r\n\r\nThe situation in which I reproduced this issue was while being logged in through an ssh connection into my Windows 10 x64 Enterprise version (1909) using an OpenSSH_for_Windows_7.7p1 server. In this configuration the command `python -c \"import getpass; print(getpass.getuser())\"` returns my domain username e.g. `contoso\\john_doe` instead of `john_doe` as when logged in regularly using a local session.\r\n\r\nWhen trying to create a temp directory in pytest through e.g. `tmpdir_factory.mktemp('foobar')` this fails with the following error message:\r\n```\r\nself = WindowsPath('C:/Users/john_doe/AppData/Local/Temp/pytest-of-contoso/john_doe')\r\nmode = 511, parents = False, exist_ok = True\r\n\r\n    def mkdir(self, mode=0o777, parents=False, exist_ok=False):\r\n        \"\"\"\r\n        Create a new directory at this given path.\r\n        \"\"\"\r\n        if self._closed:\r\n            self._raise_closed()\r\n        try:\r\n>           self._accessor.mkdir(self, mode)\r\nE           FileNotFoundError: [WinError 3] The system cannot find the path specified: 'C:\\\\Users\\\\john_doe\\\\AppData\\\\Local\\\\Temp\\\\pytest-of-contoso\\\\john_doe'\r\n\r\nC:\\Python38\\lib\\pathlib.py:1266: FileNotFoundError\r\n```\r\n\r\nI could also reproduce this without the complicated ssh/windows setup with pytest 6.2.2 using the following commands from a `cmd`:\r\n```bat\r\necho def test_tmpdir(tmpdir):>test_tmp.py\r\necho   pass>>test_tmp.py\r\nset LOGNAME=contoso\\john_doe\r\npy.test test_tmp.py\r\n```\r\n\r\nThanks for having a look at this!\n</description></issue>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.tmpdir.get_user</name><path>src/_pytest/tmpdir.py</path><content>def get_user() -> Optional[str]:\n    \"\"\"Return the current user name, or None if getuser() does not work\n    in the current environment (see #1010).\"\"\"\n    import getpass\n\n    try:\n        return getpass.getuser()\n    except (ImportError, KeyError):\n        return None</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.tmpdir.TempPathFactory</name><path>src/_pytest/tmpdir.py</path><content>@final\n@attr.s(init=False)\nclass TempPathFactory:\n    \"\"\"Factory for temporary directories under the common base temp directory.\n\n    The base directory can be configured using the ``--basetemp`` option.\n    \"\"\"\n\n    _given_basetemp = attr.ib(type=Optional[Path])\n    _trace = attr.ib()\n    _basetemp = attr.ib(type=Optional[Path])\n\n    def __init__(\n        self,\n        given_basetemp: Optional[Path],\n        trace,\n        basetemp: Optional[Path] = None,\n        *,\n        _ispytest: bool = False,\n    ) -> None:\n        check_ispytest(_ispytest)\n        if given_basetemp is None:\n            self._given_basetemp = None\n        else:\n            # Use os.path.abspath() to get absolute path instead of resolve() as it\n            # does not work the same in all platforms (see #4427).\n            # Path.absolute() exists, but it is not public (see https://bugs.python.org/issue25012).\n            self._given_basetemp = Path(os.path.abspath(str(given_basetemp)))\n        self._trace = trace\n        self._basetemp = basetemp\n\n    @classmethod\n    def from_config(\n        cls,\n        config: Config,\n        *,\n        _ispytest: bool = False,\n    ) -> \"TempPathFactory\":\n        \"\"\"Create a factory according to pytest configuration.\n\n        :meta private:\n        \"\"\"\n        check_ispytest(_ispytest)\n        return cls(\n            given_basetemp=config.option.basetemp,\n            trace=config.trace.get(\"tmpdir\"),\n            _ispytest=True,\n        )\n\n    def _ensure_relative_to_basetemp(self, basename: str) -> str:\n        basename = os.path.normpath(basename)\n        if (self.getbasetemp() / basename).resolve().parent != self.getbasetemp():\n            raise ValueError(f\"{basename} is not a normalized and relative path\")\n        return basename\n\n    def mktemp(self, basename: str, numbered: bool = True) -> Path:\n        \"\"\"Create a new temporary directory managed by the factory.\n\n        :param basename:\n            Directory base name, must be a relative path.\n\n        :param numbered:\n            If ``True``, ensure the directory is unique by adding a numbered\n            suffix greater than any existing one: ``basename=\"foo-\"`` and ``numbered=True``\n            means that this function will create directories named ``\"foo-0\"``,\n            ``\"foo-1\"``, ``\"foo-2\"`` and so on.\n\n        :returns:\n            The path to the new directory.\n        \"\"\"\n        basename = self._ensure_relative_to_basetemp(basename)\n        if not numbered:\n            p = self.getbasetemp().joinpath(basename)\n            p.mkdir()\n        else:\n            p = make_numbered_dir(root=self.getbasetemp(), prefix=basename)\n            self._trace(\"mktemp\", p)\n        return p\n\n    def getbasetemp(self) -> Path:\n        \"\"\"Return base temporary directory.\"\"\"\n        if self._basetemp is not None:\n            return self._basetemp\n\n        if self._given_basetemp is not None:\n            basetemp = self._given_basetemp\n            ensure_reset_dir(basetemp)\n            basetemp = basetemp.resolve()\n        else:\n            from_env = os.environ.get(\"PYTEST_DEBUG_TEMPROOT\")\n            temproot = Path(from_env or tempfile.gettempdir()).resolve()\n            user = get_user() or \"unknown\"\n            # use a sub-directory in the temproot to speed-up\n            # make_numbered_dir() call\n            rootdir = temproot.joinpath(f\"pytest-of-{user}\")\n            rootdir.mkdir(exist_ok=True)\n            basetemp = make_numbered_dir_with_cleanup(\n                prefix=\"pytest-\", root=rootdir, keep=3, lock_timeout=LOCK_TIMEOUT\n            )\n        assert basetemp is not None, basetemp\n        self._basetemp = t = basetemp\n        self._trace(\"new basetemp\", t)\n        return t</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.tmpdir.TempPathFactory._given_basetemp</name><path>src/_pytest/tmpdir.py</path><content>_given_basetemp = attr.ib(type=Optional[Path])</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.tmpdir.TempPathFactory._trace</name><path>src/_pytest/tmpdir.py</path><content>_trace = attr.ib()</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.tmpdir.TempPathFactory._basetemp</name><path>src/_pytest/tmpdir.py</path><content>_basetemp = attr.ib(type=Optional[Path])</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.tmpdir.TempPathFactory.__init__</name><path>src/_pytest/tmpdir.py</path><content>def __init__(\n        self,\n        given_basetemp: Optional[Path],\n        trace,\n        basetemp: Optional[Path] = None,\n        *,\n        _ispytest: bool = False,\n    ) -> None:\n        check_ispytest(_ispytest)\n        if given_basetemp is None:\n            self._given_basetemp = None\n        else:\n            # Use os.path.abspath() to get absolute path instead of resolve() as it\n            # does not work the same in all platforms (see #4427).\n            # Path.absolute() exists, but it is not public (see https://bugs.python.org/issue25012).\n            self._given_basetemp = Path(os.path.abspath(str(given_basetemp)))\n        self._trace = trace\n        self._basetemp = basetemp</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.tmpdir.TempPathFactory.from_config</name><path>src/_pytest/tmpdir.py</path><content>@classmethod\n    def from_config(\n        cls,\n        config: Config,\n        *,\n        _ispytest: bool = False,\n    ) -> \"TempPathFactory\":\n        \"\"\"Create a factory according to pytest configuration.\n\n        :meta private:\n        \"\"\"\n        check_ispytest(_ispytest)\n        return cls(\n            given_basetemp=config.option.basetemp,\n            trace=config.trace.get(\"tmpdir\"),\n            _ispytest=True,\n        )</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.tmpdir.TempPathFactory._ensure_relative_to_basetemp</name><path>src/_pytest/tmpdir.py</path><content>def _ensure_relative_to_basetemp(self, basename: str) -> str:\n        basename = os.path.normpath(basename)\n        if (self.getbasetemp() / basename).resolve().parent != self.getbasetemp():\n            raise ValueError(f\"{basename} is not a normalized and relative path\")\n        return basename</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.tmpdir.TempPathFactory.mktemp</name><path>src/_pytest/tmpdir.py</path><content>def mktemp(self, basename: str, numbered: bool = True) -> Path:\n        \"\"\"Create a new temporary directory managed by the factory.\n\n        :param basename:\n            Directory base name, must be a relative path.\n\n        :param numbered:\n            If ``True``, ensure the directory is unique by adding a numbered\n            suffix greater than any existing one: ``basename=\"foo-\"`` and ``numbered=True``\n            means that this function will create directories named ``\"foo-0\"``,\n            ``\"foo-1\"``, ``\"foo-2\"`` and so on.\n\n        :returns:\n            The path to the new directory.\n        \"\"\"\n        basename = self._ensure_relative_to_basetemp(basename)\n        if not numbered:\n            p = self.getbasetemp().joinpath(basename)\n            p.mkdir()\n        else:\n            p = make_numbered_dir(root=self.getbasetemp(), prefix=basename)\n            self._trace(\"mktemp\", p)\n        return p</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.tmpdir.TempPathFactory.getbasetemp</name><path>src/_pytest/tmpdir.py</path><content>def getbasetemp(self) -> Path:\n        \"\"\"Return base temporary directory.\"\"\"\n        if self._basetemp is not None:\n            return self._basetemp\n\n        if self._given_basetemp is not None:\n            basetemp = self._given_basetemp\n            ensure_reset_dir(basetemp)\n            basetemp = basetemp.resolve()\n        else:\n            from_env = os.environ.get(\"PYTEST_DEBUG_TEMPROOT\")\n            temproot = Path(from_env or tempfile.gettempdir()).resolve()\n            user = get_user() or \"unknown\"\n            # use a sub-directory in the temproot to speed-up\n            # make_numbered_dir() call\n            rootdir = temproot.joinpath(f\"pytest-of-{user}\")\n            rootdir.mkdir(exist_ok=True)\n            basetemp = make_numbered_dir_with_cleanup(\n                prefix=\"pytest-\", root=rootdir, keep=3, lock_timeout=LOCK_TIMEOUT\n            )\n        assert basetemp is not None, basetemp\n        self._basetemp = t = basetemp\n        self._trace(\"new basetemp\", t)\n        return t</content></symbol>"
+    }
+  ],
+  "completion": {
+    "id": "chatcmpl-9y3Z6ZjhItKwepUPuHmDq8PcmTFrk",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\"scratch_pad\":\"1. Analyze User Instructions:\\n\\nThe issue describes a problem with the tmpdir creation in pytest when the username contains characters illegal in directory names. Specifically, the username returned by `getpass.getuser()` might include characters such as backslashes (`\\\\`) which are disallowed in Windows directory paths. This can result in errors during temporary directory creation in pytest.\\n\\n- The username \\\"contoso\\\\\\\\john_doe\\\" is returned by `getpass.getuser()` during an SSH connection, leading to the error because '\\\\\\\\' is not valid in directory names.\\n\\n- The expected result is that pytest tmpdir functionality should work even if the username contains disallowed path characters by using a sanitized version of the username.\\n\\nTo fix this, we need to sanitize the username by replacing or removing illegal characters before it gets used in path creation.\\n\\n2. Make the evaluate:\\n\\n- We should examine where the username is being used in paths or temporary directory creation.\\n\\n- The function `get_user` seems to be at the root of the problem since it directly returns the username from `getpass.getuser`. It should potentially replace characters such as '\\\\\\\\' or '/' with a valid substitute (e.g., '-') or remove them completely.\\n\\n- `TempPathFactory` class contains logic for creating temporary paths. The method `getbasetemp` utilizes the result of `get_user()`. This path handling portion is where username sanitation should occur if not directly handled in `get_user`.\\n\\nRecommendations:\\n- **Modify `get_user()` to sanitize the username** by replacing or removing disallowed characters for directory names.\\n\\nBy addressing the username before it is placed into paths, this should prevent the issue from occurring.\",\"symbols\":[{\"name\":\"_pytest.tmpdir.get_user\",\"file_path\":\"src/_pytest/tmpdir.py\",\"reason\":\"This function returns the username which might contain illegal characters for directory paths. It should return a sanitized username, replacing or removing any illegal characters.\"},{\"name\":\"_pytest.tmpdir.TempPathFactory.getbasetemp\",\"file_path\":\"src/_pytest/tmpdir.py\",\"reason\":\"This function constructs a path using the username (via `get_user()`). It should ensure that the username is sanitized before use if not already handled in `get_user()`.\"}],\"more_info\":[],\"is_done\":true,\"symbols_scratch_pad\":[\"The `get_user` function simply returns the username from `getpass.getuser()`. Since this is the source of the potentially problematic username, it should be modified to sanitize the output before returning it to ensure no illegal characters are included in directory paths.\",\"The `TempPathFactory` class contains the logic to create temporary directories and uses `get_user()` to incorporate the username in the directory path. Specifically in `getbasetemp`, the username is used in constructing paths and thus, it should be ensured that the username is sanitized if not already within `get_user`.\"]}",
+          "refusal": null,
+          "role": "assistant",
+          "function_call": null,
+          "tool_calls": [],
+          "parsed": {
+            "scratch_pad": "1. Analyze User Instructions:\n\nThe issue describes a problem with the tmpdir creation in pytest when the username contains characters illegal in directory names. Specifically, the username returned by `getpass.getuser()` might include characters such as backslashes (`\\`) which are disallowed in Windows directory paths. This can result in errors during temporary directory creation in pytest.\n\n- The username \"contoso\\\\john_doe\" is returned by `getpass.getuser()` during an SSH connection, leading to the error because '\\\\' is not valid in directory names.\n\n- The expected result is that pytest tmpdir functionality should work even if the username contains disallowed path characters by using a sanitized version of the username.\n\nTo fix this, we need to sanitize the username by replacing or removing illegal characters before it gets used in path creation.\n\n2. Make the evaluate:\n\n- We should examine where the username is being used in paths or temporary directory creation.\n\n- The function `get_user` seems to be at the root of the problem since it directly returns the username from `getpass.getuser`. It should potentially replace characters such as '\\\\' or '/' with a valid substitute (e.g., '-') or remove them completely.\n\n- `TempPathFactory` class contains logic for creating temporary paths. The method `getbasetemp` utilizes the result of `get_user()`. This path handling portion is where username sanitation should occur if not directly handled in `get_user`.\n\nRecommendations:\n- **Modify `get_user()` to sanitize the username** by replacing or removing disallowed characters for directory names.\n\nBy addressing the username before it is placed into paths, this should prevent the issue from occurring.",
+            "symbols": [
+              {
+                "name": "_pytest.tmpdir.get_user",
+                "file_path": "src/_pytest/tmpdir.py",
+                "reason": "This function returns the username which might contain illegal characters for directory paths. It should return a sanitized username, replacing or removing any illegal characters."
+              },
+              {
+                "name": "_pytest.tmpdir.TempPathFactory.getbasetemp",
+                "file_path": "src/_pytest/tmpdir.py",
+                "reason": "This function constructs a path using the username (via `get_user()`). It should ensure that the username is sanitized before use if not already handled in `get_user()`."
+              }
+            ],
+            "more_info": [],
+            "is_done": true,
+            "symbols_scratch_pad": [
+              "The `get_user` function simply returns the username from `getpass.getuser()`. Since this is the source of the potentially problematic username, it should be modified to sanitize the output before returning it to ensure no illegal characters are included in directory paths.",
+              "The `TempPathFactory` class contains the logic to create temporary directories and uses `get_user()` to incorporate the username in the directory path. Specifically in `getbasetemp`, the username is used in constructing paths and thus, it should be ensured that the username is sanitized if not already within `get_user`."
+            ]
+          }
+        }
+      }
+    ],
+    "created": 1724100412,
+    "model": "gpt-4o-2024-08-06",
+    "object": "chat.completion",
+    "service_tier": null,
+    "system_fingerprint": "fp_2a322c9ffc",
+    "usage": {
+      "completion_tokens": 610,
+      "prompt_tokens": 2999,
+      "total_tokens": 3609
+    }
+  }
+}

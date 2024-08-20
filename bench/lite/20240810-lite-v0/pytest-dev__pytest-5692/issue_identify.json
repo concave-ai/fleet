@@ -1,0 +1,43 @@
+{
+    "file_paths": [
+        "src/_pytest/junitxml.py"
+    ],
+    "symbols": [
+        "_pytest.junitxml.LogXML.pytest_sessionfinish"
+    ],
+    "code_spans": {
+        "_pytest.junitxml.LogXML.pytest_sessionfinish": {
+            "name": "_pytest.junitxml.LogXML.pytest_sessionfinish",
+            "file_path": "src/_pytest/junitxml.py",
+            "file_content": "def pytest_sessionfinish(self):\n        dirname = os.path.dirname(os.path.abspath(self.logfile))\n        if not os.path.isdir(dirname):\n            os.makedirs(dirname)\n        logfile = open(self.logfile, \"w\", encoding=\"utf-8\")\n        suite_stop_time = time.time()\n        suite_time_delta = suite_stop_time - self.suite_start_time\n\n        numtests = (\n            self.stats[\"passed\"]\n            + self.stats[\"failure\"]\n            + self.stats[\"skipped\"]\n            + self.stats[\"error\"]\n            - self.cnt_double_fail_tests\n        )\n        logfile.write('<?xml version=\"1.0\" encoding=\"utf-8\"?>')\n\n        suite_node = Junit.testsuite(\n            self._get_global_properties_node(),\n            [x.to_xml() for x in self.node_reporters_ordered],\n            name=self.suite_name,\n            errors=self.stats[\"error\"],\n            failures=self.stats[\"failure\"],\n            skipped=self.stats[\"skipped\"],\n            tests=numtests,\n            time=\"%.3f\" % suite_time_delta,\n        )\n        logfile.write(Junit.testsuites([suite_node]).unicode(indent=0))\n        logfile.close()",
+            "start_line": 642,
+            "start_column": 21520,
+            "end_line": 4,
+            "end_column": 22618,
+            "start_byte": 21520,
+            "end_byte": 4
+        },
+        "_pytest.junitxml.LogXML.add_global_property": {
+            "name": "_pytest.junitxml.LogXML.add_global_property",
+            "file_path": "src/_pytest/junitxml.py",
+            "file_content": "def add_global_property(self, name, value):\n        __tracebackhide__ = True\n        _check_record_param_type(\"name\", name)\n        self.global_properties.append((name, bin_xml_escape(value)))",
+            "start_line": 675,
+            "start_column": 22765,
+            "end_line": 4,
+            "end_column": 22957,
+            "start_byte": 22765,
+            "end_byte": 4
+        },
+        "_pytest.junitxml.LogXML._get_global_properties_node": {
+            "name": "_pytest.junitxml.LogXML._get_global_properties_node",
+            "file_path": "src/_pytest/junitxml.py",
+            "file_content": "def _get_global_properties_node(self):\n        \"\"\"Return a Junit node containing custom properties, if any.\n        \"\"\"\n        if self.global_properties:\n            return Junit.properties(\n                [\n                    Junit.property(name=name, value=value)\n                    for name, value in self.global_properties\n                ]\n            )\n        return \"\"",
+            "start_line": 680,
+            "start_column": 22963,
+            "end_line": 4,
+            "end_column": 23343,
+            "start_byte": 22963,
+            "end_byte": 4
+        }
+    }
+}

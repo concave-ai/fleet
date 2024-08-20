@@ -1,0 +1,42 @@
+
+diff --git a/pmxbot/pmxbot/core.py b/pmxbot/pmxbot/core.py
+new file mode 100644
+index 000000000..99a7c4267
+--- /dev/null
++++ b/pmxbot/pmxbot/core.py
+@@ -0,0 +1,4 @@
++def initialize(config):
++    class Bot:
++        pass
++    return Bot()
+diff --git a/pmxbot/pmxbot/logging.py b/pmxbot/pmxbot/logging.py
+new file mode 100644
+index 000000000..666fb413f
+--- /dev/null
++++ b/pmxbot/pmxbot/logging.py
+@@ -0,0 +1,2 @@
++class Logger:
++    store = None
+diff --git a/reproduce_bug.py b/reproduce_bug.py
+new file mode 100644
+index 000000000..56358fdf9
+--- /dev/null
++++ b/reproduce_bug.py
+@@ -0,0 +1,17 @@
++import sys
++sys.path.insert(0, sys.path[0] + '/pmxbot')
++
++import pmxbot.logging
++from pmxbot.core import initialize
++
++# Mimic the setup from the issue
++pmxbot.logging.Logger.store = 'test_store_value'
++
++# Check if the pmxbot.logging module is the same as the one in sys.modules
++if pmxbot.logging is sys.modules['pmxbot.logging']:
++    print("The modules are the same instance.")
++else:
++    print("The modules are different instances.")
++
++# Output the value of the class variable to verify if it's set correctly
++print("Logger.store:", getattr(pmxbot.logging.Logger, 'store', None))

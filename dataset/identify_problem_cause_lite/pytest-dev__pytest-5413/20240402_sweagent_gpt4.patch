@@ -1,0 +1,50 @@
+
+diff --git a/reproduce_issue.py b/reproduce_issue.py
+new file mode 100644
+index 000000000..c739db425
+--- /dev/null
++++ b/reproduce_issue.py
+@@ -0,0 +1,28 @@
++import pytest
++
++# Normal exception catch
++try:
++    raise LookupError(
++        f"A\n"
++        f"B\n"
++        f"C"
++    )
++except LookupError as e:
++    print("Normal exception catch output:")
++    print(str(e))
++
++# Pytest raises context
++with pytest.raises(LookupError) as e:
++    raise LookupError(
++        f"A\n"
++        f"B\n"
++        f"C"
++    )
++
++print("Pytest raises context output:")
++print(str(e))
++print("Pytest raises context output with e.value:")
++print(str(e.value))
++
++# Add a line to indicate the script completed successfully
++print("Script completed successfully, no errors.")
+diff --git a/src/_pytest/_code/code.py b/src/_pytest/_code/code.py
+index c4ed961ac..977e859e4 100644
+--- a/src/_pytest/_code/code.py
++++ b/src/_pytest/_code/code.py
+@@ -537,9 +537,7 @@ class ExceptionInfo:
+     def __str__(self):
+         if self._excinfo is None:
+             return repr(self)
+-        entry = self.traceback[-1]
+-        loc = ReprFileLocation(entry.path, entry.lineno + 1, self.exconly())
+-        return str(loc)
++        return str(self.value)
+ 
+     def match(self, regexp):
+         """

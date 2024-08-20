@@ -1,0 +1,12 @@
+
+diff --git a/reproduce_crash.py b/reproduce_crash.py
+new file mode 100644
+index 000000000..2a7076e74
+--- /dev/null
++++ b/reproduce_crash.py
+@@ -0,0 +1,5 @@
++# Attempt to reproduce the crash
++compiled_code = compile("False", "<string>", "eval")
++result = eval(compiled_code)
++
++print("Script completed successfully, no errors.")

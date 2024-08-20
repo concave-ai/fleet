@@ -1,0 +1,13 @@
+
+diff --git a/setup.cfg b/setup.cfg
+index ab3e0f88c..1e47eacca 100644
+--- a/setup.cfg
++++ b/setup.cfg
+@@ -71,3 +71,7 @@ strict_equality = True
+ warn_redundant_casts = True
+ warn_return_any = True
+ warn_unused_configs = True
++[tool:pytest]
++python_files = test_*.py *_test.py
++python_classes = Test*
++python_functions = test_*

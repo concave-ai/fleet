@@ -1,0 +1,50 @@
+
+diff --git a/reproduce_issue.py b/reproduce_issue.py
+new file mode 100644
+index 000000000..338607db6
+--- /dev/null
++++ b/reproduce_issue.py
+@@ -0,0 +1,9 @@
++import pytest
++
++def test_foo(caplog):
++    caplog.set_level(42)
++
++def test_bar(caplog):
++    print(caplog.handler.level)
++
++print("Script completed successfully, no errors.")
+diff --git a/src/_pytest/logging.py b/src/_pytest/logging.py
+index 11031f2f2..63c8e5730 100644
+--- a/src/_pytest/logging.py
++++ b/src/_pytest/logging.py
+@@ -342,13 +342,17 @@ class LogCaptureFixture:
+     """Provides access and control of log capturing."""
+ 
+     def __init__(self, item: nodes.Node) -> None:
+-        """Creates a new funcarg."""
++        print("Creating new LogCaptureFixture instance")
+         self._item = item
+         # dict of log name -> log level
+         self._initial_logger_levels = {}  # type: Dict[Optional[str], int]
+ 
+     def _finalize(self) -> None:
+         """Finalizes the fixture.
++        This restores the log levels changed by :meth:`set_level`.
++        """
++        print("_finalize called with _initial_logger_levels:", self._initial_logger_levels)
++        """Finalizes the fixture.
+ 
+         This restores the log levels changed by :meth:`set_level`.
+         """
+@@ -470,7 +474,10 @@ def caplog(request: FixtureRequest) -> Generator[LogCaptureFixture, None, None]:
+     * caplog.record_tuples   -> list of (logger_name, level, message) tuples
+     * caplog.clear()         -> clear captured records and formatted log output string
+     """
++    root_logger = logging.getLogger()
++    root_logger.setLevel(logging.NOTSET)
+     result = LogCaptureFixture(request.node)
++    result.set_level(logging.NOTSET, logger=root_logger.name)
+     yield result
+     result._finalize()
+ 

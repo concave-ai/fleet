@@ -1,0 +1,501 @@
+{
+  "name": "SymbolsEvaluate",
+  "model": "gpt-4o-2024-08-06",
+  "metadata": {
+    "token_count": 0,
+    "cost": 0
+  },
+  "issue": "<description>:Incorrect caching of skipif/xfail string condition evaluation\nVersion: pytest 5.4.3, current master\r\n\r\npytest caches the evaluation of the string in e.g. `@pytest.mark.skipif(\"sys.platform == 'win32'\")`. The caching key is only the string itself (see `cached_eval` in `_pytest/mark/evaluate.py`). However, the evaluation also depends on the item's globals, so the caching can lead to incorrect results. Example:\r\n\r\n```py\r\n# test_module_1.py\r\nimport pytest\r\n\r\nskip = True\r\n\r\n@pytest.mark.skipif(\"skip\")\r\ndef test_should_skip():\r\n    assert False\r\n```\r\n\r\n```py\r\n# test_module_2.py\r\nimport pytest\r\n\r\nskip = False\r\n\r\n@pytest.mark.skipif(\"skip\")\r\ndef test_should_not_skip():\r\n    assert False\r\n```\r\n\r\nRunning `pytest test_module_1.py test_module_2.py`.\r\n\r\nExpected: `test_should_skip` is skipped, `test_should_not_skip` is not skipped.\r\n\r\nActual: both are skipped.\r\n\r\n---\r\n\r\nI think the most appropriate fix is to simply remove the caching, which I don't think is necessary really, and inline `cached_eval` into `MarkEvaluator._istrue`.\n</description>",
+  "request": {
+    "related_symbols": [
+      {
+        "name": "_pytest.mark.MarkEvaluator._istrue",
+        "file_path": "src/_pytest/mark/evaluate.py",
+        "file_content": "def _istrue(self) -> bool:\n        if hasattr(self, \"result\"):\n            result = getattr(self, \"result\")  # type: bool\n            return result\n        self._marks = self._get_marks()\n\n        if self._marks:\n            self.result = False\n            for mark in self._marks:\n                self._mark = mark\n                if \"condition\" not in mark.kwargs:\n                    args = mark.args\n                else:\n                    args = (mark.kwargs[\"condition\"],)\n\n                for expr in args:\n                    self.expr = expr\n                    if isinstance(expr, str):\n                        d = self._getglobals()\n                        result = cached_eval(self.item.config, expr, d)\n                    else:\n                        if \"reason\" not in mark.kwargs:\n                            # XXX better be checked at collection time\n                            msg = (\n                                \"you need to specify reason=STRING \"\n                                \"when using booleans as conditions.\"\n                            )\n                            fail(msg)\n                        result = bool(expr)\n                    if result:\n                        self.result = True\n                        self.reason = mark.kwargs.get(\"reason\", None)\n                        self.expr = expr\n                        return self.result\n\n                if not args:\n                    self.result = True\n                    self.reason = mark.kwargs.get(\"reason\", None)\n                    return self.result\n        return False",
+        "start_line": 81,
+        "start_column": 2564,
+        "end_line": 4,
+        "end_column": 4143,
+        "start_byte": 2564,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.capture.CaptureManager.pytest_runtest_setup",
+        "file_path": "src/_pytest/skipping.py",
+        "file_content": "",
+        "start_line": 735,
+        "start_column": 23643,
+        "end_line": 4,
+        "end_column": 23821,
+        "start_byte": 23643,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.hookspec.pytest_runtest_setup",
+        "file_path": "src/_pytest/skipping.py",
+        "file_content": "",
+        "start_line": 420,
+        "start_column": 14531,
+        "end_line": 0,
+        "end_column": 14635,
+        "start_byte": 14531,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.hookspec.pytest_runtest_makereport",
+        "file_path": "src/_pytest/skipping.py",
+        "file_content": "",
+        "start_line": 438,
+        "start_column": 15172,
+        "end_line": 0,
+        "end_column": 15521,
+        "start_byte": 15172,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.logging.LoggingPlugin.pytest_runtest_setup",
+        "file_path": "src/_pytest/skipping.py",
+        "file_content": "",
+        "start_line": 675,
+        "start_column": 24746,
+        "end_line": 4,
+        "end_column": 25079,
+        "start_byte": 24746,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.mark.MarkEvaluator",
+        "file_path": "src/_pytest/skipping.py",
+        "file_content": "unxfail\",\n        action=\"store_true\",\n        dest=\"runxfail\",\n        default=False,\n        help=\"report the results of xfail tests as if they were not marked\",\n    )\n\n    parser.addini(\n        \"xfail_strict\",\n        \"default for the strict parameter of xfail \"\n        \"markers when not given explicitly (default: False)\",\n        default=False,\n        type=\"bool\",\n    )\n\n\ndef pytest_configure(config: Config) -> None:\n    if config.option.runxfail:\n        # yay a hack\n        import pytest\n\n        old = pytest.xfail\n        config._cleanup.append(lambda: setattr(pytest, \"xfail\", old))\n\n        def nop(*args, **kwargs):\n            pass\n\n        nop.Exception = xfail.Exception  # type: ignore[attr-defined] # noqa: F821\n        setattr(pytest, \"xfail\", nop)\n\n    config.addinivalue_line(\n        \"markers\",\n        \"skip(reason=None): skip the given test function with an optional reason. \"\n        'Example: skip(reason=\"no way of currently testing this\") skips the '\n        \"test.\",\n    )\n    config.addinivalue_line(\n        \"markers\",\n        \"skipif(condition): skip the given test function if eval(condition) \"\n        \"results in a True value.  Evaluation happens within the \"\n        \"module global context. Example: skipif('sys.platform == \\\"win32\\\"') \"\n        \"skips the test if we are on the win32 platform. see \"\n        \"https://docs.pytest.org/en/latest/skipping.html\",\n    )\n    config.addinivalue_line(\n        \"markers\",\n        \"xfail(condition, reason=None, run=True, raises=None, strict=False): \"\n        \"mark the test function as an expected failure if eval(condition) \"\n        \"has a True value. Optionally specify a reason for better reporting \"\n        \"and run=False if you don't even want to execute the test function. \"\n        \"If only specific exception(s) are expected, you can list them in \"\n        \"raises, and if the test fails in other ways, it will be reported as \"\n        \"a true failure. See https://docs.pytest.org/en/latest/skipping.html\",\n    )\n\n\n@hookimpl(tryfirst=True)\ndef pytest_runtest_setup(item: Item) -> None:\n    # Check if skip or skipif are specified as pytest marks\n    item._store[skipped_by_mark_key] = False\n    eval_skipif = MarkEvaluator(item, \"skipif\")\n    if eval_skipif.istrue():\n        item._store[skipped_by_mark_key] = True\n        skip(eval_skipif.getexplanation())\n\n    for skip_info in item.iter_markers(name=\"skip\"):\n        item._store[skipped_by_mark_key] = True\n        if \"reason\" in skip_info.kwargs:\n            skip(skip_info.kwargs[\"reason\"])\n        elif skip_info.args:\n            skip(skip_info.args[0])\n        else:\n            skip(\"unconditional skip\")\n\n    item._store[evalxfail_key] = MarkEvaluator(item, \"xfail\")\n    check_xfail_no_run(item)\n\n\n@hookimpl(hookwrapper=True)\ndef pytest_pyfunc_call(pyfuncitem: Function):\n    check_xfail_no_run(pyfuncitem)\n    outcome = yield\n    passed = outcome.excinfo is None\n    if passed:\n        check_strict_xfail(pyfuncitem)\n\n\ndef check_xfail_no_run(item: Item) -> None:\n    \"\"\"check xfail(run=False)\"\"\"\n    if not item.config.option.runxfail:\n        evalxfail = item._store[evalxfail_key]\n        if evalxfail.istrue():\n            if not evalxfail.get(\"run\", True):\n                xfail(\"[NOTRUN] \" + evalxfail.getexplanation())\n\n\ndef check_strict_xfail(pyfuncitem: Function) -> None:\n    \"\"\"check xfail(strict=True) for the given PASSING test\"\"\"\n    evalxfail = pyfuncitem._store[evalxfail_key]\n    if evalxfail.istrue():\n        strict_default = pyfuncitem.config.getini(\"xfail_strict\")\n        is_strict_xfail = evalxfail.get(\"strict\", strict_default)\n        if is_strict_xfail:\n            del pyfuncitem._store[evalxfail_key]\n            explanation = evalxfail.getexplanation()\n            fail(\"[XPASS(strict)] \" + explanatio",
+        "start_line": 33,
+        "start_column": 794,
+        "end_line": 0,
+        "end_column": 4578,
+        "start_byte": 794,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.mark.MarkEvaluator.__init__",
+        "file_path": "src/_pytest/skipping.py",
+        "file_content": "\"store_true\",\n        dest=\"runxfail\",\n        default=False,\n        help=\"report the results of xfail tests as if they were not marked\",\n    )\n\n    parser.addini(\n        \"xfail_strict\",\n        \"default for the",
+        "start_line": 34,
+        "start_column": 819,
+        "end_line": 4,
+        "end_column": 1032,
+        "start_byte": 819,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.mark.MarkEvaluator.__bool__",
+        "file_path": "src/_pytest/skipping.py",
+        "file_content": "t parameter of xfail \"\n        \"markers when not given explicitly (default: False)\",\n        default=False,\n      ",
+        "start_line": 40,
+        "start_column": 1038,
+        "end_line": 4,
+        "end_column": 1152,
+        "start_byte": 1038,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.mark.MarkEvaluator.wasvalid",
+        "file_path": "src/_pytest/skipping.py",
+        "file_content": "=\"bool\",\n    )\n\n\ndef pytest_configure(config: Config) -> None:\n    ",
+        "start_line": 44,
+        "start_column": 1158,
+        "end_line": 4,
+        "end_column": 1225,
+        "start_byte": 1158,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.mark.MarkEvaluator._get_marks",
+        "file_path": "src/_pytest/skipping.py",
+        "file_content": "fig.option.runxfail:\n        # yay a hack\n        import pytest\n\n        old = pytest.xfail\n        c",
+        "start_line": 47,
+        "start_column": 1231,
+        "end_line": 4,
+        "end_column": 1332,
+        "start_byte": 1231,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.mark.MarkEvaluator.invalidraise",
+        "file_path": "src/_pytest/skipping.py",
+        "file_content": "_cleanup.append(lambda: setattr(pytest, \"xfail\", old))\n\n        def nop(*args, **kwargs):\n            pass\n\n        nop.Exception = xfail.Exception  # type: ignore[attr-def",
+        "start_line": 50,
+        "start_column": 1338,
+        "end_line": 4,
+        "end_column": 1510,
+        "start_byte": 1338,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.mark.MarkEvaluator.istrue",
+        "file_path": "src/_pytest/skipping.py",
+        "file_content": "# noqa: F821\n        setattr(pytest, \"xfail\", nop)\n\n    config.addinivalue_line(\n        \"markers\",\n        \"skip(reason=None): skip the given test function with an optional reason. \"\n        'Example: skip(reason=\"no way of currently testing this\") skips the '\n        \"test.\",\n    )\n    config.addinivalue_line(\n        \"markers\",\n        \"skipif(condition): skip the given test function if eval(condition) \"\n        \"results in a True value.  Evaluation happens within the \"\n        \"module global context. Example: skipif('sys.platform == \\\"win32\\\"') \"\n        \"skips the test if we are on the win32 platform. see \"\n        \"https://docs.pytest.org/en/latest/skipping.html\",\n    )\n    config.addinivalue_line(\n        \"markers\",\n        \"xfail(condition, rea",
+        "start_line": 56,
+        "start_column": 1516,
+        "end_line": 4,
+        "end_column": 2278,
+        "start_byte": 1516,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.mark.MarkEvaluator._getglobals",
+        "file_path": "src/_pytest/skipping.py",
+        "file_content": "ne, run=True, raises=None, strict=False): \"\n        \"mark the test function as an expected failure if eval(condition) \"\n        \"has a True value. Optionally specify a reason for better reporting \"\n        \"and run=False if you don't even want to execute the test function. ",
+        "start_line": 75,
+        "start_column": 2284,
+        "end_line": 4,
+        "end_column": 2558,
+        "start_byte": 2284,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.mark.MarkEvaluator._istrue",
+        "file_path": "src/_pytest/skipping.py",
+        "file_content": "    \"If only specific exception(s) are expected, you can list them in \"\n        \"raises, and if the test fails in other ways, it will be reported as \"\n        \"a true failure. See https://docs.pytest.org/en/latest/skipping.html\",\n    )\n\n\n@hookimpl(tryfirst=True)\ndef pytest_runtest_setup(item: Item) -> None:\n    # Check if skip or skipif are specified as pytest marks\n    item._store[skipped_by_mark_key] = False\n    eval_skipif = MarkEvaluator(item, \"skipif\")\n    if eval_skipif.istrue():\n        item._store[skipped_by_mark_key] = True\n        skip(eval_skipif.getexplanation())\n\n    for skip_info in item.iter_markers(name=\"skip\"):\n        item._store[skipped_by_mark_key] = True\n        if \"reason\" in skip_info.kwargs:\n            skip(skip_info.kwargs[\"reason\"])\n        elif skip_info.args:\n            skip(skip_info.args[0])\n        else:\n            skip(\"unconditional skip\")\n\n    item._store[evalxfail_key] = MarkEvaluator(item, \"xfail\")\n    check_xfail_no_run(item)\n\n\n@hookimpl(hookwrapper=True)\ndef pytest_pyfunc_call(pyfuncitem: Function):\n    check_xfail_no_run(pyfuncitem)\n    outcome = yield\n    passed = outcome.excinfo is None\n    if passed:\n        check_strict_xfail(pyfuncitem)\n\n\ndef check_xfail_no_run(item: Item) -> None:\n    \"\"\"check xfail(run=False)\"\"\"\n    if not item.config.option.runxfail:\n        evalxfail = item._store[evalxfail_key]\n        if evalxfail.istrue():\n            if not evalxfail.get(\"run\", True):\n                xfail(\"[NOTRUN] \" + evalxfail.getexplanation())\n\n\ndef check_strict_xfail(pyfuncitem: Function) -> None:\n    \"\"\"check ",
+        "start_line": 81,
+        "start_column": 2564,
+        "end_line": 4,
+        "end_column": 4143,
+        "start_byte": 2564,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.mark.MarkEvaluator.get",
+        "file_path": "src/_pytest/skipping.py",
+        "file_content": "strict=True) for the given PASSING test\"\"\"\n    evalxfail = pyfuncitem._store[evalxfail_key]\n    if evalxfail.istrue():\n        strict_default = ",
+        "start_line": 122,
+        "start_column": 4149,
+        "end_line": 4,
+        "end_column": 4293,
+        "start_byte": 4149,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.mark.MarkEvaluator.getexplanation",
+        "file_path": "src/_pytest/skipping.py",
+        "file_content": "item.config.getini(\"xfail_strict\")\n        is_strict_xfail = evalxfail.get(\"strict\", strict_default)\n        if is_strict_xfail:\n            del pyfuncitem._store[evalxfail_key]\n            explanation = evalxfail.getexplanation()\n            fail(\"[XPASS(strict)] \" + explanatio",
+        "start_line": 127,
+        "start_column": 4299,
+        "end_line": 4,
+        "end_column": 4578,
+        "start_byte": 4299,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.runner.pytest_runtest_setup",
+        "file_path": "src/_pytest/skipping.py",
+        "file_content": "fail.get(\"strict\", strict_default)\n        if is_strict_xfail:\n            del pyfuncitem._store[evalxfail_key]\n            explanat",
+        "start_line": 137,
+        "start_column": 4365,
+        "end_line": 0,
+        "end_column": 4497,
+        "start_byte": 4365,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.runner.pytest_runtest_makereport",
+        "file_path": "src/_pytest/skipping.py",
+        "file_content": "",
+        "start_line": 310,
+        "start_column": 10281,
+        "end_line": 0,
+        "end_column": 10412,
+        "start_byte": 10281,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.skipping.pytest_runtest_setup",
+        "file_path": "src/_pytest/skipping.py",
+        "file_content": "@hookimpl(tryfirst=True)\ndef pytest_runtest_setup(item: Item) -> None:\n    # Check if skip or skipif are specified as pytest marks\n    item._store[skipped_by_mark_key] = False\n    eval_skipif = MarkEvaluator(item, \"skipif\")\n    if eval_skipif.istrue():\n        item._store[skipped_by_mark_key] = True\n        skip(eval_skipif.getexplanation())\n\n    for skip_info in item.iter_markers(name=\"skip\"):\n        item._store[skipped_by_mark_key] = True\n        if \"reason\" in skip_info.kwargs:\n            skip(skip_info.kwargs[\"reason\"])\n        elif skip_info.args:\n            skip(skip_info.args[0])\n        else:\n            skip(\"unconditional skip\")\n\n    item._store[evalxfail_key] = MarkEvaluator(item, \"xfail\")\n    check_xfail_no_run(item)",
+        "start_line": 82,
+        "start_column": 2802,
+        "end_line": 0,
+        "end_column": 3543,
+        "start_byte": 2802,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.skipping.check_xfail_no_run",
+        "file_path": "src/_pytest/skipping.py",
+        "file_content": "def check_xfail_no_run(item: Item) -> None:\n    \"\"\"check xfail(run=False)\"\"\"\n    if not item.config.option.runxfail:\n        evalxfail = item._store[evalxfail_key]\n        if evalxfail.istrue():\n            if not evalxfail.get(\"run\", True):\n                xfail(\"[NOTRUN] \" + evalxfail.getexplanation())",
+        "start_line": 113,
+        "start_column": 3768,
+        "end_line": 0,
+        "end_column": 4073,
+        "start_byte": 3768,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.skipping.check_strict_xfail",
+        "file_path": "src/_pytest/skipping.py",
+        "file_content": "def check_strict_xfail(pyfuncitem: Function) -> None:\n    \"\"\"check xfail(strict=True) for the given PASSING test\"\"\"\n    evalxfail = pyfuncitem._store[evalxfail_key]\n    if evalxfail.istrue():\n        strict_default = pyfuncitem.config.getini(\"xfail_strict\")\n        is_strict_xfail = evalxfail.get(\"strict\", strict_default)\n        if is_strict_xfail:\n            del pyfuncitem._store[evalxfail_key]\n            explanation = evalxfail.getexplanation()\n            fail(\"[XPASS(strict)] \" + explanation, pytrace=False)",
+        "start_line": 122,
+        "start_column": 4076,
+        "end_line": 0,
+        "end_column": 4595,
+        "start_byte": 4076,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.skipping.pytest_runtest_makereport",
+        "file_path": "src/_pytest/skipping.py",
+        "file_content": "@hookimpl(hookwrapper=True)\ndef pytest_runtest_makereport(item: Item, call: CallInfo[None]):\n    outcome = yield\n    rep = outcome.get_result()\n    evalxfail = item._store.get(evalxfail_key, None)\n    # unittest special case, see setting of unexpectedsuccess_key\n    if unexpectedsuccess_key in item._store and rep.when == \"call\":\n        reason = item._store[unexpectedsuccess_key]\n        if reason:\n            rep.longrepr = \"Unexpected success: {}\".format(reason)\n        else:\n            rep.longrepr = \"Unexpected success\"\n        rep.outcome = \"failed\"\n\n    elif item.config.option.runxfail:\n        pass  # don't interfere\n    elif call.excinfo and isinstance(call.excinfo.value, xfail.Exception):\n        assert call.excinfo.value.msg is not None\n        rep.wasxfail = \"reason: \" + call.excinfo.value.msg\n        rep.outcome = \"skipped\"\n    elif evalxfail and not rep.skipped and evalxfail.wasvalid() and evalxfail.istrue():\n        if call.excinfo:\n            if evalxfail.invalidraise(call.excinfo.value):\n                rep.outcome = \"failed\"\n            else:\n                rep.outcome = \"skipped\"\n                rep.wasxfail = evalxfail.getexplanation()\n        elif call.when == \"call\":\n            strict_default = item.config.getini(\"xfail_strict\")\n            is_strict_xfail = evalxfail.get(\"strict\", strict_default)\n            explanation = evalxfail.getexplanation()\n            if is_strict_xfail:\n                rep.outcome = \"failed\"\n                rep.longrepr = \"[XPASS(strict)] {}\".format(explanation)\n            else:\n                rep.outcome = \"passed\"\n                rep.wasxfail = explanation\n    elif (\n        item._store.get(skipped_by_mark_key, True)\n        and rep.skipped\n        and type(rep.longrepr) is tuple\n    ):\n        # skipped by mark.skipif; change the location of the failure\n        # to point to the item definition, otherwise it will display\n        # the location of where the skip exception was raised within pytest\n        _, _, reason = rep.longrepr\n        filename, line = item.reportinfo()[:2]\n        assert line is not None\n        rep.longrepr = str(filename), line + 1, reason",
+        "start_line": 134,
+        "start_column": 4598,
+        "end_line": 0,
+        "end_column": 6754,
+        "start_byte": 4598,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.unittest.pytest_runtest_makereport",
+        "file_path": "src/_pytest/skipping.py",
+        "file_content": "",
+        "start_line": 290,
+        "start_column": 10753,
+        "end_line": 0,
+        "end_column": 11542,
+        "start_byte": 10753,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.nose.pytest_runtest_setup",
+        "file_path": "src/_pytest/skipping.py",
+        "file_content": "t hookimpl\nfrom _pytest.config.argparsing import Parser\nfrom _pytest.mark.evaluate import MarkEvaluator\nfrom _pytest.nodes import Item\nfrom _pytest.outcomes import fail\nfrom _pytest.outcomes import skip\nfrom _pytest.outcomes import xfail\nfrom _pytest.python import Function\nfrom _pytest.reports import BaseReport\nfrom _pytest.runner import CallInfo\nfrom _pytest.store import StoreKey\n\n\nskipped_by_mark_key = Stor",
+        "start_line": 7,
+        "start_column": 167,
+        "end_line": 0,
+        "end_column": 579,
+        "start_byte": 167,
+        "end_byte": 0
+      }
+    ],
+    "root_caused_symbols": [
+      {
+        "name": "_pytest.mark.cached_eval",
+        "file_path": "src/_pytest/mark/evaluate.py",
+        "file_content": "def cached_eval(config: Config, expr: str, d: Dict[str, object]) -> Any:\n    default = {}  # type: Dict[str, object]\n    evalcache = config._store.setdefault(evalcache_key, default)\n    try:\n        return evalcache[expr]\n    except KeyError:\n        import _pytest._code\n\n        exprcode = _pytest._code.compile(expr, mode=\"eval\")\n        evalcache[expr] = x = eval(exprcode, d)\n        return x",
+        "start_line": 20,
+        "start_column": 394,
+        "end_line": 0,
+        "end_column": 791,
+        "start_byte": 394,
+        "end_byte": 0
+      }
+    ]
+  },
+  "response": {
+    "scratch_pad": "1. The issue described mentions a problem with caching the evaluation of 'skipif' conditions causing incorrect behavior. \n2. This is likely caused by the caching mechanism in 'cached_eval'.\n3. Expected result is tests should skip correctly without being affected by previous cache entries.\n4. Expected behavior is specific tests are either skippable or executable as per their own conditions without interference.\n5. Fix: Looks like removing the cache use in 'MarkEvaluator._istrue' and 'cached_eval' as their recommendation.\n\nI'm presuming that 'cached_eval' is directly involved since it's mentioned and recommended to change, needing to inline its code instead of calling it to avoid shared state issues with the cache.\n\nMarkEvaluator._istrue is where this is being consumed so it would need modification to remove the use of 'cached_eval'.\n\nOther provided symbols don't appear directly relevant to the caching problem.\n\nNext steps are to review _istrue and cached_eval in particular for this matter.",
+    "symbols": [
+      {
+        "name": "_pytest.mark.cached_eval",
+        "file_path": "src/_pytest/mark/evaluate.py",
+        "reason": "The use of caching in this function is not ideal for 'skipif' as it can let previous evaluations interfere with current ones. Suggested to inline this to avoid cache side effects."
+      },
+      {
+        "name": "_pytest.mark.MarkEvaluator._istrue",
+        "file_path": "src/_pytest/mark/evaluate.py",
+        "reason": "The function uses 'cached_eval' which can result in incorrect skip/xfail evaluations. Modifying this to incorporate inline evaluation without caching will fix the misleading checks."
+      }
+    ],
+    "more_info": [],
+    "is_done": false,
+    "symbols_scratch_pad": [
+      "The function 'cached_eval' relies on a cached result dict to evaluate expressions and uses items globals. Here the caching is inappropriate for 'skipif', since different global contexts affect results; removing caching solves this issue.",
+      "This function determines if a condition is true for 'MarkEvaluator', calling 'cached_eval' to determine truth for a string expr. Removing cache-dependence prevents erroneous evaluations from prior cached results.",
+      "The function is not relevant to caching evaluation errors directly, but manages which tests are skipped hence impact skipping logic in the tool chain action list and process.",
+      "This symbol identifies a pytest hook but doesn't point to the problem origin for caching in evaluation, skipping our direct attention for caching misbehavior.",
+      "Like previous func has similar indications but no direct impact on the erroneously cached context the issue describes.",
+      "Another pytest hook possibly relating but doesn't direct address the described problem context.",
+      "Involvement in pytest hook systems is apparent, not directly linked with the caching issue as described in the broader context.",
+      "General MarkEvaluator functions, defines marker behavior but doesn't seek our attention for correcting evaluated context due to caching.",
+      "A constructor function lacking direct implemented context on the caching evaluation, but possibly affects that area programmatically setup.",
+      "Doesn't comprehensively influence the fix or emanate the problems resulting from the cached_eval concerns.",
+      "Auxiliary retrieval functions that possibly interact with others influencing skipif behavior; not the root cause.",
+      "Evaluation defines but itself doesn\u2019t pinpoint caching trouble.",
+      "Ongoing expressions handler aiding logic elsewhere, not the central problematic area.",
+      "Explanations given for xfail/skip checks at-runtest. It settles checked conditions but doesn't resolve the issue with bad caching behavior.",
+      "Setup cursors through skip/run phases observing conditional truths inline, partook in traditional formats like skipif.",
+      "Capturing expressions likely involved to extent but-may precision fallback specifics to getexplan understandings settled elsewhere.",
+      "Validation checks for conditions quite like others, doesn't contest incorrect execution context.",
+      "Registration or retrieval methods of relevance indirectly towards skipping sys simulations, redundant info in them."
+    ]
+  },
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are an autonomous AI assistant tasked with finding relevant code in an existing \ncodebase based on a reported issue. \nYour task is base on the symbol code to identify how many symbols need to be change to resolve the issue. \n#Input Structure:\n\n* <issue>: Contains the reported issue.\n* <symbol>: the code might to be relevant to the issue.\n\n# Your Task:\n\n1. Analyze User Instructions:\nCarefully read the reported issue within the <issue> tag.\nthink step by step and write out your thoughts in the scratch_pad field.\n1.1 What issue is the user describing?\n1.2 How was this issue caused?\n1.3 If the user described the expected result, what should it be fixed to?\n1.4 If the user did not provide an expected result, what should the expectation be?\n1.5 How should the issue be fixed to meet the expectation?\n\n2. Make the evaluate:\n2.1. Thoroughly analyze each lines in the <symbol> and <symbol> tags.\n2.2. Match the symbol/code/pattern with the key elements, functions, variables, or patterns identified in the reported issue.\n2.3. Evaluate the relevance of each symbol based on how well it aligns with the reported issue and current file context.\n2.4. make the decision how many symbols need to be change to resolve the issue.\n2.5. if you need more file content or symbol information, you can ask the user for more information.\n2.6. relative symbol means, He might be the root cause of the problem, or he could be a part of the process that reproduces the issue.\n\nThink step by step and write out your thoughts in the scratch_pad field.  \n"
+    },
+    {
+      "role": "user",
+      "content": "<issue><description>:Incorrect caching of skipif/xfail string condition evaluation\nVersion: pytest 5.4.3, current master\r\n\r\npytest caches the evaluation of the string in e.g. `@pytest.mark.skipif(\"sys.platform == 'win32'\")`. The caching key is only the string itself (see `cached_eval` in `_pytest/mark/evaluate.py`). However, the evaluation also depends on the item's globals, so the caching can lead to incorrect results. Example:\r\n\r\n```py\r\n# test_module_1.py\r\nimport pytest\r\n\r\nskip = True\r\n\r\n@pytest.mark.skipif(\"skip\")\r\ndef test_should_skip():\r\n    assert False\r\n```\r\n\r\n```py\r\n# test_module_2.py\r\nimport pytest\r\n\r\nskip = False\r\n\r\n@pytest.mark.skipif(\"skip\")\r\ndef test_should_not_skip():\r\n    assert False\r\n```\r\n\r\nRunning `pytest test_module_1.py test_module_2.py`.\r\n\r\nExpected: `test_should_skip` is skipped, `test_should_not_skip` is not skipped.\r\n\r\nActual: both are skipped.\r\n\r\n---\r\n\r\nI think the most appropriate fix is to simply remove the caching, which I don't think is necessary really, and inline `cached_eval` into `MarkEvaluator._istrue`.\n</description></issue>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.mark.cached_eval</name><path>src/_pytest/mark/evaluate.py</path><content>def cached_eval(config: Config, expr: str, d: Dict[str, object]) -> Any:\n    default = {}  # type: Dict[str, object]\n    evalcache = config._store.setdefault(evalcache_key, default)\n    try:\n        return evalcache[expr]\n    except KeyError:\n        import _pytest._code\n\n        exprcode = _pytest._code.compile(expr, mode=\"eval\")\n        evalcache[expr] = x = eval(exprcode, d)\n        return x</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.mark.MarkEvaluator._istrue</name><path>src/_pytest/mark/evaluate.py</path><content>def _istrue(self) -> bool:\n        if hasattr(self, \"result\"):\n            result = getattr(self, \"result\")  # type: bool\n            return result\n        self._marks = self._get_marks()\n\n        if self._marks:\n            self.result = False\n            for mark in self._marks:\n                self._mark = mark\n                if \"condition\" not in mark.kwargs:\n                    args = mark.args\n                else:\n                    args = (mark.kwargs[\"condition\"],)\n\n                for expr in args:\n                    self.expr = expr\n                    if isinstance(expr, str):\n                        d = self._getglobals()\n                        result = cached_eval(self.item.config, expr, d)\n                    else:\n                        if \"reason\" not in mark.kwargs:\n                            # XXX better be checked at collection time\n                            msg = (\n                                \"you need to specify reason=STRING \"\n                                \"when using booleans as conditions.\"\n                            )\n                            fail(msg)\n                        result = bool(expr)\n                    if result:\n                        self.result = True\n                        self.reason = mark.kwargs.get(\"reason\", None)\n                        self.expr = expr\n                        return self.result\n\n                if not args:\n                    self.result = True\n                    self.reason = mark.kwargs.get(\"reason\", None)\n                    return self.result\n        return False</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.capture.CaptureManager.pytest_runtest_setup</name><path>src/_pytest/skipping.py</path><content></content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.hookspec.pytest_runtest_setup</name><path>src/_pytest/skipping.py</path><content></content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.hookspec.pytest_runtest_makereport</name><path>src/_pytest/skipping.py</path><content></content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.logging.LoggingPlugin.pytest_runtest_setup</name><path>src/_pytest/skipping.py</path><content></content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.mark.MarkEvaluator</name><path>src/_pytest/skipping.py</path><content>unxfail\",\n        action=\"store_true\",\n        dest=\"runxfail\",\n        default=False,\n        help=\"report the results of xfail tests as if they were not marked\",\n    )\n\n    parser.addini(\n        \"xfail_strict\",\n        \"default for the strict parameter of xfail \"\n        \"markers when not given explicitly (default: False)\",\n        default=False,\n        type=\"bool\",\n    )\n\n\ndef pytest_configure(config: Config) -> None:\n    if config.option.runxfail:\n        # yay a hack\n        import pytest\n\n        old = pytest.xfail\n        config._cleanup.append(lambda: setattr(pytest, \"xfail\", old))\n\n        def nop(*args, **kwargs):\n            pass\n\n        nop.Exception = xfail.Exception  # type: ignore[attr-defined] # noqa: F821\n        setattr(pytest, \"xfail\", nop)\n\n    config.addinivalue_line(\n        \"markers\",\n        \"skip(reason=None): skip the given test function with an optional reason. \"\n        'Example: skip(reason=\"no way of currently testing this\") skips the '\n        \"test.\",\n    )\n    config.addinivalue_line(\n        \"markers\",\n        \"skipif(condition): skip the given test function if eval(condition) \"\n        \"results in a True value.  Evaluation happens within the \"\n        \"module global context. Example: skipif('sys.platform == \\\"win32\\\"') \"\n        \"skips the test if we are on the win32 platform. see \"\n        \"https://docs.pytest.org/en/latest/skipping.html\",\n    )\n    config.addinivalue_line(\n        \"markers\",\n        \"xfail(condition, reason=None, run=True, raises=None, strict=False): \"\n        \"mark the test function as an expected failure if eval(condition) \"\n        \"has a True value. Optionally specify a reason for better reporting \"\n        \"and run=False if you don't even want to execute the test function. \"\n        \"If only specific exception(s) are expected, you can list them in \"\n        \"raises, and if the test fails in other ways, it will be reported as \"\n        \"a true failure. See https://docs.pytest.org/en/latest/skipping.html\",\n    )\n\n\n@hookimpl(tryfirst=True)\ndef pytest_runtest_setup(item: Item) -> None:\n    # Check if skip or skipif are specified as pytest marks\n    item._store[skipped_by_mark_key] = False\n    eval_skipif = MarkEvaluator(item, \"skipif\")\n    if eval_skipif.istrue():\n        item._store[skipped_by_mark_key] = True\n        skip(eval_skipif.getexplanation())\n\n    for skip_info in item.iter_markers(name=\"skip\"):\n        item._store[skipped_by_mark_key] = True\n        if \"reason\" in skip_info.kwargs:\n            skip(skip_info.kwargs[\"reason\"])\n        elif skip_info.args:\n            skip(skip_info.args[0])\n        else:\n            skip(\"unconditional skip\")\n\n    item._store[evalxfail_key] = MarkEvaluator(item, \"xfail\")\n    check_xfail_no_run(item)\n\n\n@hookimpl(hookwrapper=True)\ndef pytest_pyfunc_call(pyfuncitem: Function):\n    check_xfail_no_run(pyfuncitem)\n    outcome = yield\n    passed = outcome.excinfo is None\n    if passed:\n        check_strict_xfail(pyfuncitem)\n\n\ndef check_xfail_no_run(item: Item) -> None:\n    \"\"\"check xfail(run=False)\"\"\"\n    if not item.config.option.runxfail:\n        evalxfail = item._store[evalxfail_key]\n        if evalxfail.istrue():\n            if not evalxfail.get(\"run\", True):\n                xfail(\"[NOTRUN] \" + evalxfail.getexplanation())\n\n\ndef check_strict_xfail(pyfuncitem: Function) -> None:\n    \"\"\"check xfail(strict=True) for the given PASSING test\"\"\"\n    evalxfail = pyfuncitem._store[evalxfail_key]\n    if evalxfail.istrue():\n        strict_default = pyfuncitem.config.getini(\"xfail_strict\")\n        is_strict_xfail = evalxfail.get(\"strict\", strict_default)\n        if is_strict_xfail:\n            del pyfuncitem._store[evalxfail_key]\n            explanation = evalxfail.getexplanation()\n            fail(\"[XPASS(strict)] \" + explanatio</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.mark.MarkEvaluator.__init__</name><path>src/_pytest/skipping.py</path><content>\"store_true\",\n        dest=\"runxfail\",\n        default=False,\n        help=\"report the results of xfail tests as if they were not marked\",\n    )\n\n    parser.addini(\n        \"xfail_strict\",\n        \"default for the</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.mark.MarkEvaluator.__bool__</name><path>src/_pytest/skipping.py</path><content>t parameter of xfail \"\n        \"markers when not given explicitly (default: False)\",\n        default=False,\n      </content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.mark.MarkEvaluator.wasvalid</name><path>src/_pytest/skipping.py</path><content>=\"bool\",\n    )\n\n\ndef pytest_configure(config: Config) -> None:\n    </content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.mark.MarkEvaluator._get_marks</name><path>src/_pytest/skipping.py</path><content>fig.option.runxfail:\n        # yay a hack\n        import pytest\n\n        old = pytest.xfail\n        c</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.mark.MarkEvaluator.invalidraise</name><path>src/_pytest/skipping.py</path><content>_cleanup.append(lambda: setattr(pytest, \"xfail\", old))\n\n        def nop(*args, **kwargs):\n            pass\n\n        nop.Exception = xfail.Exception  # type: ignore[attr-def</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.mark.MarkEvaluator.istrue</name><path>src/_pytest/skipping.py</path><content># noqa: F821\n        setattr(pytest, \"xfail\", nop)\n\n    config.addinivalue_line(\n        \"markers\",\n        \"skip(reason=None): skip the given test function with an optional reason. \"\n        'Example: skip(reason=\"no way of currently testing this\") skips the '\n        \"test.\",\n    )\n    config.addinivalue_line(\n        \"markers\",\n        \"skipif(condition): skip the given test function if eval(condition) \"\n        \"results in a True value.  Evaluation happens within the \"\n        \"module global context. Example: skipif('sys.platform == \\\"win32\\\"') \"\n        \"skips the test if we are on the win32 platform. see \"\n        \"https://docs.pytest.org/en/latest/skipping.html\",\n    )\n    config.addinivalue_line(\n        \"markers\",\n        \"xfail(condition, rea</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.mark.MarkEvaluator._getglobals</name><path>src/_pytest/skipping.py</path><content>ne, run=True, raises=None, strict=False): \"\n        \"mark the test function as an expected failure if eval(condition) \"\n        \"has a True value. Optionally specify a reason for better reporting \"\n        \"and run=False if you don't even want to execute the test function. </content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.mark.MarkEvaluator._istrue</name><path>src/_pytest/skipping.py</path><content>    \"If only specific exception(s) are expected, you can list them in \"\n        \"raises, and if the test fails in other ways, it will be reported as \"\n        \"a true failure. See https://docs.pytest.org/en/latest/skipping.html\",\n    )\n\n\n@hookimpl(tryfirst=True)\ndef pytest_runtest_setup(item: Item) -> None:\n    # Check if skip or skipif are specified as pytest marks\n    item._store[skipped_by_mark_key] = False\n    eval_skipif = MarkEvaluator(item, \"skipif\")\n    if eval_skipif.istrue():\n        item._store[skipped_by_mark_key] = True\n        skip(eval_skipif.getexplanation())\n\n    for skip_info in item.iter_markers(name=\"skip\"):\n        item._store[skipped_by_mark_key] = True\n        if \"reason\" in skip_info.kwargs:\n            skip(skip_info.kwargs[\"reason\"])\n        elif skip_info.args:\n            skip(skip_info.args[0])\n        else:\n            skip(\"unconditional skip\")\n\n    item._store[evalxfail_key] = MarkEvaluator(item, \"xfail\")\n    check_xfail_no_run(item)\n\n\n@hookimpl(hookwrapper=True)\ndef pytest_pyfunc_call(pyfuncitem: Function):\n    check_xfail_no_run(pyfuncitem)\n    outcome = yield\n    passed = outcome.excinfo is None\n    if passed:\n        check_strict_xfail(pyfuncitem)\n\n\ndef check_xfail_no_run(item: Item) -> None:\n    \"\"\"check xfail(run=False)\"\"\"\n    if not item.config.option.runxfail:\n        evalxfail = item._store[evalxfail_key]\n        if evalxfail.istrue():\n            if not evalxfail.get(\"run\", True):\n                xfail(\"[NOTRUN] \" + evalxfail.getexplanation())\n\n\ndef check_strict_xfail(pyfuncitem: Function) -> None:\n    \"\"\"check </content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.mark.MarkEvaluator.get</name><path>src/_pytest/skipping.py</path><content>strict=True) for the given PASSING test\"\"\"\n    evalxfail = pyfuncitem._store[evalxfail_key]\n    if evalxfail.istrue():\n        strict_default = </content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.mark.MarkEvaluator.getexplanation</name><path>src/_pytest/skipping.py</path><content>item.config.getini(\"xfail_strict\")\n        is_strict_xfail = evalxfail.get(\"strict\", strict_default)\n        if is_strict_xfail:\n            del pyfuncitem._store[evalxfail_key]\n            explanation = evalxfail.getexplanation()\n            fail(\"[XPASS(strict)] \" + explanatio</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.runner.pytest_runtest_setup</name><path>src/_pytest/skipping.py</path><content>fail.get(\"strict\", strict_default)\n        if is_strict_xfail:\n            del pyfuncitem._store[evalxfail_key]\n            explanat</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.runner.pytest_runtest_makereport</name><path>src/_pytest/skipping.py</path><content></content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.skipping.pytest_runtest_setup</name><path>src/_pytest/skipping.py</path><content>@hookimpl(tryfirst=True)\ndef pytest_runtest_setup(item: Item) -> None:\n    # Check if skip or skipif are specified as pytest marks\n    item._store[skipped_by_mark_key] = False\n    eval_skipif = MarkEvaluator(item, \"skipif\")\n    if eval_skipif.istrue():\n        item._store[skipped_by_mark_key] = True\n        skip(eval_skipif.getexplanation())\n\n    for skip_info in item.iter_markers(name=\"skip\"):\n        item._store[skipped_by_mark_key] = True\n        if \"reason\" in skip_info.kwargs:\n            skip(skip_info.kwargs[\"reason\"])\n        elif skip_info.args:\n            skip(skip_info.args[0])\n        else:\n            skip(\"unconditional skip\")\n\n    item._store[evalxfail_key] = MarkEvaluator(item, \"xfail\")\n    check_xfail_no_run(item)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.skipping.check_xfail_no_run</name><path>src/_pytest/skipping.py</path><content>def check_xfail_no_run(item: Item) -> None:\n    \"\"\"check xfail(run=False)\"\"\"\n    if not item.config.option.runxfail:\n        evalxfail = item._store[evalxfail_key]\n        if evalxfail.istrue():\n            if not evalxfail.get(\"run\", True):\n                xfail(\"[NOTRUN] \" + evalxfail.getexplanation())</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.skipping.check_strict_xfail</name><path>src/_pytest/skipping.py</path><content>def check_strict_xfail(pyfuncitem: Function) -> None:\n    \"\"\"check xfail(strict=True) for the given PASSING test\"\"\"\n    evalxfail = pyfuncitem._store[evalxfail_key]\n    if evalxfail.istrue():\n        strict_default = pyfuncitem.config.getini(\"xfail_strict\")\n        is_strict_xfail = evalxfail.get(\"strict\", strict_default)\n        if is_strict_xfail:\n            del pyfuncitem._store[evalxfail_key]\n            explanation = evalxfail.getexplanation()\n            fail(\"[XPASS(strict)] \" + explanation, pytrace=False)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.skipping.pytest_runtest_makereport</name><path>src/_pytest/skipping.py</path><content>@hookimpl(hookwrapper=True)\ndef pytest_runtest_makereport(item: Item, call: CallInfo[None]):\n    outcome = yield\n    rep = outcome.get_result()\n    evalxfail = item._store.get(evalxfail_key, None)\n    # unittest special case, see setting of unexpectedsuccess_key\n    if unexpectedsuccess_key in item._store and rep.when == \"call\":\n        reason = item._store[unexpectedsuccess_key]\n        if reason:\n            rep.longrepr = \"Unexpected success: {}\".format(reason)\n        else:\n            rep.longrepr = \"Unexpected success\"\n        rep.outcome = \"failed\"\n\n    elif item.config.option.runxfail:\n        pass  # don't interfere\n    elif call.excinfo and isinstance(call.excinfo.value, xfail.Exception):\n        assert call.excinfo.value.msg is not None\n        rep.wasxfail = \"reason: \" + call.excinfo.value.msg\n        rep.outcome = \"skipped\"\n    elif evalxfail and not rep.skipped and evalxfail.wasvalid() and evalxfail.istrue():\n        if call.excinfo:\n            if evalxfail.invalidraise(call.excinfo.value):\n                rep.outcome = \"failed\"\n            else:\n                rep.outcome = \"skipped\"\n                rep.wasxfail = evalxfail.getexplanation()\n        elif call.when == \"call\":\n            strict_default = item.config.getini(\"xfail_strict\")\n            is_strict_xfail = evalxfail.get(\"strict\", strict_default)\n            explanation = evalxfail.getexplanation()\n            if is_strict_xfail:\n                rep.outcome = \"failed\"\n                rep.longrepr = \"[XPASS(strict)] {}\".format(explanation)\n            else:\n                rep.outcome = \"passed\"\n                rep.wasxfail = explanation\n    elif (\n        item._store.get(skipped_by_mark_key, True)\n        and rep.skipped\n        and type(rep.longrepr) is tuple\n    ):\n        # skipped by mark.skipif; change the location of the failure\n        # to point to the item definition, otherwise it will display\n        # the location of where the skip exception was raised within pytest\n        _, _, reason = rep.longrepr\n        filename, line = item.reportinfo()[:2]\n        assert line is not None\n        rep.longrepr = str(filename), line + 1, reason</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.unittest.pytest_runtest_makereport</name><path>src/_pytest/skipping.py</path><content></content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.nose.pytest_runtest_setup</name><path>src/_pytest/skipping.py</path><content>t hookimpl\nfrom _pytest.config.argparsing import Parser\nfrom _pytest.mark.evaluate import MarkEvaluator\nfrom _pytest.nodes import Item\nfrom _pytest.outcomes import fail\nfrom _pytest.outcomes import skip\nfrom _pytest.outcomes import xfail\nfrom _pytest.python import Function\nfrom _pytest.reports import BaseReport\nfrom _pytest.runner import CallInfo\nfrom _pytest.store import StoreKey\n\n\nskipped_by_mark_key = Stor</content></symbol>"
+    }
+  ],
+  "completion": {
+    "id": "chatcmpl-9y2C4d5mp8nliHaem7NvCPWos4MGF",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\"scratch_pad\":\"1. The issue described mentions a problem with caching the evaluation of 'skipif' conditions causing incorrect behavior. \\n2. This is likely caused by the caching mechanism in 'cached_eval'.\\n3. Expected result is tests should skip correctly without being affected by previous cache entries.\\n4. Expected behavior is specific tests are either skippable or executable as per their own conditions without interference.\\n5. Fix: Looks like removing the cache use in 'MarkEvaluator._istrue' and 'cached_eval' as their recommendation.\\n\\nI'm presuming that 'cached_eval' is directly involved since it's mentioned and recommended to change, needing to inline its code instead of calling it to avoid shared state issues with the cache.\\n\\nMarkEvaluator._istrue is where this is being consumed so it would need modification to remove the use of 'cached_eval'.\\n\\nOther provided symbols don't appear directly relevant to the caching problem.\\n\\nNext steps are to review _istrue and cached_eval in particular for this matter.\",\"symbols\":[{\"name\":\"_pytest.mark.cached_eval\",\"file_path\":\"src/_pytest/mark/evaluate.py\",\"reason\":\"The use of caching in this function is not ideal for 'skipif' as it can let previous evaluations interfere with current ones. Suggested to inline this to avoid cache side effects.\"},{\"name\":\"_pytest.mark.MarkEvaluator._istrue\",\"file_path\":\"src/_pytest/mark/evaluate.py\",\"reason\":\"The function uses 'cached_eval' which can result in incorrect skip/xfail evaluations. Modifying this to incorporate inline evaluation without caching will fix the misleading checks.\"}],\"more_info\":[],\"is_done\":false,\"symbols_scratch_pad\":[\"The function 'cached_eval' relies on a cached result dict to evaluate expressions and uses items globals. Here the caching is inappropriate for 'skipif', since different global contexts affect results; removing caching solves this issue.\",\"This function determines if a condition is true for 'MarkEvaluator', calling 'cached_eval' to determine truth for a string expr. Removing cache-dependence prevents erroneous evaluations from prior cached results.\",\"The function is not relevant to caching evaluation errors directly, but manages which tests are skipped hence impact skipping logic in the tool chain action list and process.\",\"This symbol identifies a pytest hook but doesn't point to the problem origin for caching in evaluation, skipping our direct attention for caching misbehavior.\",\"Like previous func has similar indications but no direct impact on the erroneously cached context the issue describes.\",\"Another pytest hook possibly relating but doesn't direct address the described problem context.\",\"Involvement in pytest hook systems is apparent, not directly linked with the caching issue as described in the broader context.\",\"General MarkEvaluator functions, defines marker behavior but doesn't seek our attention for correcting evaluated context due to caching.\",\"A constructor function lacking direct implemented context on the caching evaluation, but possibly affects that area programmatically setup.\",\"Doesn't comprehensively influence the fix or emanate the problems resulting from the cached_eval concerns.\",\"Auxiliary retrieval functions that possibly interact with others influencing skipif behavior; not the root cause.\",\"Evaluation defines but itself doesn\u2019t pinpoint caching trouble.\",\"Ongoing expressions handler aiding logic elsewhere, not the central problematic area.\",\"Explanations given for xfail/skip checks at-runtest. It settles checked conditions but doesn't resolve the issue with bad caching behavior.\",\"Setup cursors through skip/run phases observing conditional truths inline, partook in traditional formats like skipif.\",\"Capturing expressions likely involved to extent but-may precision fallback specifics to getexplan understandings settled elsewhere.\",\"Validation checks for conditions quite like others, doesn't contest incorrect execution context.\",\"Registration or retrieval methods of relevance indirectly towards skipping sys simulations, redundant info in them.\"]}",
+          "refusal": null,
+          "role": "assistant",
+          "function_call": null,
+          "tool_calls": [],
+          "parsed": {
+            "scratch_pad": "1. The issue described mentions a problem with caching the evaluation of 'skipif' conditions causing incorrect behavior. \n2. This is likely caused by the caching mechanism in 'cached_eval'.\n3. Expected result is tests should skip correctly without being affected by previous cache entries.\n4. Expected behavior is specific tests are either skippable or executable as per their own conditions without interference.\n5. Fix: Looks like removing the cache use in 'MarkEvaluator._istrue' and 'cached_eval' as their recommendation.\n\nI'm presuming that 'cached_eval' is directly involved since it's mentioned and recommended to change, needing to inline its code instead of calling it to avoid shared state issues with the cache.\n\nMarkEvaluator._istrue is where this is being consumed so it would need modification to remove the use of 'cached_eval'.\n\nOther provided symbols don't appear directly relevant to the caching problem.\n\nNext steps are to review _istrue and cached_eval in particular for this matter.",
+            "symbols": [
+              {
+                "name": "_pytest.mark.cached_eval",
+                "file_path": "src/_pytest/mark/evaluate.py",
+                "reason": "The use of caching in this function is not ideal for 'skipif' as it can let previous evaluations interfere with current ones. Suggested to inline this to avoid cache side effects."
+              },
+              {
+                "name": "_pytest.mark.MarkEvaluator._istrue",
+                "file_path": "src/_pytest/mark/evaluate.py",
+                "reason": "The function uses 'cached_eval' which can result in incorrect skip/xfail evaluations. Modifying this to incorporate inline evaluation without caching will fix the misleading checks."
+              }
+            ],
+            "more_info": [],
+            "is_done": false,
+            "symbols_scratch_pad": [
+              "The function 'cached_eval' relies on a cached result dict to evaluate expressions and uses items globals. Here the caching is inappropriate for 'skipif', since different global contexts affect results; removing caching solves this issue.",
+              "This function determines if a condition is true for 'MarkEvaluator', calling 'cached_eval' to determine truth for a string expr. Removing cache-dependence prevents erroneous evaluations from prior cached results.",
+              "The function is not relevant to caching evaluation errors directly, but manages which tests are skipped hence impact skipping logic in the tool chain action list and process.",
+              "This symbol identifies a pytest hook but doesn't point to the problem origin for caching in evaluation, skipping our direct attention for caching misbehavior.",
+              "Like previous func has similar indications but no direct impact on the erroneously cached context the issue describes.",
+              "Another pytest hook possibly relating but doesn't direct address the described problem context.",
+              "Involvement in pytest hook systems is apparent, not directly linked with the caching issue as described in the broader context.",
+              "General MarkEvaluator functions, defines marker behavior but doesn't seek our attention for correcting evaluated context due to caching.",
+              "A constructor function lacking direct implemented context on the caching evaluation, but possibly affects that area programmatically setup.",
+              "Doesn't comprehensively influence the fix or emanate the problems resulting from the cached_eval concerns.",
+              "Auxiliary retrieval functions that possibly interact with others influencing skipif behavior; not the root cause.",
+              "Evaluation defines but itself doesn\u2019t pinpoint caching trouble.",
+              "Ongoing expressions handler aiding logic elsewhere, not the central problematic area.",
+              "Explanations given for xfail/skip checks at-runtest. It settles checked conditions but doesn't resolve the issue with bad caching behavior.",
+              "Setup cursors through skip/run phases observing conditional truths inline, partook in traditional formats like skipif.",
+              "Capturing expressions likely involved to extent but-may precision fallback specifics to getexplan understandings settled elsewhere.",
+              "Validation checks for conditions quite like others, doesn't contest incorrect execution context.",
+              "Registration or retrieval methods of relevance indirectly towards skipping sys simulations, redundant info in them."
+            ]
+          }
+        }
+      }
+    ],
+    "created": 1724095140,
+    "model": "gpt-4o-2024-08-06",
+    "object": "chat.completion",
+    "service_tier": null,
+    "system_fingerprint": "fp_2a322c9ffc",
+    "usage": {
+      "completion_tokens": 755,
+      "prompt_tokens": 4844,
+      "total_tokens": 5599
+    }
+  }
+}

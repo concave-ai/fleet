@@ -1,0 +1,33 @@
+{
+    "file_paths": [
+        "src/_pytest/mark/evaluate.py"
+    ],
+    "symbols": [
+        "_pytest.mark.cached_eval",
+        "_pytest.mark.MarkEvaluator._istrue"
+    ],
+    "code_spans": {
+        "_pytest.mark.cached_eval": {
+            "name": "_pytest.mark.cached_eval",
+            "file_path": "src/_pytest/mark/evaluate.py",
+            "file_content": "def cached_eval(config: Config, expr: str, d: Dict[str, object]) -> Any:\n    default = {}  # type: Dict[str, object]\n    evalcache = config._store.setdefault(evalcache_key, default)\n    try:\n        return evalcache[expr]\n    except KeyError:\n        import _pytest._code\n\n        exprcode = _pytest._code.compile(expr, mode=\"eval\")\n        evalcache[expr] = x = eval(exprcode, d)\n        return x",
+            "start_line": 20,
+            "start_column": 394,
+            "end_line": 0,
+            "end_column": 791,
+            "start_byte": 394,
+            "end_byte": 0
+        },
+        "_pytest.mark.MarkEvaluator._istrue": {
+            "name": "_pytest.mark.MarkEvaluator._istrue",
+            "file_path": "src/_pytest/mark/evaluate.py",
+            "file_content": "def _istrue(self) -> bool:\n        if hasattr(self, \"result\"):\n            result = getattr(self, \"result\")  # type: bool\n            return result\n        self._marks = self._get_marks()\n\n        if self._marks:\n            self.result = False\n            for mark in self._marks:\n                self._mark = mark\n                if \"condition\" not in mark.kwargs:\n                    args = mark.args\n                else:\n                    args = (mark.kwargs[\"condition\"],)\n\n                for expr in args:\n                    self.expr = expr\n                    if isinstance(expr, str):\n                        d = self._getglobals()\n                        result = cached_eval(self.item.config, expr, d)\n                    else:\n                        if \"reason\" not in mark.kwargs:\n                            # XXX better be checked at collection time\n                            msg = (\n                                \"you need to specify reason=STRING \"\n                                \"when using booleans as conditions.\"\n                            )\n                            fail(msg)\n                        result = bool(expr)\n                    if result:\n                        self.result = True\n                        self.reason = mark.kwargs.get(\"reason\", None)\n                        self.expr = expr\n                        return self.result\n\n                if not args:\n                    self.result = True\n                    self.reason = mark.kwargs.get(\"reason\", None)\n                    return self.result\n        return False",
+            "start_line": 81,
+            "start_column": 2564,
+            "end_line": 4,
+            "end_column": 4143,
+            "start_byte": 2564,
+            "end_byte": 4
+        }
+    }
+}

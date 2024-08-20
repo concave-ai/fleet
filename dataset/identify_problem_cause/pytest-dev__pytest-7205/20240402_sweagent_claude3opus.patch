@@ -1,0 +1,27 @@
+
+diff --git a/sampleproject b/sampleproject
+new file mode 160000
+index 000000000..5d277956b
+--- /dev/null
++++ b/sampleproject
+@@ -0,0 +1 @@
++Subproject commit 5d277956b5a571dac16b28db74e5f2b780d9af5f
+diff --git a/src/_pytest/setuponly.py b/src/_pytest/setuponly.py
+index c9cc589ff..4303933ba 100644
+--- a/src/_pytest/setuponly.py
++++ b/src/_pytest/setuponly.py
+@@ -1,4 +1,5 @@
+ import pytest
++from _pytest.compat import saferepr
+ 
+ 
+ def pytest_addoption(parser):
+@@ -66,7 +67,7 @@ def _show_fixture_action(fixturedef, msg):
+             tw.write(" (fixtures used: {})".format(", ".join(deps)))
+ 
+     if hasattr(fixturedef, "cached_param"):
+-        tw.write("[{}]".format(fixturedef.cached_param))
++        tw.write("[{}]".format(saferepr(fixturedef.cached_param)))
+ 
+     tw.flush()
+ 

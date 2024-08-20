@@ -1,0 +1,32 @@
+
+diff --git a/foobar/__init__.py b/foobar/__init__.py
+new file mode 100644
+index 000000000..2cfffa40d
+--- /dev/null
++++ b/foobar/__init__.py
+@@ -0,0 +1 @@
++assert False
+diff --git a/simulate_test_run.py b/simulate_test_run.py
+new file mode 100644
+index 000000000..8b1378917
+--- /dev/null
++++ b/simulate_test_run.py
+@@ -0,0 +1 @@
++
+diff --git a/tox.ini b/tox.ini
+index b03941657..6212be58d 100644
+--- a/tox.ini
++++ b/tox.ini
+@@ -179,3 +179,12 @@ force_single_line = 1
+ known_localfolder = pytest,_pytest
+ known_third_party = test_source,test_excinfo
+ force_alphabetical_sort_within_sections = 1
++[tox]
++envlist = py37-pytest{522,523}
++skipsdist = true
++
++[testenv]
++deps =
++    pytest522: pytest==5.2.2
++    pytest523: pytest==5.2.3
++commands = pytest

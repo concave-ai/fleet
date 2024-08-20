@@ -1,0 +1,192 @@
+{
+  "name": "FileSymbolSearch",
+  "model": "gpt-4o-2024-08-06",
+  "metadata": {},
+  "issue": "<description>:Hostname and timestamp properties in generated JUnit XML reports\nPytest enables generating JUnit XML reports of the tests.\r\n\r\nHowever, there are some properties missing, specifically `hostname` and `timestamp` from the `testsuite` XML element. Is there an option to include them?\r\n\r\nExample of a pytest XML report:\r\n```xml\r\n<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<testsuite errors=\"0\" failures=\"2\" name=\"check\" skipped=\"0\" tests=\"4\" time=\"0.049\">\r\n\t<testcase classname=\"test_sample.TestClass\" file=\"test_sample.py\" line=\"3\" name=\"test_addOne_normal\" time=\"0.001\"></testcase>\r\n\t<testcase classname=\"test_sample.TestClass\" file=\"test_sample.py\" line=\"6\" name=\"test_addOne_edge\" time=\"0.001\"></testcase>\r\n</testsuite>\r\n```\r\n\r\nExample of a junit XML report:\r\n```xml\r\n<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<testsuite name=\"location.GeoLocationTest\" tests=\"2\" skipped=\"0\" failures=\"0\" errors=\"0\" timestamp=\"2019-04-22T10:32:27\" hostname=\"Anass-MacBook-Pro.local\" time=\"0.048\">\r\n  <properties/>\r\n  <testcase name=\"testIoException()\" classname=\"location.GeoLocationTest\" time=\"0.044\"/>\r\n  <testcase name=\"testJsonDeserialization()\" classname=\"location.GeoLocationTest\" time=\"0.003\"/>\r\n  <system-out><![CDATA[]]></system-out>\r\n  <system-err><![CDATA[]]></system-err>\r\n</testsuite>\r\n```\n</description>",
+  "request": {
+    "files": [
+      {
+        "file_path": "src/_pytest/junitxml.py",
+        "relevant_symbol_keys": [
+          "LogXML.pytest_sessionfinish",
+          "LogXML"
+        ],
+        "root_cause_symbol_keys": [
+          "LogXML.pytest_sessionfinish",
+          "LogXML"
+        ]
+      }
+    ],
+    "with_content": true
+  },
+  "response": {
+    "related_symbols": [],
+    "root_caused_symbols": [
+      {
+        "name": "_pytest.junitxml.LogXML",
+        "file_path": "src/_pytest/junitxml.py",
+        "file_content": "class LogXML:\n    def __init__(\n        self,\n        logfile,\n        prefix,\n        suite_name=\"pytest\",\n        logging=\"no\",\n        report_duration=\"total\",\n        family=\"xunit1\",\n        log_passing_tests=True,\n    ):\n        logfile = os.path.expanduser(os.path.expandvars(logfile))\n        self.logfile = os.path.normpath(os.path.abspath(logfile))\n        self.prefix = prefix\n        self.suite_name = suite_name\n        self.logging = logging\n        self.log_passing_tests = log_passing_tests\n        self.report_duration = report_duration\n        self.family = family\n        self.stats = dict.fromkeys([\"error\", \"passed\", \"failure\", \"skipped\"], 0)\n        self.node_reporters = {}  # nodeid -> _NodeReporter\n        self.node_reporters_ordered = []\n        self.global_properties = []\n\n        # List of reports that failed on call but teardown is pending.\n        self.open_reports = []\n        self.cnt_double_fail_tests = 0\n\n        # Replaces convenience family with real family\n        if self.family == \"legacy\":\n            self.family = \"xunit1\"\n\n    def finalize(self, report):\n        nodeid = getattr(report, \"nodeid\", report)\n        # local hack to handle xdist report order\n        slavenode = getattr(report, \"node\", None)\n        reporter = self.node_reporters.pop((nodeid, slavenode))\n        if reporter is not None:\n            reporter.finalize()\n\n    def node_reporter(self, report):\n        nodeid = getattr(report, \"nodeid\", report)\n        # local hack to handle xdist report order\n        slavenode = getattr(report, \"node\", None)\n\n        key = nodeid, slavenode\n\n        if key in self.node_reporters:\n            # TODO: breasks for --dist=each\n            return self.node_reporters[key]\n\n        reporter = _NodeReporter(nodeid, self)\n\n        self.node_reporters[key] = reporter\n        self.node_reporters_ordered.append(reporter)\n\n        return reporter\n\n    def add_stats(self, key):\n        if key in self.stats:\n            self.stats[key] += 1\n\n    def _opentestcase(self, report):\n        reporter = self.node_reporter(report)\n        reporter.record_testreport(report)\n        return reporter\n\n    def pytest_runtest_logreport(self, report):\n        \"\"\"handle a setup/call/teardown report, generating the appropriate\n        xml tags as necessary.\n\n        note: due to plugins like xdist, this hook may be called in interlaced\n        order with reports from other nodes. for example:\n\n        usual call order:\n            -> setup node1\n            -> call node1\n            -> teardown node1\n            -> setup node2\n            -> call node2\n            -> teardown node2\n\n        possible call order in xdist:\n            -> setup node1\n            -> call node1\n            -> setup node2\n            -> call node2\n            -> teardown node2\n            -> teardown node1\n        \"\"\"\n        close_report = None\n        if report.passed:\n            if report.when == \"call\":  # ignore setup/teardown\n                reporter = self._opentestcase(report)\n                reporter.append_pass(report)\n        elif report.failed:\n            if report.when == \"teardown\":\n                # The following vars are needed when xdist plugin is used\n                report_wid = getattr(report, \"worker_id\", None)\n                report_ii = getattr(report, \"item_index\", None)\n                close_report = next(\n                    (\n                        rep\n                        for rep in self.open_reports\n                        if (\n                            rep.nodeid == report.nodeid\n                            and getattr(rep, \"item_index\", None) == report_ii\n                            and getattr(rep, \"worker_id\", None) == report_wid\n                        )\n                    ),\n                    None,\n                )\n                if close_report:\n                    # We need to open new testcase in case we have failure in\n                    # call and error in teardown in order to follow junit\n                    # schema\n                    self.finalize(close_report)\n                    self.cnt_double_fail_tests += 1\n            reporter = self._opentestcase(report)\n            if report.when == \"call\":\n                reporter.append_failure(report)\n                self.open_reports.append(report)\n            else:\n                reporter.append_error(report)\n        elif report.skipped:\n            reporter = self._opentestcase(report)\n            reporter.append_skipped(report)\n        self.update_testcase_duration(report)\n        if report.when == \"teardown\":\n            reporter = self._opentestcase(report)\n            reporter.write_captured_output(report)\n\n            for propname, propvalue in report.user_properties:\n                reporter.add_property(propname, propvalue)\n\n            self.finalize(report)\n            report_wid = getattr(report, \"worker_id\", None)\n            report_ii = getattr(report, \"item_index\", None)\n            close_report = next(\n                (\n                    rep\n                    for rep in self.open_reports\n                    if (\n                        rep.nodeid == report.nodeid\n                        and getattr(rep, \"item_index\", None) == report_ii\n                        and getattr(rep, \"worker_id\", None) == report_wid\n                    )\n                ),\n                None,\n            )\n            if close_report:\n                self.open_reports.remove(close_report)\n\n    def update_testcase_duration(self, report):\n        \"\"\"accumulates total duration for nodeid from given report and updates\n        the Junit.testcase with the new total if already created.\n        \"\"\"\n        if self.report_duration == \"total\" or report.when == self.report_duration:\n            reporter = self.node_reporter(report)\n            reporter.duration += getattr(report, \"duration\", 0.0)\n\n    def pytest_collectreport(self, report):\n        if not report.passed:\n            reporter = self._opentestcase(report)\n            if report.failed:\n                reporter.append_collect_error(report)\n            else:\n                reporter.append_collect_skipped(report)\n\n    def pytest_internalerror(self, excrepr):\n        reporter = self.node_reporter(\"internal\")\n        reporter.attrs.update(classname=\"pytest\", name=\"internal\")\n        reporter._add_simple(Junit.error, \"internal error\", excrepr)\n\n    def pytest_sessionstart(self):\n        self.suite_start_time = time.time()\n\n    def pytest_sessionfinish(self):\n        dirname = os.path.dirname(os.path.abspath(self.logfile))\n        if not os.path.isdir(dirname):\n            os.makedirs(dirname)\n        logfile = open(self.logfile, \"w\", encoding=\"utf-8\")\n        suite_stop_time = time.time()\n        suite_time_delta = suite_stop_time - self.suite_start_time\n\n        numtests = (\n            self.stats[\"passed\"]\n            + self.stats[\"failure\"]\n            + self.stats[\"skipped\"]\n            + self.stats[\"error\"]\n            - self.cnt_double_fail_tests\n        )\n        logfile.write('<?xml version=\"1.0\" encoding=\"utf-8\"?>')\n\n        suite_node = Junit.testsuite(\n            self._get_global_properties_node(),\n            [x.to_xml() for x in self.node_reporters_ordered],\n            name=self.suite_name,\n            errors=self.stats[\"error\"],\n            failures=self.stats[\"failure\"],\n            skipped=self.stats[\"skipped\"],\n            tests=numtests,\n            time=\"%.3f\" % suite_time_delta,\n        )\n        logfile.write(Junit.testsuites([suite_node]).unicode(indent=0))\n        logfile.close()\n\n    def pytest_terminal_summary(self, terminalreporter):\n        terminalreporter.write_sep(\"-\", \"generated xml file: %s\" % (self.logfile))\n\n    def add_global_property(self, name, value):\n        __tracebackhide__ = True\n        _check_record_param_type(\"name\", name)\n        self.global_properties.append((name, bin_xml_escape(value)))\n\n    def _get_global_properties_node(self):\n        \"\"\"Return a Junit node containing custom properties, if any.\n        \"\"\"\n        if self.global_properties:\n            return Junit.properties(\n                [\n                    Junit.property(name=name, value=value)\n                    for name, value in self.global_properties\n                ]\n            )\n        return \"\"",
+        "start_line": 465,
+        "start_column": 15042,
+        "end_line": 0,
+        "end_column": 23343,
+        "start_byte": 15042,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.junitxml.LogXML.__init__",
+        "file_path": "src/_pytest/junitxml.py",
+        "file_content": "def __init__(\n        self,\n        logfile,\n        prefix,\n        suite_name=\"pytest\",\n        logging=\"no\",\n        report_duration=\"total\",\n        family=\"xunit1\",\n        log_passing_tests=True,\n    ):\n        logfile = os.path.expanduser(os.path.expandvars(logfile))\n        self.logfile = os.path.normpath(os.path.abspath(logfile))\n        self.prefix = prefix\n        self.suite_name = suite_name\n        self.logging = logging\n        self.log_passing_tests = log_passing_tests\n        self.report_duration = report_duration\n        self.family = family\n        self.stats = dict.fromkeys([\"error\", \"passed\", \"failure\", \"skipped\"], 0)\n        self.node_reporters = {}  # nodeid -> _NodeReporter\n        self.node_reporters_ordered = []\n        self.global_properties = []\n\n        # List of reports that failed on call but teardown is pending.\n        self.open_reports = []\n        self.cnt_double_fail_tests = 0\n\n        # Replaces convenience family with real family\n        if self.family == \"legacy\":\n            self.family = \"xunit1\"",
+        "start_line": 466,
+        "start_column": 15060,
+        "end_line": 4,
+        "end_column": 16111,
+        "start_byte": 15060,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.junitxml.LogXML.finalize",
+        "file_path": "src/_pytest/junitxml.py",
+        "file_content": "def finalize(self, report):\n        nodeid = getattr(report, \"nodeid\", report)\n        # local hack to handle xdist report order\n        slavenode = getattr(report, \"node\", None)\n        reporter = self.node_reporters.pop((nodeid, slavenode))\n        if reporter is not None:\n            reporter.finalize()",
+        "start_line": 497,
+        "start_column": 16117,
+        "end_line": 4,
+        "end_column": 16424,
+        "start_byte": 16117,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.junitxml.LogXML.node_reporter",
+        "file_path": "src/_pytest/junitxml.py",
+        "file_content": "def node_reporter(self, report):\n        nodeid = getattr(report, \"nodeid\", report)\n        # local hack to handle xdist report order\n        slavenode = getattr(report, \"node\", None)\n\n        key = nodeid, slavenode\n\n        if key in self.node_reporters:\n            # TODO: breasks for --dist=each\n            return self.node_reporters[key]\n\n        reporter = _NodeReporter(nodeid, self)\n\n        self.node_reporters[key] = reporter\n        self.node_reporters_ordered.append(reporter)\n\n        return reporter",
+        "start_line": 505,
+        "start_column": 16430,
+        "end_line": 4,
+        "end_column": 16945,
+        "start_byte": 16430,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.junitxml.LogXML.add_stats",
+        "file_path": "src/_pytest/junitxml.py",
+        "file_content": "def add_stats(self, key):\n        if key in self.stats:\n            self.stats[key] += 1",
+        "start_line": 523,
+        "start_column": 16951,
+        "end_line": 4,
+        "end_column": 17039,
+        "start_byte": 16951,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.junitxml.LogXML._opentestcase",
+        "file_path": "src/_pytest/junitxml.py",
+        "file_content": "def _opentestcase(self, report):\n        reporter = self.node_reporter(report)\n        reporter.record_testreport(report)\n        return reporter",
+        "start_line": 527,
+        "start_column": 17045,
+        "end_line": 4,
+        "end_column": 17190,
+        "start_byte": 17045,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.junitxml.LogXML.pytest_runtest_logreport",
+        "file_path": "src/_pytest/junitxml.py",
+        "file_content": "def pytest_runtest_logreport(self, report):\n        \"\"\"handle a setup/call/teardown report, generating the appropriate\n        xml tags as necessary.\n\n        note: due to plugins like xdist, this hook may be called in interlaced\n        order with reports from other nodes. for example:\n\n        usual call order:\n            -> setup node1\n            -> call node1\n            -> teardown node1\n            -> setup node2\n            -> call node2\n            -> teardown node2\n\n        possible call order in xdist:\n            -> setup node1\n            -> call node1\n            -> setup node2\n            -> call node2\n            -> teardown node2\n            -> teardown node1\n        \"\"\"\n        close_report = None\n        if report.passed:\n            if report.when == \"call\":  # ignore setup/teardown\n                reporter = self._opentestcase(report)\n                reporter.append_pass(report)\n        elif report.failed:\n            if report.when == \"teardown\":\n                # The following vars are needed when xdist plugin is used\n                report_wid = getattr(report, \"worker_id\", None)\n                report_ii = getattr(report, \"item_index\", None)\n                close_report = next(\n                    (\n                        rep\n                        for rep in self.open_reports\n                        if (\n                            rep.nodeid == report.nodeid\n                            and getattr(rep, \"item_index\", None) == report_ii\n                            and getattr(rep, \"worker_id\", None) == report_wid\n                        )\n                    ),\n                    None,\n                )\n                if close_report:\n                    # We need to open new testcase in case we have failure in\n                    # call and error in teardown in order to follow junit\n                    # schema\n                    self.finalize(close_report)\n                    self.cnt_double_fail_tests += 1\n            reporter = self._opentestcase(report)\n            if report.when == \"call\":\n                reporter.append_failure(report)\n                self.open_reports.append(report)\n            else:\n                reporter.append_error(report)\n        elif report.skipped:\n            reporter = self._opentestcase(report)\n            reporter.append_skipped(report)\n        self.update_testcase_duration(report)\n        if report.when == \"teardown\":\n            reporter = self._opentestcase(report)\n            reporter.write_captured_output(report)\n\n            for propname, propvalue in report.user_properties:\n                reporter.add_property(propname, propvalue)\n\n            self.finalize(report)\n            report_wid = getattr(report, \"worker_id\", None)\n            report_ii = getattr(report, \"item_index\", None)\n            close_report = next(\n                (\n                    rep\n                    for rep in self.open_reports\n                    if (\n                        rep.nodeid == report.nodeid\n                        and getattr(rep, \"item_index\", None) == report_ii\n                        and getattr(rep, \"worker_id\", None) == report_wid\n                    )\n                ),\n                None,\n            )\n            if close_report:\n                self.open_reports.remove(close_report)",
+        "start_line": 532,
+        "start_column": 17196,
+        "end_line": 4,
+        "end_column": 20514,
+        "start_byte": 17196,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.junitxml.LogXML.update_testcase_duration",
+        "file_path": "src/_pytest/junitxml.py",
+        "file_content": "def update_testcase_duration(self, report):\n        \"\"\"accumulates total duration for nodeid from given report and updates\n        the Junit.testcase with the new total if already created.\n        \"\"\"\n        if self.report_duration == \"total\" or report.when == self.report_duration:\n            reporter = self.node_reporter(report)\n            reporter.duration += getattr(report, \"duration\", 0.0)",
+        "start_line": 618,
+        "start_column": 20520,
+        "end_line": 4,
+        "end_column": 20919,
+        "start_byte": 20520,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.junitxml.LogXML.pytest_collectreport",
+        "file_path": "src/_pytest/junitxml.py",
+        "file_content": "def pytest_collectreport(self, report):\n        if not report.passed:\n            reporter = self._opentestcase(report)\n            if report.failed:\n                reporter.append_collect_error(report)\n            else:\n                reporter.append_collect_skipped(report)",
+        "start_line": 626,
+        "start_column": 20925,
+        "end_line": 4,
+        "end_column": 21202,
+        "start_byte": 20925,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.junitxml.LogXML.pytest_internalerror",
+        "file_path": "src/_pytest/junitxml.py",
+        "file_content": "def pytest_internalerror(self, excrepr):\n        reporter = self.node_reporter(\"internal\")\n        reporter.attrs.update(classname=\"pytest\", name=\"internal\")\n        reporter._add_simple(Junit.error, \"internal error\", excrepr)",
+        "start_line": 634,
+        "start_column": 21208,
+        "end_line": 4,
+        "end_column": 21434,
+        "start_byte": 21208,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.junitxml.LogXML.pytest_sessionstart",
+        "file_path": "src/_pytest/junitxml.py",
+        "file_content": "def pytest_sessionstart(self):\n        self.suite_start_time = time.time()",
+        "start_line": 639,
+        "start_column": 21440,
+        "end_line": 4,
+        "end_column": 21514,
+        "start_byte": 21440,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.junitxml.LogXML.pytest_sessionfinish",
+        "file_path": "src/_pytest/junitxml.py",
+        "file_content": "def pytest_sessionfinish(self):\n        dirname = os.path.dirname(os.path.abspath(self.logfile))\n        if not os.path.isdir(dirname):\n            os.makedirs(dirname)\n        logfile = open(self.logfile, \"w\", encoding=\"utf-8\")\n        suite_stop_time = time.time()\n        suite_time_delta = suite_stop_time - self.suite_start_time\n\n        numtests = (\n            self.stats[\"passed\"]\n            + self.stats[\"failure\"]\n            + self.stats[\"skipped\"]\n            + self.stats[\"error\"]\n            - self.cnt_double_fail_tests\n        )\n        logfile.write('<?xml version=\"1.0\" encoding=\"utf-8\"?>')\n\n        suite_node = Junit.testsuite(\n            self._get_global_properties_node(),\n            [x.to_xml() for x in self.node_reporters_ordered],\n            name=self.suite_name,\n            errors=self.stats[\"error\"],\n            failures=self.stats[\"failure\"],\n            skipped=self.stats[\"skipped\"],\n            tests=numtests,\n            time=\"%.3f\" % suite_time_delta,\n        )\n        logfile.write(Junit.testsuites([suite_node]).unicode(indent=0))\n        logfile.close()",
+        "start_line": 642,
+        "start_column": 21520,
+        "end_line": 4,
+        "end_column": 22618,
+        "start_byte": 21520,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.junitxml.LogXML.pytest_terminal_summary",
+        "file_path": "src/_pytest/junitxml.py",
+        "file_content": "def pytest_terminal_summary(self, terminalreporter):\n        terminalreporter.write_sep(\"-\", \"generated xml file: %s\" % (self.logfile))",
+        "start_line": 672,
+        "start_column": 22624,
+        "end_line": 4,
+        "end_column": 22759,
+        "start_byte": 22624,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.junitxml.LogXML.add_global_property",
+        "file_path": "src/_pytest/junitxml.py",
+        "file_content": "def add_global_property(self, name, value):\n        __tracebackhide__ = True\n        _check_record_param_type(\"name\", name)\n        self.global_properties.append((name, bin_xml_escape(value)))",
+        "start_line": 675,
+        "start_column": 22765,
+        "end_line": 4,
+        "end_column": 22957,
+        "start_byte": 22765,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.junitxml.LogXML._get_global_properties_node",
+        "file_path": "src/_pytest/junitxml.py",
+        "file_content": "def _get_global_properties_node(self):\n        \"\"\"Return a Junit node containing custom properties, if any.\n        \"\"\"\n        if self.global_properties:\n            return Junit.properties(\n                [\n                    Junit.property(name=name, value=value)\n                    for name, value in self.global_properties\n                ]\n            )\n        return \"\"",
+        "start_line": 680,
+        "start_column": 22963,
+        "end_line": 4,
+        "end_column": 23343,
+        "start_byte": 22963,
+        "end_byte": 4
+      }
+    ]
+  }
+}

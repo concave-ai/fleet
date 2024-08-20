@@ -1,0 +1,227 @@
+{
+  "name": "FileSymbolSearch",
+  "model": "gpt-4o-2024-08-06",
+  "metadata": {},
+  "issue": "<description>:Confusing assertion rewriting message with byte strings\nThe comparison with assertion rewriting for byte strings is confusing: \r\n```\r\n    def test_b():\r\n>       assert b\"\" == b\"42\"\r\nE       AssertionError: assert b'' == b'42'\r\nE         Right contains more items, first extra item: 52\r\nE         Full diff:\r\nE         - b''\r\nE         + b'42'\r\nE         ?   ++\r\n```\r\n\r\n52 is the ASCII ordinal of \"4\" here.\r\n\r\nIt became clear to me when using another example:\r\n\r\n```\r\n    def test_b():\r\n>       assert b\"\" == b\"1\"\r\nE       AssertionError: assert b'' == b'1'\r\nE         Right contains more items, first extra item: 49\r\nE         Full diff:\r\nE         - b''\r\nE         + b'1'\r\nE         ?   +\r\n```\r\n\r\nNot sure what should/could be done here.\n</description>",
+  "request": {
+    "files": [
+      {
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "relevant_symbol_keys": [
+          "AssertionRewritingHook#",
+          "AssertionRewriter#",
+          "AssertionRewriter.run",
+          "AssertionRewriter.visit_Assert",
+          "AssertionRewriter.visit_Compare",
+          "_call_reprcompare"
+        ],
+        "root_cause_symbol_keys": [
+          "AssertionRewritingHook#",
+          "AssertionRewriter#",
+          "AssertionRewriter.run",
+          "AssertionRewriter.visit_Assert",
+          "AssertionRewriter.visit_Compare",
+          "_call_reprcompare"
+        ]
+      },
+      {
+        "file_path": "src/_pytest/assertion/__init__.py",
+        "relevant_symbol_keys": [
+          "pytest_runtest_setup",
+          "util._reprcompare"
+        ],
+        "root_cause_symbol_keys": []
+      },
+      {
+        "file_path": "src/_pytest/assertion/util.py",
+        "relevant_symbol_keys": [
+          "assertrepr_compare",
+          "_diff_text",
+          "escape_for_readable_diff"
+        ],
+        "root_cause_symbol_keys": [
+          "assertrepr_compare",
+          "_diff_text",
+          "escape_for_readable_diff"
+        ]
+      },
+      {
+        "file_path": "src/_pytest/assertion/truncate.py",
+        "relevant_symbol_keys": [],
+        "root_cause_symbol_keys": []
+      }
+    ],
+    "with_content": true
+  },
+  "response": {
+    "related_symbols": [
+      {
+        "name": "_pytest.assertion.pytest_runtest_setup",
+        "file_path": "src/_pytest/assertion/__init__.py",
+        "file_content": "def pytest_runtest_setup(item):\n    \"\"\"Setup the pytest_assertrepr_compare hook\n\n    The newinterpret and rewrite modules will use util._reprcompare if\n    it exists to use custom reporting via the\n    pytest_assertrepr_compare hook.  This sets up this custom\n    comparison for the test.\n    \"\"\"\n\n    def callbinrepr(op, left, right):\n        \"\"\"Call the pytest_assertrepr_compare hook and prepare the result\n\n        This uses the first result from the hook and then ensures the\n        following:\n        * Overly verbose explanations are truncated unless configured otherwise\n          (eg. if running in verbose mode).\n        * Embedded newlines are escaped to help util.format_explanation()\n          later.\n        * If the rewrite mode is used embedded %-characters are replaced\n          to protect later % formatting.\n\n        The result can be formatted by util.format_explanation() for\n        pretty printing.\n        \"\"\"\n        hook_result = item.ihook.pytest_assertrepr_compare(\n            config=item.config, op=op, left=left, right=right\n        )\n        for new_expl in hook_result:\n            if new_expl:\n                new_expl = truncate.truncate_if_required(new_expl, item)\n                new_expl = [line.replace(\"\\n\", \"\\\\n\") for line in new_expl]\n                res = \"\\n~\".join(new_expl)\n                if item.config.getvalue(\"assertmode\") == \"rewrite\":\n                    res = res.replace(\"%\", \"%%\")\n                return res\n\n    util._reprcompare = callbinrepr",
+        "start_line": 93,
+        "start_column": 2937,
+        "end_line": 0,
+        "end_column": 4439,
+        "start_byte": 2937,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.capture.CaptureManager.pytest_runtest_setup",
+        "file_path": "src/_pytest/assertion/__init__.py",
+        "file_content": "",
+        "start_line": 216,
+        "start_column": 7283,
+        "end_line": 4,
+        "end_column": 7424,
+        "start_byte": 7283,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.hookspec.pytest_runtest_setup",
+        "file_path": "src/_pytest/assertion/__init__.py",
+        "file_content": "",
+        "start_line": 349,
+        "start_column": 11341,
+        "end_line": 0,
+        "end_column": 11429,
+        "start_byte": 11341,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.logging.LoggingPlugin.pytest_runtest_setup",
+        "file_path": "src/_pytest/assertion/__init__.py",
+        "file_content": "",
+        "start_line": 562,
+        "start_column": 19159,
+        "end_line": 4,
+        "end_column": 19300,
+        "start_byte": 19159,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.runner.pytest_runtest_setup",
+        "file_path": "src/_pytest/assertion/__init__.py",
+        "file_content": "\n    \"\"\"\n\n    def callbinrepr(op, left, right):\n        \"\"\"Call the pytest_assertrepr_compare hook and prepare the res",
+        "start_line": 107,
+        "start_column": 3225,
+        "end_line": 0,
+        "end_column": 3343,
+        "start_byte": 3225,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.skipping.pytest_runtest_setup",
+        "file_path": "src/_pytest/assertion/__init__.py",
+        "file_content": ")\n    config._assertstate.trace(\"installed rewrite import hook\")\n\n    def undo():\n        hook = config._assertstate.hook\n        if hook is not None and hook in sys.meta_path:\n            sys.meta_path.remove(hook)\n\n    config.add_cleanup(undo)\n    return hook\n\n\ndef pytest_collection(session):\n    # this hook is only called when test modules are collected\n    # so for example not in the master process of pytest-xdist\n    # (which does not collect test modules)\n    assertstate = getattr(session.config, \"_assertstate\", None)\n    if assertstate:\n        if assertstate.hook is not None:\n            assertstate.hook.set_session(session)\n\n\ndef pytest_runtest_setup(item):\n    \"\"\"S",
+        "start_line": 67,
+        "start_column": 2294,
+        "end_line": 0,
+        "end_column": 2977,
+        "start_byte": 2294,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.nose.pytest_runtest_setup",
+        "file_path": "src/_pytest/assertion/__init__.py",
+        "file_content": " register_assert_rewrite(*names):\n    \"\"\"Register one or more module names to be rewritten on import.\n\n    This function will make sure that this module or all modules inside\n    the package will get their assert statements rewritten.\n    Thus you should make sure to call this before the module is\n    actually imported, usually in your __init__.py if you are a plugin\n    using a package.\n\n    :raise TypeError",
+        "start_line": 28,
+        "start_column": 795,
+        "end_line": 0,
+        "end_column": 1207,
+        "start_byte": 795,
+        "end_byte": 0
+      }
+    ],
+    "root_caused_symbols": [
+      {
+        "name": "_pytest.assertion._call_reprcompare",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def _call_reprcompare(ops, results, expls, each_obj):\n    for i, res, expl in zip(range(len(ops)), results, expls):\n        try:\n            done = not res\n        except Exception:\n            done = True\n        if done:\n            break\n    if util._reprcompare is not None:\n        custom = util._reprcompare(ops[i], each_obj[i], each_obj[i + 1])\n        if custom is not None:\n            return custom\n    return expl",
+        "start_line": 386,
+        "start_column": 14311,
+        "end_line": 0,
+        "end_column": 14735,
+        "start_byte": 14311,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.assertion.AssertionRewriter.run",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def run(self, mod):\n        \"\"\"Find all assert statements in *mod* and rewrite them.\"\"\"\n        if not mod.body:\n            # Nothing to do.\n            return\n        # Insert some special imports at the top of the module but after any\n        # docstrings and __future__ imports.\n        aliases = [\n            ast.alias(\"builtins\", \"@py_builtins\"),\n            ast.alias(\"_pytest.assertion.rewrite\", \"@pytest_ar\"),\n        ]\n        doc = getattr(mod, \"docstring\", None)\n        expect_docstring = doc is None\n        if doc is not None and self.is_rewrite_disabled(doc):\n            return\n        pos = 0\n        lineno = 1\n        for item in mod.body:\n            if (\n                expect_docstring\n                and isinstance(item, ast.Expr)\n                and isinstance(item.value, ast.Str)\n            ):\n                doc = item.value.s\n                if self.is_rewrite_disabled(doc):\n                    return\n                expect_docstring = False\n            elif (\n                not isinstance(item, ast.ImportFrom)\n                or item.level > 0\n                or item.module != \"__future__\"\n            ):\n                lineno = item.lineno\n                break\n            pos += 1\n        else:\n            lineno = item.lineno\n        imports = [\n            ast.Import([alias], lineno=lineno, col_offset=0) for alias in aliases\n        ]\n        mod.body[pos:pos] = imports\n        # Collect asserts.\n        nodes = [mod]\n        while nodes:\n            node = nodes.pop()\n            for name, field in ast.iter_fields(node):\n                if isinstance(field, list):\n                    new = []\n                    for i, child in enumerate(field):\n                        if isinstance(child, ast.Assert):\n                            # Transform assert.\n                            new.extend(self.visit(child))\n                        else:\n                            new.append(child)\n                            if isinstance(child, ast.AST):\n                                nodes.append(child)\n                    setattr(node, name, new)\n                elif (\n                    isinstance(field, ast.AST)\n                    # Don't recurse into expressions as they can't contain\n                    # asserts.\n                    and not isinstance(field, ast.expr)\n                ):\n                    nodes.append(field)",
+        "start_line": 513,
+        "start_column": 18546,
+        "end_line": 4,
+        "end_column": 20935,
+        "start_byte": 18546,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.assertion.AssertionRewriter.visit_Assert",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def visit_Assert(self, assert_):\n        \"\"\"Return the AST statements to replace the ast.Assert instance.\n\n        This rewrites the test of an assertion to provide\n        intermediate values and replace it with an if statement which\n        raises an assertion error with a detailed explanation in case\n        the expression is false.\n\n        \"\"\"\n        if isinstance(assert_.test, ast.Tuple) and len(assert_.test.elts) >= 1:\n            from _pytest.warning_types import PytestAssertRewriteWarning\n            import warnings\n\n            warnings.warn_explicit(\n                PytestAssertRewriteWarning(\n                    \"assertion is always true, perhaps remove parentheses?\"\n                ),\n                category=None,\n                filename=self.module_path,\n                lineno=assert_.lineno,\n            )\n\n        self.statements = []\n        self.variables = []\n        self.variable_counter = itertools.count()\n        self.stack = []\n        self.on_failure = []\n        self.push_format_context()\n        # Rewrite assert into a bunch of statements.\n        top_condition, explanation = self.visit(assert_.test)\n        # If in a test module, check if directly asserting None, in order to warn [Issue #3191]\n        if self.module_path is not None:\n            self.statements.append(\n                self.warn_about_none_ast(\n                    top_condition, module_path=self.module_path, lineno=assert_.lineno\n                )\n            )\n        # Create failure message.\n        body = self.on_failure\n        negation = ast.UnaryOp(ast.Not(), top_condition)\n        self.statements.append(ast.If(negation, body, []))\n        if assert_.msg:\n            assertmsg = self.helper(\"_format_assertmsg\", assert_.msg)\n            explanation = \"\\n>assert \" + explanation\n        else:\n            assertmsg = ast.Str(\"\")\n            explanation = \"assert \" + explanation\n        template = ast.BinOp(assertmsg, ast.Add(), ast.Str(explanation))\n        msg = self.pop_format_context(template)\n        fmt = self.helper(\"_format_explanation\", msg)\n        err_name = ast.Name(\"AssertionError\", ast.Load())\n        exc = ast.Call(err_name, [fmt], [])\n        raise_ = ast.Raise(exc, None)\n\n        body.append(raise_)\n        # Clear temporary variables by setting them to None.\n        if self.variables:\n            variables = [ast.Name(name, ast.Store()) for name in self.variables]\n            clear = ast.Assign(variables, _NameConstant(None))\n            self.statements.append(clear)\n        # Fix line numbers.\n        for stmt in self.statements:\n            set_location(stmt, assert_.lineno, assert_.col_offset)\n        return self.statements",
+        "start_line": 662,
+        "start_column": 24275,
+        "end_line": 4,
+        "end_column": 26963,
+        "start_byte": 24275,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.assertion.AssertionRewriter.visit_Compare",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def visit_Compare(self, comp):\n        self.push_format_context()\n        left_res, left_expl = self.visit(comp.left)\n        if isinstance(comp.left, (ast.Compare, ast.BoolOp)):\n            left_expl = \"({})\".format(left_expl)\n        res_variables = [self.variable() for i in range(len(comp.ops))]\n        load_names = [ast.Name(v, ast.Load()) for v in res_variables]\n        store_names = [ast.Name(v, ast.Store()) for v in res_variables]\n        it = zip(range(len(comp.ops)), comp.ops, comp.comparators)\n        expls = []\n        syms = []\n        results = [left_res]\n        for i, op, next_operand in it:\n            next_res, next_expl = self.visit(next_operand)\n            if isinstance(next_operand, (ast.Compare, ast.BoolOp)):\n                next_expl = \"({})\".format(next_expl)\n            results.append(next_res)\n            sym = binop_map[op.__class__]\n            syms.append(ast.Str(sym))\n            expl = \"{} {} {}\".format(left_expl, sym, next_expl)\n            expls.append(ast.Str(expl))\n            res_expr = ast.Compare(left_res, [op], [next_res])\n            self.statements.append(ast.Assign([store_names[i]], res_expr))\n            left_res, left_expl = next_res, next_expl\n        # Use pytest.assertion.util._reprcompare if that's available.\n        expl_call = self.helper(\n            \"_call_reprcompare\",\n            ast.Tuple(syms, ast.Load()),\n            ast.Tuple(load_names, ast.Load()),\n            ast.Tuple(expls, ast.Load()),\n            ast.Tuple(results, ast.Load()),\n        )\n        if len(comp.ops) > 1:\n            res = ast.BoolOp(ast.And(), load_names)\n        else:\n            res = load_names[0]\n        return res, self.explanation_param(self.pop_format_context(expl_call))",
+        "start_line": 856,
+        "start_column": 32390,
+        "end_line": 4,
+        "end_column": 34123,
+        "start_byte": 32390,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.assertion.pytest_assertrepr_compare",
+        "file_path": "src/_pytest/assertion/util.py",
+        "file_content": "elif op == \"not in\":\n            if istext(left) an",
+        "start_line": 144,
+        "start_column": 4794,
+        "end_line": 0,
+        "end_column": 4845,
+        "start_byte": 4794,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.assertion.assertrepr_compare",
+        "file_path": "src/_pytest/assertion/util.py",
+        "file_content": "def assertrepr_compare(config, op, left, right):\n    \"\"\"Return specialised explanations for some operators/operands\"\"\"\n    width = 80 - 15 - len(op) - 2  # 15 chars indentation, 1 space around op\n    left_repr = saferepr(left, maxsize=int(width // 2))\n    right_repr = saferepr(right, maxsize=width - len(left_repr))\n\n    summary = \"{} {} {}\".format(left_repr, op, right_repr)\n\n    verbose = config.getoption(\"verbose\")\n    explanation = None\n    try:\n        if op == \"==\":\n            if istext(left) and istext(right):\n                explanation = _diff_text(left, right, verbose)\n            else:\n                if issequence(left) and issequence(right):\n                    explanation = _compare_eq_sequence(left, right, verbose)\n                elif isset(left) and isset(right):\n                    explanation = _compare_eq_set(left, right, verbose)\n                elif isdict(left) and isdict(right):\n                    explanation = _compare_eq_dict(left, right, verbose)\n                elif type(left) == type(right) and (isdatacls(left) or isattrs(left)):\n                    type_fn = (isdatacls, isattrs)\n                    explanation = _compare_eq_cls(left, right, verbose, type_fn)\n                elif verbose > 0:\n                    explanation = _compare_eq_verbose(left, right)\n                if isiterable(left) and isiterable(right):\n                    expl = _compare_eq_iterable(left, right, verbose)\n                    if explanation is not None:\n                        explanation.extend(expl)\n                    else:\n                        explanation = expl\n        elif op == \"not in\":\n            if istext(left) and istext(right):\n                explanation = _notin_text(left, right, verbose)\n    except outcomes.Exit:\n        raise\n    except Exception:\n        explanation = [\n            \"(pytest_assertion plugin: representation of details failed.  \"\n            \"Probably an object has a faulty __repr__.)\",\n            str(_pytest._code.ExceptionInfo.from_current()),\n        ]\n\n    if not explanation:\n        return None\n\n    return [summary] + explanation",
+        "start_line": 115,
+        "start_column": 3183,
+        "end_line": 0,
+        "end_column": 5297,
+        "start_byte": 3183,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.assertion._diff_text",
+        "file_path": "src/_pytest/assertion/util.py",
+        "file_content": "def _diff_text(left, right, verbose=0):\n    \"\"\"Return the explanation for the diff between text or bytes.\n\n    Unless --verbose is used this will skip leading and trailing\n    characters which are identical to keep the diff minimal.\n\n    If the input are bytes they will be safely converted to text.\n    \"\"\"\n    from difflib import ndiff\n\n    explanation = []\n\n    def escape_for_readable_diff(binary_text):\n        \"\"\"\n        Ensures that the internal string is always valid unicode, converting any bytes safely to valid unicode.\n        This is done using repr() which then needs post-processing to fix the encompassing quotes and un-escape\n        newlines and carriage returns (#429).\n        \"\"\"\n        r = str(repr(binary_text)[1:-1])\n        r = r.replace(r\"\\n\", \"\\n\")\n        r = r.replace(r\"\\r\", \"\\r\")\n        return r\n\n    if isinstance(left, bytes):\n        left = escape_for_readable_diff(left)\n    if isinstance(right, bytes):\n        right = escape_for_readable_diff(right)\n    if verbose < 1:\n        i = 0  # just in case left or right has zero length\n        for i in range(min(len(left), len(right))):\n            if left[i] != right[i]:\n                break\n        if i > 42:\n            i -= 10  # Provide some context\n            explanation = [\n                \"Skipping %s identical leading characters in diff, use -v to show\" % i\n            ]\n            left = left[i:]\n            right = right[i:]\n        if len(left) == len(right):\n            for i in range(len(left)):\n                if left[-i] != right[-i]:\n                    break\n            if i > 42:\n                i -= 10  # Provide some context\n                explanation += [\n                    \"Skipping {} identical trailing \"\n                    \"characters in diff, use -v to show\".format(i)\n                ]\n                left = left[:-i]\n                right = right[:-i]\n    keepends = True\n    if left.isspace() or right.isspace():\n        left = repr(str(left))\n        right = repr(str(right))\n        explanation += [\"Strings contain only whitespace, escaping them using repr()\"]\n    explanation += [\n        line.strip(\"\\n\")\n        for line in ndiff(left.splitlines(keepends), right.splitlines(keepends))\n    ]\n    return explanation",
+        "start_line": 165,
+        "start_column": 5300,
+        "end_line": 0,
+        "end_column": 7552,
+        "start_byte": 5300,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.hookspec.pytest_assertrepr_compare",
+        "file_path": "src/_pytest/assertion/util.py",
+        "file_content": "",
+        "start_line": 475,
+        "start_column": 15508,
+        "end_line": 0,
+        "end_column": 16001,
+        "start_byte": 15508,
+        "end_byte": 0
+      }
+    ]
+  }
+}

@@ -1,0 +1,54 @@
+{
+    "file_paths": [
+        "src/_pytest/skipping.py"
+    ],
+    "symbols": [
+        "_pytest.skipping.pytest_runtest_makereport"
+    ],
+    "code_spans": {
+        "_pytest.hookspec.pytest_runtest_makereport": {
+            "name": "_pytest.hookspec.pytest_runtest_makereport",
+            "file_path": "src/_pytest/skipping.py",
+            "file_content": "",
+            "start_line": 487,
+            "start_column": 17415,
+            "end_line": 0,
+            "end_column": 17902,
+            "start_byte": 17415,
+            "end_byte": 0
+        },
+        "_pytest.runner.pytest_runtest_makereport": {
+            "name": "_pytest.runner.pytest_runtest_makereport",
+            "file_path": "src/_pytest/skipping.py",
+            "file_content": "grepr\n        filename, line = item.reportinfo()[:2]\n        assert line is not None\n        rep.longrepr = str(filename), line + 1",
+            "start_line": 311,
+            "start_column": 10294,
+            "end_line": 0,
+            "end_column": 10425,
+            "start_byte": 10294,
+            "end_byte": 0
+        },
+        "_pytest.skipping.pytest_runtest_makereport": {
+            "name": "_pytest.skipping.pytest_runtest_makereport",
+            "file_path": "src/_pytest/skipping.py",
+            "file_content": "@hookimpl(hookwrapper=True)\ndef pytest_runtest_makereport(item: Item, call: CallInfo[None]):\n    outcome = yield\n    rep = outcome.get_result()\n    xfailed = item._store.get(xfailed_key, None)\n    # unittest special case, see setting of unexpectedsuccess_key\n    if unexpectedsuccess_key in item._store and rep.when == \"call\":\n        reason = item._store[unexpectedsuccess_key]\n        if reason:\n            rep.longrepr = \"Unexpected success: {}\".format(reason)\n        else:\n            rep.longrepr = \"Unexpected success\"\n        rep.outcome = \"failed\"\n    elif item.config.option.runxfail:\n        pass  # don't interfere\n    elif call.excinfo and isinstance(call.excinfo.value, xfail.Exception):\n        assert call.excinfo.value.msg is not None\n        rep.wasxfail = \"reason: \" + call.excinfo.value.msg\n        rep.outcome = \"skipped\"\n    elif not rep.skipped and xfailed:\n        if call.excinfo:\n            raises = xfailed.raises\n            if raises is not None and not isinstance(call.excinfo.value, raises):\n                rep.outcome = \"failed\"\n            else:\n                rep.outcome = \"skipped\"\n                rep.wasxfail = xfailed.reason\n        elif call.when == \"call\":\n            if xfailed.strict:\n                rep.outcome = \"failed\"\n                rep.longrepr = \"[XPASS(strict)] \" + xfailed.reason\n            else:\n                rep.outcome = \"passed\"\n                rep.wasxfail = xfailed.reason\n    elif (\n        item._store.get(skipped_by_mark_key, True)\n        and rep.skipped\n        and type(rep.longrepr) is tuple\n    ):\n        # skipped by mark.skipif; change the location of the failure\n        # to point to the item definition, otherwise it will display\n        # the location of where the skip exception was raised within pytest\n        _, _, reason = rep.longrepr\n        filename, line = item.reportinfo()[:2]\n        assert line is not None\n        rep.longrepr = str(filename), line + 1, reason",
+            "start_line": 259,
+            "start_column": 8475,
+            "end_line": 0,
+            "end_column": 10433,
+            "start_byte": 8475,
+            "end_byte": 0
+        },
+        "_pytest.unittest.pytest_runtest_makereport": {
+            "name": "_pytest.unittest.pytest_runtest_makereport",
+            "file_path": "src/_pytest/skipping.py",
+            "file_content": "",
+            "start_line": 290,
+            "start_column": 10761,
+            "end_line": 0,
+            "end_column": 11550,
+            "start_byte": 10761,
+            "end_byte": 0
+        }
+    }
+}

@@ -1,0 +1,66 @@
+{
+    "file_paths": [
+        "src/_pytest/assertion/rewrite.py"
+    ],
+    "symbols": [
+        "_pytest.assertion.AssertionRewriter.run",
+        "_pytest.assertion.AssertionRewriter.is_rewrite_disabled"
+    ],
+    "code_spans": {
+        "_pytest.pathlib.import_path": {
+            "name": "_pytest.pathlib.import_path",
+            "file_path": "src/_pytest/python.py",
+            "file_content": "or_glob_option(self, option_name: str, name: str) -> bool:\n        \"\"\"Check if the given name matches the prefix or glob-pattern defined\n        in ini configuration.\"\"\"\n        for option in self.config.getini(option_name):\n            if name.startswith(option):\n                return True\n            # Check that name looks like a glob-string before calling fnmatch\n            # because this is called for every name in each collected module,\n            # and fnmatch is somewhat expensive to call.\n            elif (\"*\" in option or \"?\" in option or \"[\" in option) and fnmatch.fnmatch(\n                name, option\n            ):\n                return True\n        return False\n\n    def collect(self) -> Iterable[Union[nodes.Item, nodes.Collector]]:\n        if not getattr(self.obj, \"__test__\", True):\n            return []\n\n        # Avoid random getattrs and peek in the __dict__ instead.\n        dicts = [getattr(self.obj, \"__dict__\", {})]\n        if isinstance(self.obj, type):\n            for basecls in self.obj.__mro__:\n                dicts.append(basecls.__dict__)\n\n        # In each class, nodes should be definition ordered.\n        # __dict__ is definition ordered.\n        seen: Set[str] = set()\n        dict_values: List[List[Union[nodes.Item, nodes.Collector]]] = []\n        ihook = self.ihook\n        for dic in dicts:\n            values: List[Union[nodes.Item, nodes.Collector]] = []\n            # Note: seems like the dict can change during iteration -\n            # be careful not to remove the list() without consideration.\n            for name, obj in list(dic.items()):\n                if name in IGNORED_ATTRIBUTES:\n                    continue\n                if name in seen:\n                    continue\n                seen.add(name)\n                res = ihook.pytest_pycollect_makeitem(\n                    collector=self, name=name, obj=obj\n                )\n                if res is None:\n                    continue\n                elif isinstance(res, list):\n                    values.extend(res)\n                else:\n                    values.append(res)\n            dict_values.append(values)\n\n        # Between classes in the class hierarchy, reverse-MRO order -- nodes\n        # inherited from base classes should come before subclasses.\n        result = []\n        for values in reversed(dict_values):\n            result.extend(values)\n        return result\n\n    def _genfunctions(self, name: str, funcobj) -> Iterator[\"Function\"]:\n        modulecol = self.getparent(Module)\n        assert modulecol is not None\n        module = modulecol.obj\n        clscol = self.getparent(Class)\n        cls = clscol and clscol.obj or None\n\n        definition = FunctionDefinition.from_parent(self, name=name, callobj=funcobj)\n        fixtureinfo = definition._fixtureinfo\n\n        # pytest_generate_tests impls call metafunc.parametrize() which fills\n        # metafunc._calls, the outcome of the hook.\n        metafunc = Metafunc(\n            definition=definition,\n            fixtureinfo=fixtureinfo,\n            config=self.config,\n            cls=cls,\n            module=module,\n            _ispytest=True,\n        )\n        methods = []\n        if hasattr(module, \"pytest_generate_tests\"):\n            methods.append(module.pytest_generate_tests)\n        if cls is not None and hasattr(cls, \"pytest_generate_tests\"):\n            methods.append(cls().pytest_generate_tests)\n        self.ihook.pytest_generate_tests.call_extra(methods, dict(metafunc=metafunc))\n\n        if not metafunc._calls:\n            yield Function.from_parent(self, name=name, fixtureinfo=fixtureinfo)\n        else:\n            # Add funcargs() as fixturedefs to fixtureinfo.arg2fixturedefs.\n            fm = self.session._fixturemanager\n            fixtures.add_funcarg_pseudo_fixture_def(self, metafunc, fm)\n\n            # Add_funcarg_pseudo_fixture_def may have shadowed some fixtures\n            # with direct parametrization, so make sure we update what the\n            # function reall",
+            "start_line": 485,
+            "start_column": 15363,
+            "end_line": 0,
+            "end_column": 19370,
+            "start_byte": 15363,
+            "end_byte": 0
+        },
+        "_pytest.python.Module._importtestmodule": {
+            "name": "_pytest.python.Module._importtestmodule",
+            "file_path": "src/_pytest/python.py",
+            "file_content": "def _importtestmodule(self):\n        # We assume we are only called once per module.\n        importmode = self.config.getoption(\"--import-mode\")\n        try:\n            mod = import_path(self.path, mode=importmode, root=self.config.rootpath)\n        except SyntaxError as e:\n            raise self.CollectError(\n                ExceptionInfo.from_current().getrepr(style=\"short\")\n            ) from e\n        except ImportPathMismatchError as e:\n            raise self.CollectError(\n                \"import file mismatch:\\n\"\n                \"imported module %r has this __file__ attribute:\\n\"\n                \"  %s\\n\"\n                \"which is not the same as the test file we want to collect:\\n\"\n                \"  %s\\n\"\n                \"HINT: remove __pycache__ / .pyc files and/or use a \"\n                \"unique basename for your test file modules\" % e.args\n            ) from e\n        except ImportError as e:\n            exc_info = ExceptionInfo.from_current()\n            if self.config.getoption(\"verbose\") < 2:\n                exc_info.traceback = exc_info.traceback.filter(filter_traceback)\n            exc_repr = (\n                exc_info.getrepr(style=\"short\")\n                if exc_info.traceback\n                else exc_info.exconly()\n            )\n            formatted_tb = str(exc_repr)\n            raise self.CollectError(\n                \"ImportError while importing test module '{path}'.\\n\"\n                \"Hint: make sure your test modules/packages have valid Python names.\\n\"\n                \"Traceback:\\n\"\n                \"{traceback}\".format(path=self.path, traceback=formatted_tb)\n            ) from e\n        except skip.Exception as e:\n            if e.allow_module_level:\n                raise\n            raise self.CollectError(\n                \"Using pytest.skip outside of a test will skip the entire module. \"\n                \"If that's your intention, pass `allow_module_level=True`. \"\n                \"If you want to skip a specific test or an entire class, \"\n                \"use the @pytest.mark.skip or @pytest.mark.skipif decorators.\"\n            ) from e\n        self.config.pluginmanager.consider_module(mod)\n        return mod",
+            "start_line": 612,
+            "start_column": 23679,
+            "end_line": 4,
+            "end_column": 25853,
+            "start_byte": 23679,
+            "end_byte": 4
+        },
+        "_pytest.assertion.rewrite_asserts": {
+            "name": "_pytest.assertion.rewrite_asserts",
+            "file_path": "src/_pytest/assertion/rewrite.py",
+            "file_content": "def rewrite_asserts(\n    mod: ast.Module,\n    source: bytes,\n    module_path: Optional[str] = None,\n    config: Optional[Config] = None,\n) -> None:\n    \"\"\"Rewrite the assert statements in mod.\"\"\"\n    AssertionRewriter(module_path, config, source).run(mod)",
+            "start_line": 394,
+            "start_column": 14700,
+            "end_line": 0,
+            "end_column": 14955,
+            "start_byte": 14700,
+            "end_byte": 0
+        },
+        "_pytest.assertion.AssertionRewriter.run": {
+            "name": "_pytest.assertion.AssertionRewriter.run",
+            "file_path": "src/_pytest/assertion/rewrite.py",
+            "file_content": "def run(self, mod: ast.Module) -> None:\n        \"\"\"Find all assert statements in *mod* and rewrite them.\"\"\"\n        if not mod.body:\n            # Nothing to do.\n            return\n\n        # We'll insert some special imports at the top of the module, but after any\n        # docstrings and __future__ imports, so first figure out where that is.\n        doc = getattr(mod, \"docstring\", None)\n        expect_docstring = doc is None\n        if doc is not None and self.is_rewrite_disabled(doc):\n            return\n        pos = 0\n        item = None\n        for item in mod.body:\n            if (\n                expect_docstring\n                and isinstance(item, ast.Expr)\n                and isinstance(item.value, ast.Constant)\n            ):\n                doc = item.value.value\n                if self.is_rewrite_disabled(doc):\n                    return\n                expect_docstring = False\n            elif (\n                isinstance(item, ast.ImportFrom)\n                and item.level == 0\n                and item.module == \"__future__\"\n            ):\n                pass\n            else:\n                break\n            pos += 1\n        # Special case: for a decorated function, set the lineno to that of the\n        # first decorator, not the `def`. Issue #4984.\n        if isinstance(item, ast.FunctionDef) and item.decorator_list:\n            lineno = item.decorator_list[0].lineno\n        else:\n            lineno = item.lineno\n        # Now actually insert the special imports.\n        if sys.version_info >= (3, 10):\n            aliases = [\n                ast.alias(\"builtins\", \"@py_builtins\", lineno=lineno, col_offset=0),\n                ast.alias(\n                    \"_pytest.assertion.rewrite\",\n                    \"@pytest_ar\",\n                    lineno=lineno,\n                    col_offset=0,\n                ),\n            ]\n        else:\n            aliases = [\n                ast.alias(\"builtins\", \"@py_builtins\"),\n                ast.alias(\"_pytest.assertion.rewrite\", \"@pytest_ar\"),\n            ]\n        imports = [\n            ast.Import([alias], lineno=lineno, col_offset=0) for alias in aliases\n        ]\n        mod.body[pos:pos] = imports\n\n        # Collect asserts.\n        nodes: List[ast.AST] = [mod]\n        while nodes:\n            node = nodes.pop()\n            for name, field in ast.iter_fields(node):\n                if isinstance(field, list):\n                    new: List[ast.AST] = []\n                    for i, child in enumerate(field):\n                        if isinstance(child, ast.Assert):\n                            # Transform assert.\n                            new.extend(self.visit(child))\n                        else:\n                            new.append(child)\n                            if isinstance(child, ast.AST):\n                                nodes.append(child)\n                    setattr(node, name, new)\n                elif (\n                    isinstance(field, ast.AST)\n                    # Don't recurse into expressions as they can't contain\n                    # asserts.\n                    and not isinstance(field, ast.expr)\n                ):\n                    nodes.append(field)",
+            "start_line": 659,
+            "start_column": 24250,
+            "end_line": 4,
+            "end_column": 27441,
+            "start_byte": 24250,
+            "end_byte": 4
+        },
+        "_pytest.assertion.AssertionRewriter.is_rewrite_disabled": {
+            "name": "_pytest.assertion.AssertionRewriter.is_rewrite_disabled",
+            "file_path": "src/_pytest/assertion/rewrite.py",
+            "file_content": "@staticmethod\n    def is_rewrite_disabled(docstring: str) -> bool:\n        return \"PYTEST_DONT_REWRITE\" in docstring",
+            "start_line": 743,
+            "start_column": 27447,
+            "end_line": 4,
+            "end_column": 27563,
+            "start_byte": 27447,
+            "end_byte": 4
+        }
+    }
+}

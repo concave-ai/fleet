@@ -1,0 +1,64 @@
+
+diff --git a/reproduce_markers.py b/reproduce_markers.py
+new file mode 100644
+index 000000000..19f3e894d
+--- /dev/null
++++ b/reproduce_markers.py
+@@ -0,0 +1,38 @@
++import itertools
++import pytest
++
++class BaseMeta(type):
++    @property
++    def pytestmark(self):
++        marks = []
++        seen = set()
++        for base in reversed(self.__mro__):
++            for mark in getattr(base, "_pytestmark", []):
++                if mark.name not in seen:
++                    seen.add(mark.name)
++                    marks.append(mark)
++        return marks
++
++    @pytestmark.setter
++    def pytestmark(self, value):
++        if not isinstance(value, list):
++            value = [value]
++        self._pytestmark = value
++
++class Base(metaclass=BaseMeta):
++    pass
++
++@pytest.mark.foo
++class Foo(Base):
++    pass
++
++@pytest.mark.bar
++class Bar(Base):
++    pass
++
++class TestDings(Foo, Bar):
++    def test_dings(self):
++        pass
++
++# Check the markers on TestDings
++print([marker.name for marker in TestDings.pytestmark])
+diff --git a/src/_pytest/nodes.py b/src/_pytest/nodes.py
+index cfb9b5a36..4142c2021 100644
+--- a/src/_pytest/nodes.py
++++ b/src/_pytest/nodes.py
+@@ -376,10 +376,13 @@ class Node(metaclass=NodeMeta):
+         :param name: If given, filter the results by the name attribute.
+         :returns: An iterator of (node, mark) tuples.
+         """
++        seen = set()
+         for node in reversed(self.listchain()):
+             for mark in node.own_markers:
+                 if name is None or getattr(mark, "name", None) == name:
+-                    yield node, mark
++                    if mark.name not in seen:
++                        seen.add(mark.name)
++                        yield node, mark
+ 
+     @overload
+     def get_closest_marker(self, name: str) -> Optional[Mark]:

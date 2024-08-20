@@ -1,0 +1,63 @@
+
+diff --git a/run_tests.py b/run_tests.py
+new file mode 100644
+index 000000000..5b8e4404a
+--- /dev/null
++++ b/run_tests.py
+@@ -0,0 +1,8 @@
++import subprocess
++
++# Run pytest and capture the output
++result = subprocess.run(['pytest', 'test_path_error.py'], capture_output=True, text=True)
++
++# Print the output
++print(result.stdout)
++print(result.stderr)
+diff --git a/src/_pytest/terminal.py b/src/_pytest/terminal.py
+index 8ecb5a16b..e89dcf97a 100644
+--- a/src/_pytest/terminal.py
++++ b/src/_pytest/terminal.py
+@@ -776,7 +776,7 @@ class TerminalReporter:
+ 
+     def _locationline(self, nodeid, fspath, lineno, domain):
+         def mkrel(nodeid):
+-            line = self.config.cwd_relative_nodeid(nodeid)
++            line = self.startdir.bestrelpath(py.path.local(nodeid))
+             if domain and line.endswith(domain):
+                 line = line[: -len(domain)]
+                 values = domain.split("[")
+diff --git a/test_path_error.py b/test_path_error.py
+new file mode 100644
+index 000000000..746580ea3
+--- /dev/null
++++ b/test_path_error.py
+@@ -0,0 +1,29 @@
++import os
++import errno
++import shutil
++
++import pytest
++
++
++@pytest.fixture
++def private_dir():  # or (monkeypatch)
++    out_dir = 'ddd'
++
++    try:
++        shutil.rmtree(out_dir)
++    except OSError as ex:
++        if ex.errno != errno.ENOENT:
++            raise
++    os.mkdir(out_dir)
++
++    old_dir = os.getcwd()
++    os.chdir(out_dir)
++    yield out_dir
++    os.chdir(old_dir)
++
++    # Same issue if using:
++    # monkeypatch.chdir(out_dir)
++
++
++def test_show_wrong_path(private_dir):
++    assert False

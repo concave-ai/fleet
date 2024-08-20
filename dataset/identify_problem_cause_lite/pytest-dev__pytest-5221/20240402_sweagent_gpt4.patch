@@ -1,0 +1,14 @@
+
+diff --git a/src/_pytest/python.py b/src/_pytest/python.py
+index 377357846..e5be1a99c 100644
+--- a/src/_pytest/python.py
++++ b/src/_pytest/python.py
+@@ -1348,6 +1348,8 @@ def _showfixtures_main(config, session):
+             funcargspec = argname
+         tw.line(funcargspec, green=True)
+         loc = getlocation(fixturedef.func, curdir)
++        scope = fixturedef.scope  # Get the scope of the fixture
++        tw.line(f"    scope: {scope}", blue=True)  # Display the scope in blue
+         doc = fixturedef.func.__doc__ or ""
+         if doc:
+             write_docstring(tw, doc)

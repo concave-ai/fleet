@@ -1,0 +1,1090 @@
+{
+  "name": "SymbolsEvaluate",
+  "model": "gpt-4o-2024-08-06",
+  "metadata": {
+    "token_count": 0,
+    "cost": 0
+  },
+  "issue": "<description>:pytest --collect-only needs a one char shortcut command\nI find myself needing to run `--collect-only` very often and that cli argument is a very long to type one. \r\n\r\nI do think that it would be great to allocate a character for it, not sure which one yet. Please use up/down thumbs to vote if you would find it useful or not and eventually proposing which char should be used. \r\n\r\nClearly this is a change very easy to implement but first I want to see if others would find it useful or not.\npytest --collect-only needs a one char shortcut command\nI find myself needing to run `--collect-only` very often and that cli argument is a very long to type one. \r\n\r\nI do think that it would be great to allocate a character for it, not sure which one yet. Please use up/down thumbs to vote if you would find it useful or not and eventually proposing which char should be used. \r\n\r\nClearly this is a change very easy to implement but first I want to see if others would find it useful or not.\n</description>",
+  "request": {
+    "related_symbols": [
+      {
+        "name": "_pytest.config.ArgumentError",
+        "file_path": "src/_pytest/config/argparsing.py",
+        "file_content": "class ArgumentError(Exception):\n    \"\"\"\n    Raised if an Argument instance is created with invalid or\n    inconsistent arguments.\n    \"\"\"\n\n    def __init__(self, msg, option):\n        self.msg = msg\n        self.option_id = str(option)\n\n    def __str__(self):\n        if self.option_id:\n            return \"option {}: {}\".format(self.option_id, self.msg)\n        else:\n            return self.msg",
+        "start_line": 145,
+        "start_column": 5419,
+        "end_line": 0,
+        "end_column": 5815,
+        "start_byte": 5419,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.config.ArgumentError.__init__",
+        "file_path": "src/_pytest/config/argparsing.py",
+        "file_content": "def __init__(self, msg, option):\n        self.msg = msg\n        self.option_id = str(option)",
+        "start_line": 151,
+        "start_column": 5562,
+        "end_line": 4,
+        "end_column": 5654,
+        "start_byte": 5562,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.config.ArgumentError.__str__",
+        "file_path": "src/_pytest/config/argparsing.py",
+        "file_content": "def __str__(self):\n        if self.option_id:\n            return \"option {}: {}\".format(self.option_id, self.msg)\n        else:\n            return self.msg",
+        "start_line": 155,
+        "start_column": 5660,
+        "end_line": 4,
+        "end_column": 5815,
+        "start_byte": 5660,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.config.Argument",
+        "file_path": "src/_pytest/config/argparsing.py",
+        "file_content": "class Argument:\n    \"\"\"class that mimics the necessary behaviour of optparse.Option\n\n    it's currently a least effort implementation\n    and ignoring choices and integer prefixes\n    https://docs.python.org/3/library/optparse.html#optparse-standard-option-types\n    \"\"\"\n\n    _typ_map = {\"int\": int, \"string\": str, \"float\": float, \"complex\": complex}\n\n    def __init__(self, *names, **attrs):\n        \"\"\"store parms in private vars for use in add_argument\"\"\"\n        self._attrs = attrs\n        self._short_opts = []  # type: List[str]\n        self._long_opts = []  # type: List[str]\n        self.dest = attrs.get(\"dest\")\n        if \"%default\" in (attrs.get(\"help\") or \"\"):\n            warnings.warn(\n                'pytest now uses argparse. \"%default\" should be'\n                ' changed to \"%(default)s\" ',\n                DeprecationWarning,\n                stacklevel=3,\n            )\n        try:\n            typ = attrs[\"type\"]\n        except KeyError:\n            pass\n        else:\n            # this might raise a keyerror as well, don't want to catch that\n            if isinstance(typ, str):\n                if typ == \"choice\":\n                    warnings.warn(\n                        \"`type` argument to addoption() is the string %r.\"\n                        \" For choices this is optional and can be omitted, \"\n                        \" but when supplied should be a type (for example `str` or `int`).\"\n                        \" (options: %s)\" % (typ, names),\n                        DeprecationWarning,\n                        stacklevel=4,\n                    )\n                    # argparse expects a type here take it from\n                    # the type of the first element\n                    attrs[\"type\"] = type(attrs[\"choices\"][0])\n                else:\n                    warnings.warn(\n                        \"`type` argument to addoption() is the string %r, \"\n                        \" but when supplied should be a type (for example `str` or `int`).\"\n                        \" (options: %s)\" % (typ, names),\n                        DeprecationWarning,\n                        stacklevel=4,\n                    )\n                    attrs[\"type\"] = Argument._typ_map[typ]\n                # used in test_parseopt -> test_parse_defaultgetter\n                self.type = attrs[\"type\"]\n            else:\n                self.type = typ\n        try:\n            # attribute existence is tested in Config._processopt\n            self.default = attrs[\"default\"]\n        except KeyError:\n            pass\n        self._set_opt_strings(names)\n        if not self.dest:\n            if self._long_opts:\n                self.dest = self._long_opts[0][2:].replace(\"-\", \"_\")\n            else:\n                try:\n                    self.dest = self._short_opts[0][1:]\n                except IndexError:\n                    raise ArgumentError(\"need a long or short option\", self)\n\n    def names(self):\n        return self._short_opts + self._long_opts\n\n    def attrs(self):\n        # update any attributes set by processopt\n        attrs = \"default dest help\".split()\n        if self.dest:\n            attrs.append(self.dest)\n        for attr in attrs:\n            try:\n                self._attrs[attr] = getattr(self, attr)\n            except AttributeError:\n                pass\n        if self._attrs.get(\"help\"):\n            a = self._attrs[\"help\"]\n            a = a.replace(\"%default\", \"%(default)s\")\n            # a = a.replace('%prog', '%(prog)s')\n            self._attrs[\"help\"] = a\n        return self._attrs\n\n    def _set_opt_strings(self, opts):\n        \"\"\"directly from optparse\n\n        might not be necessary as this is passed to argparse later on\"\"\"\n        for opt in opts:\n            if len(opt) < 2:\n                raise ArgumentError(\n                    \"invalid option string %r: \"\n                    \"must be at least two characters long\" % opt,\n                    self,\n                )\n            elif len(opt) == 2:\n                if not (opt[0] == \"-\" and opt[1] != \"-\"):\n                    raise ArgumentError(\n                        \"invalid short option string %r: \"\n                        \"must be of the form -x, (x any non-dash char)\" % opt,\n                        self,\n                    )\n                self._short_opts.append(opt)\n            else:\n                if not (opt[0:2] == \"--\" and opt[2] != \"-\"):\n                    raise ArgumentError(\n                        \"invalid long option string %r: \"\n                        \"must start with --, followed by non-dash\" % opt,\n                        self,\n                    )\n                self._long_opts.append(opt)\n\n    def __repr__(self) -> str:\n        args = []  # type: List[str]\n        if self._short_opts:\n            args += [\"_short_opts: \" + repr(self._short_opts)]\n        if self._long_opts:\n            args += [\"_long_opts: \" + repr(self._long_opts)]\n        args += [\"dest: \" + repr(self.dest)]\n        if hasattr(self, \"type\"):\n            args += [\"type: \" + repr(self.type)]\n        if hasattr(self, \"default\"):\n            args += [\"default: \" + repr(self.default)]\n        return \"Argument({})\".format(\", \".join(args))",
+        "start_line": 162,
+        "start_column": 5818,
+        "end_line": 0,
+        "end_column": 10992,
+        "start_byte": 5818,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.config.Argument._typ_map",
+        "file_path": "src/_pytest/config/argparsing.py",
+        "file_content": "_typ_map = {\"int\": int, \"string\": str, \"float\": float, \"complex\": complex}",
+        "start_line": 170,
+        "start_column": 6094,
+        "end_line": 4,
+        "end_column": 6168,
+        "start_byte": 6094,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.config.Argument.__init__",
+        "file_path": "src/_pytest/config/argparsing.py",
+        "file_content": "def __init__(self, *names, **attrs):\n        \"\"\"store parms in private vars for use in add_argument\"\"\"\n        self._attrs = attrs\n        self._short_opts = []  # type: List[str]\n        self._long_opts = []  # type: List[str]\n        self.dest = attrs.get(\"dest\")\n        if \"%default\" in (attrs.get(\"help\") or \"\"):\n            warnings.warn(\n                'pytest now uses argparse. \"%default\" should be'\n                ' changed to \"%(default)s\" ',\n                DeprecationWarning,\n                stacklevel=3,\n            )\n        try:\n            typ = attrs[\"type\"]\n        except KeyError:\n            pass\n        else:\n            # this might raise a keyerror as well, don't want to catch that\n            if isinstance(typ, str):\n                if typ == \"choice\":\n                    warnings.warn(\n                        \"`type` argument to addoption() is the string %r.\"\n                        \" For choices this is optional and can be omitted, \"\n                        \" but when supplied should be a type (for example `str` or `int`).\"\n                        \" (options: %s)\" % (typ, names),\n                        DeprecationWarning,\n                        stacklevel=4,\n                    )\n                    # argparse expects a type here take it from\n                    # the type of the first element\n                    attrs[\"type\"] = type(attrs[\"choices\"][0])\n                else:\n                    warnings.warn(\n                        \"`type` argument to addoption() is the string %r, \"\n                        \" but when supplied should be a type (for example `str` or `int`).\"\n                        \" (options: %s)\" % (typ, names),\n                        DeprecationWarning,\n                        stacklevel=4,\n                    )\n                    attrs[\"type\"] = Argument._typ_map[typ]\n                # used in test_parseopt -> test_parse_defaultgetter\n                self.type = attrs[\"type\"]\n            else:\n                self.type = typ\n        try:\n            # attribute existence is tested in Config._processopt\n            self.default = attrs[\"default\"]\n        except KeyError:\n            pass\n        self._set_opt_strings(names)\n        if not self.dest:\n            if self._long_opts:\n                self.dest = self._long_opts[0][2:].replace(\"-\", \"_\")\n            else:\n                try:\n                    self.dest = self._short_opts[0][1:]\n                except IndexError:\n                    raise ArgumentError(\"need a long or short option\", self)",
+        "start_line": 172,
+        "start_column": 6174,
+        "end_line": 4,
+        "end_column": 8718,
+        "start_byte": 6174,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.config.Argument.names",
+        "file_path": "src/_pytest/config/argparsing.py",
+        "file_content": "def names(self):\n        return self._short_opts + self._long_opts",
+        "start_line": 232,
+        "start_column": 8724,
+        "end_line": 4,
+        "end_column": 8790,
+        "start_byte": 8724,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.config.Argument.attrs",
+        "file_path": "src/_pytest/config/argparsing.py",
+        "file_content": "def attrs(self):\n        # update any attributes set by processopt\n        attrs = \"default dest help\".split()\n        if self.dest:\n            attrs.append(self.dest)\n        for attr in attrs:\n            try:\n                self._attrs[attr] = getattr(self, attr)\n            except AttributeError:\n                pass\n        if self._attrs.get(\"help\"):\n            a = self._attrs[\"help\"]\n            a = a.replace(\"%default\", \"%(default)s\")\n            # a = a.replace('%prog', '%(prog)s')\n            self._attrs[\"help\"] = a\n        return self._attrs",
+        "start_line": 235,
+        "start_column": 8796,
+        "end_line": 4,
+        "end_column": 9357,
+        "start_byte": 8796,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.config.Argument._set_opt_strings",
+        "file_path": "src/_pytest/config/argparsing.py",
+        "file_content": "def _set_opt_strings(self, opts):\n        \"\"\"directly from optparse\n\n        might not be necessary as this is passed to argparse later on\"\"\"\n        for opt in opts:\n            if len(opt) < 2:\n                raise ArgumentError(\n                    \"invalid option string %r: \"\n                    \"must be at least two characters long\" % opt,\n                    self,\n                )\n            elif len(opt) == 2:\n                if not (opt[0] == \"-\" and opt[1] != \"-\"):\n                    raise ArgumentError(\n                        \"invalid short option string %r: \"\n                        \"must be of the form -x, (x any non-dash char)\" % opt,\n                        self,\n                    )\n                self._short_opts.append(opt)\n            else:\n                if not (opt[0:2] == \"--\" and opt[2] != \"-\"):\n                    raise ArgumentError(\n                        \"invalid long option string %r: \"\n                        \"must start with --, followed by non-dash\" % opt,\n                        self,\n                    )\n                self._long_opts.append(opt)",
+        "start_line": 252,
+        "start_column": 9363,
+        "end_line": 4,
+        "end_column": 10468,
+        "start_byte": 9363,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.config.Argument.__repr__",
+        "file_path": "src/_pytest/config/argparsing.py",
+        "file_content": "def __repr__(self) -> str:\n        args = []  # type: List[str]\n        if self._short_opts:\n            args += [\"_short_opts: \" + repr(self._short_opts)]\n        if self._long_opts:\n            args += [\"_long_opts: \" + repr(self._long_opts)]\n        args += [\"dest: \" + repr(self.dest)]\n        if hasattr(self, \"type\"):\n            args += [\"type: \" + repr(self.type)]\n        if hasattr(self, \"default\"):\n            args += [\"default: \" + repr(self.default)]\n        return \"Argument({})\".format(\", \".join(args))",
+        "start_line": 280,
+        "start_column": 10474,
+        "end_line": 4,
+        "end_column": 10992,
+        "start_byte": 10474,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.config.OptionGroup.addoption",
+        "file_path": "src/_pytest/config/argparsing.py",
+        "file_content": "def addoption(self, *optnames, **attrs):\n        \"\"\" add an option to this group.\n\n        if a shortened version of a long option is specified it will\n        be suppressed in the help. addoption('--twowords', '--two-words')\n        results in help showing '--two-words' only, but --twowords gets\n        accepted **and** the automatic destination is in args.twowords\n        \"\"\"\n        conflict = set(optnames).intersection(\n            name for opt in self.options for name in opt.names()\n        )\n        if conflict:\n            raise ValueError(\"option names %s already added\" % conflict)\n        option = Argument(*optnames, **attrs)\n        self._addoption_instance(option, shortupper=False)",
+        "start_line": 301,
+        "start_column": 11221,
+        "end_line": 4,
+        "end_column": 11922,
+        "start_byte": 11221,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.assertion.pytest_addoption",
+        "file_path": "src/_pytest/hookspec.py",
+        "file_content": "----------\n# Initialization hooks called for every plugin\n# -------------------------------------------------------------------------\n\n\n@hookspec(historic=True)\ndef pytest_addhooks(pluginmanager):\n    \"\"\"called at plugin registration time to allow adding new hooks via a call to\n    ``pluginmanager.add_hookspecs(module_or_class, prefix)``.\n\n\n    :param _pytest.config.PytestPluginManager pluginmanager: pytest plugin manager\n\n    .. note::\n        This hook is incompatible with ``hookwrapper=True``.\n    \"\"\"\n\n\n@hookspec(historic=True)\ndef pytest_plugin_registered(plugin, manager):\n    \"\"\" a new pytest plugin got registered.\n\n    :param plugin: the plugin module or instance\n    :param _pytest.config.PytestPluginManager manager: pytest plugin manager\n\n    .. note::\n        This hook is incompatible with ``hookwrapper=",
+        "start_line": 11,
+        "start_column": 229,
+        "end_line": 0,
+        "end_column": 1052,
+        "start_byte": 229,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.cacheprovider.pytest_addoption",
+        "file_path": "src/_pytest/hookspec.py",
+        "file_content": "_logfinish(nodeid, location):\n    \"\"\" signal the complete finish of running a single test item.\n\n    This hook will be called **after** :func:`pytest_runtest_setup`, :func:`pytest_runtest_call` and\n    :func:`pytest_runtest_teardown` hooks.\n\n    :param str nodeid: full id of the item\n    :param location: a triple of ``(filename, linenum, testname)``\n    \"\"\"\n\n\ndef pytest_runtest_setup(item):\n    \"\"\" called before ``pytest_runtest_call(item)``. \"\"\"\n\n\ndef pytest_runtest_call(item):\n    \"\"\" called to execute the test ``item``. \"\"\"\n\n\ndef pytest_runtest_teardown(item, nextitem):\n    \"\"\" called after ``pytest_runtest_call``.\n\n    :arg nextitem: the scheduled-to-be-next test item (None if no further\n                   test item is scheduled).  This argument can be used to\n                   perform exact teardowns, i.e. calling just enough finalizers\n                   so that nextitem only needs to call setup-functions.\n    \"\"\"\n\n\n@hookspec(firstresult=True)\ndef pytest_runtest_makereport(item, call):\n    \"\"\" return a :py:class:`_pytest.runner.TestReport` object\n    for the given :py:class:`pytest.Item <_pytest.main.Item>` and\n    :py:class:`_pytest.runner.CallInfo`.\n\n    Stops at first non-None result, see :ref:`firstresult` \"\"\"\n\n\ndef pytest_runtest_logreport(report):\n    \"\"\" process a test setup/call/teardown report relating to\n    the respective phase of executing a test. \"\"\"\n\n\n@hookspec(firstresult=True)\ndef pytest_report_to_serializable(config, report):\n    \"\"\"\n    Serializes the given report object into a data structure suitable for sending\n    over the wire, e.g. converted to JSON.\n    \"\"\"\n\n\n@hookspec(firstresult=True)\ndef pytest_report_from_serializable(config, data):\n    \"\"\"\n    Restores a report object previously serialized with pytes",
+        "start_line": 301,
+        "start_column": 11226,
+        "end_line": 0,
+        "end_column": 12991,
+        "start_byte": 11226,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.capture.pytest_addoption",
+        "file_path": "src/_pytest/hookspec.py",
+        "file_content": "-----------------\n\n\n@hookspec(historic=True)\ndef pytest_addhooks(pluginmanager):\n    \"\"\"called at plugin registration time to allow adding new hooks via a call to\n    ``pluginmanager.add_hookspecs(module_or_class, prefix)``.\n\n\n    :param _pytest.config.PytestPluginManager pluginmanager: pytest plugin manager\n\n    .. note::\n        This hook is incompatible with ``hookwrapper=True``.\n    \"\"\"\n\n\n@hookspec(historic=True)\ndef pytest_plugin_registered(plugin, manager):\n    \"\"\" a n",
+        "start_line": 19,
+        "start_column": 345,
+        "end_line": 0,
+        "end_column": 824,
+        "start_byte": 345,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.debugging.pytest_addoption",
+        "file_path": "src/_pytest/hookspec.py",
+        "file_content": "cs(module_or_class, prefix)``.\n\n\n    :param _pytest.config.PytestPluginManager pluginmanager: pytest plugin manager\n\n    .. note::\n        This hook is incompatible with ``hookwrapper=True``.\n    \"\"\"\n\n\n@hookspec(historic=True)\ndef pytest_plugin_registered(plugin, manager):\n    \"\"\" a new pytest plugin got registered.\n\n    :param plugin: the plugin module or instance\n    :param _pytest.config.PytestPluginManager manager: pytest plugin manager\n\n    .. note::\n        This hook is incompatible with ``hookwrapper=True``.\n    \"\"\"\n\n\n@hookspec(historic=True)\ndef pytest_addoption(parser, pluginmanager):\n    \"\"\"register argparse-style options and ini-style config values,\n    called once at the beginn",
+        "start_line": 21,
+        "start_column": 539,
+        "end_line": 0,
+        "end_column": 1237,
+        "start_byte": 539,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.doctest.pytest_addoption",
+        "file_path": "src/_pytest/hookspec.py",
+        "file_content": "t directory due to how pytest\n        :ref:`discovers plugins during startup <pluginorder>`.\n\n    :arg _pytest.config.Parser parser: To add command line options, call\n        :py:func:`parser.addoption(...) <_pytest.config.Parser.addoption>`.\n        To add ini-file values call :py:func:`parser.addini(...)\n        <_pytest.config.Parser.addini>`.\n\n    :arg _pytest.config.PytestPluginManager pluginmanager: pytest plugin manager,\n        which can be used to install :py:func:`hookspec`'s or :py:func:`hookimpl`'s\n        and allow one plugin to call another plugin's hooks to change how\n        command line options are added.\n\n    Options can later be accessed through the\n    :py:class:`config <_pytest.config.Config>` object, respectively:\n\n    - :py:func:`config.getoption(name) <_pytest.config.Config.getoption>` to\n      retrieve the value of a command line option.\n\n    - :py:func:`config.getini(name) <_pytest.config.Config.getini>` to retrieve\n      a value read from an ini-style file.\n\n    The config object is passed around on many internal objects via the ``.config``\n    attribute or can be retrieved as the ``pytestconfig`` fixture.\n\n    .. note::\n        This hook is incompatible with ``hookwrapper=True``.\n    \"\"\"\n\n\n@hookspec(historic=True)\ndef pytest_configure(config):\n    \"\"\"\n    Allows plugins and conftest files to perform initial configuration.\n\n    This hook is called for every plugin and ",
+        "start_line": 50,
+        "start_column": 1390,
+        "end_line": 0,
+        "end_column": 2808,
+        "start_byte": 1390,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.faulthandler.pytest_addoption",
+        "file_path": "src/_pytest/hookspec.py",
+        "file_content": "ked from main.py and builtin plugins.  \"\"\"\nfrom pluggy import HookspecMarker\n\n\nhookspec = HookspecMarker(\"pytest\")\n\n# -------------------------------------------------------------------------\n# Initialization hooks called for every plugin\n# --------------",
+        "start_line": 7,
+        "start_column": 48,
+        "end_line": 0,
+        "end_column": 303,
+        "start_byte": 48,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.fixtures.pytest_addoption",
+        "file_path": "src/_pytest/hookspec.py",
+        "file_content": "",
+        "start_line": 1190,
+        "start_column": 44317,
+        "end_line": 0,
+        "end_column": 44505,
+        "start_byte": 44317,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.helpconfig.pytest_addoption",
+        "file_path": "src/_pytest/hookspec.py",
+        "file_content": "le options and ini-style config values,\n    called once at the beginning of a test run.\n\n    .. note::\n\n        This function should be implemented only in plugins or ``conftest.py``\n        files situated at the tests root directory due to how pytest\n        :ref:`discovers plugins during startup <pluginorder>`.\n\n    :arg _pytest.config.Parser parser: To add command line options, call\n        :py:func:`parser.addoption(...) <_pytest.config.Parser.addoption>`.\n        To add ini-file values call :py:func:`parser.addini(...)\n        <_pytest.config.Parser.addini>`.\n\n    :arg _pytest.config.PytestPluginManager pluginmanager: pytest plugin manager,\n        which can be used to install :py:func:`hookspec`'s or :py:func:`hookimpl`'s\n        and allow one plugin to call another plugin's hooks to change how\n        command line options are added.\n\n    Options can later be accessed through the\n    :py:class:`config <_pytest.config.Config>` object, respectively:\n\n    - :py:func:`config.getoption(name) <_pytest.config.Config.getoption>` to\n      retrieve the value of a command line option.\n\n    - :py:func:`config.getini(name) <_pytest.config.Config.getini>` to retrieve\n      a value read from an ini-style file.\n\n    The config object is passed around on many internal objects via the ``.config``\n    attr",
+        "start_line": 38,
+        "start_column": 1168,
+        "end_line": 0,
+        "end_column": 2482,
+        "start_byte": 1168,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.hookspec.pytest_addoption",
+        "file_path": "src/_pytest/hookspec.py",
+        "file_content": "@hookspec(historic=True)\ndef pytest_addoption(parser, pluginmanager):\n    \"\"\"register argparse-style options and ini-style config values,\n    called once at the beginning of a test run.\n\n    .. note::\n\n        This function should be implemented only in plugins or ``conftest.py``\n        files situated at the tests root directory due to how pytest\n        :ref:`discovers plugins during startup <pluginorder>`.\n\n    :arg _pytest.config.Parser parser: To add command line options, call\n        :py:func:`parser.addoption(...) <_pytest.config.Parser.addoption>`.\n        To add ini-file values call :py:func:`parser.addini(...)\n        <_pytest.config.Parser.addini>`.\n\n    :arg _pytest.config.PytestPluginManager pluginmanager: pytest plugin manager,\n        which can be used to install :py:func:`hookspec`'s or :py:func:`hookimpl`'s\n        and allow one plugin to call another plugin's hooks to change how\n        command line options are added.\n\n    Options can later be accessed through the\n    :py:class:`config <_pytest.config.Config>` object, respectively:\n\n    - :py:func:`config.getoption(name) <_pytest.config.Config.getoption>` to\n      retrieve the value of a command line option.\n\n    - :py:func:`config.getini(name) <_pytest.config.Config.getini>` to retrieve\n      a value read from an ini-style file.\n\n    The config object is passed around on many internal objects via the ``.config``\n    attribute or can be retrieved as the ``pytestconfig`` fixture.\n\n    .. note::\n        This hook is incompatible with ``hookwrapper=True``.\n    \"\"\"",
+        "start_line": 36,
+        "start_column": 1070,
+        "end_line": 0,
+        "end_column": 2624,
+        "start_byte": 1070,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.junitxml.pytest_addoption",
+        "file_path": "src/_pytest/hookspec.py",
+        "file_content": "elating to\n    the respective phase of executing a test. \"\"\"\n\n\n@hookspec(firstresult=True)\ndef pytest_report_to_serializable(config, report):\n    \"\"\"\n    Serializes the given report object into a data structure suitable for sending\n    over the wire, e.g. converted to JSON.\n    \"\"\"\n\n\n@hookspec(firstresult=True)\ndef pytest_report_from_serializable(config, data):\n    \"\"\"\n    Restores a report object previously serialized with pytest_report_to_serializable().\n    \"\"\"\n\n\n# -------------------------------------------------------------------------\n# Fixture related hooks\n# -------------------------------------------------------------------------\n\n\n@hookspec(firstresult=True)\ndef pytest_fixture_setup(fixturedef, request):\n    \"\"\" performs fixture setup execution.\n\n    :return: The return value of the call to the fixture function\n\n    Stops at first non-None result, see :ref:`firstresult`\n\n    .. note::\n        If the fixture function returns None, other implementations of\n        this hook function will continue to be called, according to the\n        behavior of the :ref:`firstresult` option.\n    \"\"\"\n\n\ndef pytest_fixture_post_finalizer(fixturedef, request):\n    \"\"\" called after fixture teardown, but before the cache is cleared so\n    the fixture result cache ``fixturedef.cached_result`` can\n    still be accessed.\"\"\"\n\n\n# -------------------------------------------------",
+        "start_line": 382,
+        "start_column": 12558,
+        "end_line": 0,
+        "end_column": 13941,
+        "start_byte": 12558,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.logging.pytest_addoption",
+        "file_path": "src/_pytest/hookspec.py",
+        "file_content": "onfig.Config config: pytest config object\n    :param List[_pytest.nodes.Item] items: list of item objects\n    \"\"\"\n\n\ndef pytest_collection_finish(session):\n    \"\"\" called after collection has been performed and modified.\n\n    :param _pytest.main.Session session: the pytest session object\n    \"\"\"\n\n\n@hookspec(firstresult=True)\ndef pytest_ignore_collect(path, config):\n    \"\"\" return True to prevent considering this path for collection.\n    This hook is consulted for all files and directories prior to calling\n    more specific hooks.\n\n    Stops at first non-None result, see :ref:`firstresult`\n\n    :param path: a :py:class:`py.path.local` - the path to analyze\n    :param _pytest.config.Config config: pytest config object\n    \"\"\"\n\n\n@hookspec(firstresult=True)\ndef pytest_collect_directory(path, parent):\n    \"\"\" called before traversing a directory for collection files.\n\n    Stops at first non-None result, see :ref:`firstresult`\n\n    :param path: a :py:class:`py.path.local` - the path to analyze\n    \"\"\"\n\n\ndef pytest_collect_file(path, parent):\n    \"\"\" return collection Node or None for the given path. Any new node\n    needs to have the specified ``parent`` as a parent.\n\n    :param path: a :py:class:`py.path.local` - the path to collect\n    \"\"\"\n\n\n# logging hooks for collection\n\n\ndef pytest_collectstart(collector):\n    \"\"\" collector starts collecting. \"\"\"\n\n\ndef pytest_itemcollected(item):\n    \"\"\" we just collected a test item. \"\"\"\n\n\ndef pytest_collectreport(report):\n    \"\"\" collector finished collecting. \"\"\"\n\n\ndef pytest_deselected(items):\n    \"\"\" called for test items deselected, e.g. by keyword. \"\"\"\n\n\n@hookspec(firstresult=True)\ndef pytest_make_collect_report(collector):\n    \"\"\" perform ``collector.collect()`` and return a CollectReport.\n\n    Stops at first non-None result, see :ref:`firstresult` \"\"\"\n\n\n# -------------------------------------------------------------------------\n# Python test function related hooks\n# -------------------------------------------------------------------------\n\n\n@hookspec(firstresult=True)\ndef pytest_pycollect_makemodule(path, parent):\n    \"\"\" return a Module collector or None for the given path.\n    This hook will be called for each matching test module path.\n    The pytest_collect_file hook needs to be used if you want to\n    create test modules for files that do not match as a test module.\n\n    Stops at first non-None result, see :ref:`firstresult`\n\n    :param path: a :py:class:`py.path.local` - the path of module to collect\n    \"\"\"\n\n\n@hookspec(firstresult=True)\ndef pytest_pycollect_makeitem(collector, name, obj):\n    \"\"\" return custom item/collector for a python object in a module, or N",
+        "start_line": 171,
+        "start_column": 6052,
+        "end_line": 0,
+        "end_column": 8708,
+        "start_byte": 6052,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.main.pytest_addoption",
+        "file_path": "src/_pytest/hookspec.py",
+        "file_content": "plugin manager\n\n    .. note::\n        This hook is incompatible with ``hookwrapper=True``.\n    \"\"\"\n\n\n@hookspec(historic=True)\ndef pytest_addoption(parser, pluginmanager):\n    \"\"\"register argparse-style options and ini-style config values,\n    called once at the beginning of a test run.\n\n    .. note::\n\n        This function should be implemented only in plugins or ``conftest.py``\n        files situated at the tests root directory due to how pytest\n        :ref:`discovers plugins during startup <pluginorder>`.\n\n    :arg _pytest.config.Parser parser: To add command line options, call\n        :py:func:`parser.addoption(...) <_pytest.config.Parser.addoption>`.\n        To add ini-file values call :py:func:`parser.addini(...)\n        <_pytest.config.Parser.addini>`.\n\n    :arg _pytest.config.PytestPluginManager pluginmanager: pytest plugin manager,\n        which can be used to install :py:func:`hookspec`'s or :py:func:`hookimpl`'s\n        and allow one plugin to call another plugin's hooks to change how\n        command line options are added.\n\n    Options can later be accessed through the\n    :py:class:`config <_pytest.config.Config>` object, respectively:\n\n    - :py:func:`config.getoption(name) <_pytest.config.Config.getoption>` to\n      retrieve the value of a command line option.\n\n    - :py:func:`config.getini(name) <_pytest.config.Config.getini>` to retrieve\n      a value read from an ini-style file.\n\n    The config object is passed around on many internal objects via the ``.config``\n    attribute or can be retrieved as the ``pytestconfig`` fixture.\n\n    .. note::\n        This hook is incompatible with ``hookwrapper=True``.\n    \"\"\"\n\n\n@hookspec(historic=True)\ndef pytest_configure(config):\n    \"\"\"\n    Allows plugins and conftest files to perform initial configuration.\n\n    This hook is called for every plugin and initial conftest file\n    after command line options have been parsed.\n\n    After that, the hook is called for other conftest files as they are\n    imported.\n\n    .. note::\n        This hook is incompatible with ``hookwrapper=True``.\n\n    :arg _pytest.config.Config config: pytest config object\n    \"\"\"\n\n\n# -------------------------------------------------------------------------\n# Bootstrapping hooks called for plugins registered early enough:\n# internal and 3rd party plugins.\n# -------------------------------------------------------------------------\n\n\n@hookspec(firstresult=True)\ndef pytest_cmdline_parse(pluginmanager, args):\n    \"\"\"return initialized config object, parsing the specified args.\n\n    Stops at first non-None result, see :ref:`firstresult`\n\n    .. note::\n        This hook will only be called for plugin classes passed to the ``plugins`` arg when using `pytest.main`_ to\n        perform an in-process test run.\n\n    :param _pytest.config.PytestPluginManager pluginmanager: pytest plugin manager\n    :param list[str] args: list of arguments passed on the command line\n    \"\"\"\n\n\ndef pytest_cmdline_preparse(config, args):\n    \"\"\"(**Deprecated**) modify command line arguments before option parsing.\n\n    This hook is considered deprecated and will be removed in a future pytest version. Consider\n    using :func:`pytest_load_initial_conftests` instead.\n\n    .. note::\n        This hook will not be called for ``conftest.py`` files, only for setuptools plugins.\n\n    :param _pytest.config.Config config: pytest config object\n    :param list[str] args: list of arguments passed on the command line\n    \"\"\"\n\n\n@hookspec(firstresult=True)\ndef pytest_cmdline_main(config):\n    \"\"\" called for performing the main command line action. The default\n    implementation will invoke the configure hooks and runtest_mainloop.\n\n    .. note::\n        This hook will not be called for ``conftest.py`` files, only for setuptools plugins.\n\n    Stops at first non-None result, see :ref:`firstresult`\n\n    :param _pytest.config.Config config: pytest config object\n    \"\"\"\n\n\ndef pytest_load_initial_conftests(early_config, parser, args):\n    \"\"\" implements the loading of initial conftest files ahead\n    of command line option parsing.\n\n    .. note::\n        This hook will not ",
+        "start_line": 45,
+        "start_column": 969,
+        "end_line": 0,
+        "end_column": 5086,
+        "start_byte": 969,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.mark.pytest_addoption",
+        "file_path": "src/_pytest/hookspec.py",
+        "file_content": "on should be implemented only in plugins or ``conftest.py``\n        files situated at the tests root directory due to how pytest\n        :ref:`discovers plugins during startup <pluginorder>`.\n\n    :arg _pytest.config.Parser parser: To add command line options, call\n        :py:func:`parser.addoption(...) <_pytest.config.Parser.addoption>`.\n        To add ini-file values call :py:func:`parser.addini(...)\n        <_pytest.config.Parser.addini>`.\n\n    :arg _pytest.config.PytestPluginManager pluginmanager: pytest plugin manager,\n        which can be used to install :py:func:`hookspec`'s or :py:func:`hookimpl`'s\n        and allow one plugin to call another plugin's hooks to change how\n        command line options are added.\n\n    Options can later be accessed through the\n    :py:class:`config <_pytest.config.Config>` object, respectively:\n\n    - :py:func:`config.getoption(name) <_pytest.config.Config.getoption>` to\n      retrieve the value of a command line option.\n\n    - :py:func:`config.getini(name) <_pytest.config.Config.getini>` to retrieve\n      a value read from an ini-style file.\n\n    The config object is passed around on many internal objects via the ``.config``\n    attribute or can be retrieved as the ``pytestconfig`` fixture.\n\n    .. note::\n        This hook is incompatible with ``hookwrapper=True``.\n    \"\"\"\n\n\n@hookspec(historic=True)\ndef pytest_configure(config):\n    \"\"\"\n    Allows plugins and conftest files to perform initial configuration.\n\n    This hook is called for every plugin and initial conftest file\n    after comma",
+        "start_line": 36,
+        "start_column": 1291,
+        "end_line": 0,
+        "end_column": 2845,
+        "start_byte": 1291,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.pastebin.pytest_addoption",
+        "file_path": "src/_pytest/hookspec.py",
+        "file_content": "rt HookspecMarker\n\n\nhookspec = HookspecMarker(\"pytest\")\n\n# -------------------------------------------------------------------------\n# Initialization hooks called for every plugin\n# -------------------------------------------------------------------------\n\n\n@hookspec(historic=True)\ndef pytest_addhooks(pluginmanager):\n    \"\"\"ca",
+        "start_line": 6,
+        "start_column": 107,
+        "end_line": 0,
+        "end_column": 435,
+        "start_byte": 107,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.pytester.pytest_addoption",
+        "file_path": "src/_pytest/hookspec.py",
+        "file_content": " pytest_addoption(parser, pluginmanager):\n    \"\"\"register argparse-style options and ini-style config values,\n    called once at the beginning of a test run.\n\n    .. note::\n\n        This function should be implemented only in plugins or ``conftest.py``\n        files situated at the tests root directory due to how pytest\n        :ref:`discovers plugins during startup <pluginorder>`.\n\n    :arg _pytest.config.Parser parser: To add command line options, call\n        :py:func:`parser.addoption(...) <_pytest.config.Parser.addoption>`.\n        To add ini-file values call :py:func:`parser.addini(...)\n        <_p",
+        "start_line": 46,
+        "start_column": 1098,
+        "end_line": 0,
+        "end_column": 1709,
+        "start_byte": 1098,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.python.pytest_addoption",
+        "file_path": "src/_pytest/hookspec.py",
+        "file_content": "t.config.Parser.addini>`.\n\n    :arg _pytest.config.PytestPluginManager pluginmanager: pytest plugin manager,\n        which can be used to install :py:func:`hookspec`'s or :py:func:`hookimpl`'s\n        and allow one plugin to call another plugin's hooks to change how\n        command line options are added.\n\n    Options can later be accessed through the\n    :py:class:`config <_pytest.config.Config>` object, respectively:\n\n    - :py:func:`config.getoption(name) <_pytest.config.Config.getoption>` to\n      retrieve the value of a command line option.\n\n    - :py:func:`config.getini(name) <_pytest.config.Config.getini>` to retrieve\n      a value read from an ini-style file.\n\n    The config object is passed around on many internal objects via the ``.config``\n    attribute or can be retrieved as the ``pytestconfig`` fixture.\n\n    .. note::\n        This hook is incompatible with ``hookwrapper=True``.\n    \"\"\"\n\n\n@hookspec(historic=True)\ndef pytest_configure(config):\n    \"\"\"\n    Allows plugins and conftest files to perform initial configuration.\n\n    This hook is called for every plugin and initial conftest file\n    after command line options have been parsed.\n\n    After that, the hook is called for other conftest files as they are\n    imported.\n\n    .. note::\n        This hook is incompatible with ``hookwrapper=True``.\n\n    :arg _pytest.config.Config config: pytest config object\n    \"\"\"\n\n\n# -------------------------------------------------------------------------\n# Bootstrapping hooks called for plugins registered early enough:\n# internal and 3rd party plugins.\n# -------------------------------------------------------------------------\n\n\n@hookspec(firstresult",
+        "start_line": 56,
+        "start_column": 1713,
+        "end_line": 0,
+        "end_column": 3388,
+        "start_byte": 1713,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.runner.pytest_addoption",
+        "file_path": "src/_pytest/hookspec.py",
+        "file_content": "pytest plugin manager\n\n    .. note::\n        This hook is incompatible with ``hookwrapper=True``.\n    \"\"\"\n\n\n@hookspec(historic=True)\ndef pytest_plugin_registered(plugin, manager):\n    \"\"\" a new pytest plugin got registered.\n\n    :param plugin: the plugin module or instance\n    :param _pytest.config.PytestPlugin",
+        "start_line": 29,
+        "start_column": 633,
+        "end_line": 0,
+        "end_column": 945,
+        "start_byte": 633,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.setuponly.pytest_addoption",
+        "file_path": "src/_pytest/hookspec.py",
+        "file_content": "cations for pytest plugins, invoked from main.py and builtin plugins.  \"\"\"\nfrom pluggy import HookspecMarker\n\n\nhookspec = HookspecMarker(\"pytest\")\n\n# -------------------------------------------------------------------------\n# Initialization hooks called for every plugin\n# -------------------------------------------------------------------------\n\n\n@hookspec(historic=True)\ndef pytest_addhooks(plugi",
+        "start_line": 3,
+        "start_column": 16,
+        "end_line": 0,
+        "end_column": 415,
+        "start_byte": 16,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.setupplan.pytest_addoption",
+        "file_path": "src/_pytest/hookspec.py",
+        "file_content": "cations for pytest plugins, invoked from main.py and builtin plugins.  \"\"\"\nfrom pluggy import HookspecMarker\n\n\nhookspec = HookspecMarker(\"pytest\")\n\n# -------------------------------------------------------------------------\n# Initialization hooks called for every plugin\n# ----",
+        "start_line": 3,
+        "start_column": 16,
+        "end_line": 0,
+        "end_column": 293,
+        "start_byte": 16,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.skipping.pytest_addoption",
+        "file_path": "src/_pytest/hookspec.py",
+        "file_content": "nitialization hooks called for every plugin\n# -------------------------------------------------------------------------\n\n\n@hookspec(historic=True)\ndef pytest_addhooks(pluginmanager):\n    \"\"\"called at plugin registration time to allow adding new hooks via a call to\n    ``pluginmanager.add_hookspecs(module_or_class, prefix)``.\n\n\n    :param _pytest.config.PytestPluginManager pluginmanager: pytest plugin manager\n\n    .. note::\n        This hook is incompatible with ``hookwrapper=",
+        "start_line": 8,
+        "start_column": 243,
+        "end_line": 0,
+        "end_column": 723,
+        "start_byte": 243,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.stepwise.pytest_addoption",
+        "file_path": "src/_pytest/hookspec.py",
+        "file_content": "cations for pytest plugins, invoked from main.py and builtin plugins.  \"\"\"\nfrom pluggy import HookspecMarker\n\n\nhookspec = HookspecMarker(\"pytest\")\n\n# -------------------------------------------------------------------------\n# Initialization hooks called for every plugin\n# -------------------------------------------------------------------------\n\n\n@hookspec(historic=True)\ndef pytest_addhooks(pluginmanager):\n    \"\"\"called at plugin registration time to allow ad",
+        "start_line": 3,
+        "start_column": 16,
+        "end_line": 0,
+        "end_column": 479,
+        "start_byte": 16,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.terminal.pytest_addoption",
+        "file_path": "src/_pytest/hookspec.py",
+        "file_content": "due to how pytest\n        :ref:`discovers plugins during startup <pluginorder>`.\n\n    :arg _pytest.config.Parser parser: To add command line options, call\n        :py:func:`parser.addoption(...) <_pytest.config.Parser.addoption>`.\n        To add ini-file values call :py:func:`parser.addini(...)\n        <_pytest.config.Parser.addini>`.\n\n    :arg _pytest.config.PytestPluginManager pluginmanager: pytest plugin manager,\n        which can be used to install :py:func:`hookspec`'s or :py:func:`hookimpl`'s\n        and allow one plugin to call another plugin's hooks to change how\n        command line options are added.\n\n    Options can later be accessed through the\n    :py:class:`config <_pytest.config.Config>` object, respectively:\n\n    - :py:func:`config.getoption(name) <_pytest.config.Config.getoption>` to\n      retrieve the value of a command line option.\n\n    - :py:func:`config.getini(name) <_pytest.config.Config.getini>` to retrieve\n      a value read from an ini-style file.\n\n    The config object is passed around on many internal objects via the ``.config``\n    attribute or can be retrieved as the ``pytestconfig`` fixture.\n\n    .. note::\n        This hook is incompatible with ``hookwrapper=True``.\n    \"\"\"\n\n\n@hookspec(historic=True)\ndef pytest_configure(config):\n    \"\"\"\n    Allows plugins and conftest files to perform initial configuration.\n\n    This hook is called for every plugin and initial conftest file\n    after command line options have been parsed.\n\n    After that, the hook is called for other conftest files as they are\n    imported.\n\n    .. note::\n        This hook is incompatible with ``hookwrapper=True``.\n\n    :arg _pytest.config.Config config: pytest config object\n    \"\"\"\n\n\n# -------------------------------------------------------------------------\n# Bootstrapping hooks called for plugins registered early enough:\n# internal and 3rd party plugins.\n# -------------------------------------------------------------------------\n\n\n@hookspec(firstresult=True)\ndef pytest_cmdline_parse(pluginmanager, args):\n    \"\"\"return initialized config object, parsing the specified args.\n\n    Stops at first non-None result, see :ref:`firstresult`\n\n    .. note::\n        This hook will only be called for plugin classes passed to the ``plugins`` arg when using `pytest.main`_ to\n        perform an in-process test run.\n\n    :param _pytest.config.PytestPluginManager pluginmanager: pytest plugin manager\n    :param list[str] args: list of arguments passed on the command line\n    \"\"\"\n\n\ndef pytest_cmdline_preparse(config, args):\n    \"\"\"(**Deprecated**) modify command line arguments before option parsing.\n\n    This hook is considered deprecate",
+        "start_line": 56,
+        "start_column": 1402,
+        "end_line": 0,
+        "end_column": 4066,
+        "start_byte": 1402,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.warnings.pytest_addoption",
+        "file_path": "src/_pytest/hookspec.py",
+        "file_content": "lugin: the plugin module or instance\n    :param _pytest.config.PytestPluginManager manager: pytest plugin manager\n\n    .. note::\n        This hook is incompatible with ``hookwrapper=True``.\n    \"\"\"\n\n\n@hookspec(historic=True)\ndef pytest_addoption(parser, pluginmanager):\n    \"\"\"register argparse-style options and ini-style config values,\n    called once at the beginning of a test run.\n\n    .. note::\n\n        This function should be implemented only in plug",
+        "start_line": 31,
+        "start_column": 870,
+        "end_line": 0,
+        "end_column": 1328,
+        "start_byte": 870,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.report_log.pytest_addoption",
+        "file_path": "src/_pytest/hookspec.py",
+        "file_content": "om main.py and builtin plugins.  \"\"\"\nfrom pluggy import HookspecMarker\n\n\nhookspec = HookspecMarker(\"pytest\")\n\n# -------------------------------------------------------------------------\n# Initialization hooks called for every plugin\n# ------------------------------------------------------------------",
+        "start_line": 6,
+        "start_column": 54,
+        "end_line": 0,
+        "end_column": 355,
+        "start_byte": 54,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.resultlog.pytest_addoption",
+        "file_path": "src/_pytest/hookspec.py",
+        "file_content": "rt HookspecMarker\n\n\nhookspec = HookspecMarker(\"pytest\")\n\n# -------------------------------------------------------------------------\n# Initialization hooks called for every plugin\n# -------------------------------------------------------------------------\n\n\n@hookspec(historic=True)\ndef pytest_addhooks(pluginmanager",
+        "start_line": 8,
+        "start_column": 107,
+        "end_line": 0,
+        "end_column": 423,
+        "start_byte": 107,
+        "end_byte": 0
+      }
+    ],
+    "root_caused_symbols": [
+      {
+        "name": "_pytest.assertion.pytest_addoption",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "rom _pytest import nodes\nfrom _pytest.config import directory_arg\nfrom _pytest.config import hookimpl\nfrom _pytest.config import UsageError\nfrom _pytest.outcomes import exit\nfrom _pytest.runner import collect_one_node\nfrom _pytest.runner import SetupState\n\n\nclass ExitCode(enum.IntEnum):\n    \"\"\"\n    .. versionadded:: 5.0\n\n    Encodes the valid exit codes by pytest.\n\n    Currently users and plugins may supply other exit codes as well.\n    \"\"\"\n\n    #: tests passed\n    OK = 0\n    #: tests failed\n    TESTS_FAILED = 1\n    #: pytest was interrupted\n    INTERRUPTED = 2\n    #: an internal error got in the way\n    INTERNAL_ERROR = 3\n    #: pytest was misused\n    USAGE_ERROR = 4\n    #: pytest couldn't find tests\n    NO_TESTS_COLLECTED = 5\n\n\ndef pytest_addoption(parser):\n    parser.addini(\n        \"norecursedirs\",\n        \"",
+        "start_line": 11,
+        "start_column": 229,
+        "end_line": 0,
+        "end_column": 1052,
+        "start_byte": 229,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.cacheprovider.pytest_addoption",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "        self.testsfailed = 0\n        self.testscollected = 0\n        self.shouldstop = False\n        self.shouldfail = False\n        self.trace = config.trace.root.get(\"collection\")\n        self._norecursepatterns = config.getini(\"norecursedirs\")\n        self.startdir = config.invocation_dir\n        self._initialpaths = frozenset()\n        # Keep track of any collected nodes in here, so we don't duplicate fixtures\n        self._node_cache = {}\n        self._bestrelpathcache = _bestrelpath_cache(\n            config.rootdir\n        )  # type: Dict[str, str]\n        # Dirnames of pkgs with dunder-init files.\n        self._pkg_roots = {}\n\n        self.config.pluginmanager.register(self, name=\"session\")\n\n    def __repr__(self):\n        return \"<%s %s exitstatus=%r testsfailed=%d testscollected=%d>\" % (\n            self.__class__.__name__,\n            self.name,\n            getattr(self, \"exitstatus\", \"<UNSET>\"),\n            self.testsfailed,\n            self.testscollected,\n        )\n\n    def _node_location_to_relpath(self, node_path: str) -> str:\n        # bestrelpath is a quite slow function\n        return self._bestrelpathcache[node_path]\n\n    @hookimpl(tryfirst=True)\n    def pytest_collectstart(self):\n        if self.shouldfail:\n            raise self.Failed(self.shouldfail)\n        if self.shouldstop:\n            raise self.Interrupted(self.shouldstop)\n\n    @hookimpl(tryfirst=True)\n    def pytest_runtest_logreport(self, report):\n        if report.failed and not hasattr(report, \"wasxfail\"):\n            self.testsfailed += 1\n            maxfail = self.config.getvalue(\"maxfail\")\n            if maxfail and self.testsfailed >= maxfail:\n                self.shouldfail = \"stopping after %d failures\" % (self.testsfailed)\n\n    pytest_collectrep",
+        "start_line": 301,
+        "start_column": 11226,
+        "end_line": 0,
+        "end_column": 12991,
+        "start_byte": 11226,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.capture.pytest_addoption",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "onfig import UsageError\nfrom _pytest.outcomes import exit\nfrom _pytest.runner import collect_one_node\nfrom _pytest.runner import SetupState\n\n\nclass ExitCode(enum.IntEnum):\n    \"\"\"\n    .. versionadded:: 5.0\n\n    Encodes the valid exit codes by pytest.\n\n    Currently users and plugins may supply other exit codes as well.\n    \"\"\"\n\n    #: tests passed\n    OK = 0\n    #: tests failed\n    TESTS_FAILED = 1\n    #: pytest was interrupted\n    INTERRUPTED = 2\n    #: an internal error go",
+        "start_line": 19,
+        "start_column": 345,
+        "end_line": 0,
+        "end_column": 824,
+        "start_byte": 345,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.debugging.pytest_addoption",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "added:: 5.0\n\n    Encodes the valid exit codes by pytest.\n\n    Currently users and plugins may supply other exit codes as well.\n    \"\"\"\n\n    #: tests passed\n    OK = 0\n    #: tests failed\n    TESTS_FAILED = 1\n    #: pytest was interrupted\n    INTERRUPTED = 2\n    #: an internal error got in the way\n    INTERNAL_ERROR = 3\n    #: pytest was misused\n    USAGE_ERROR = 4\n    #: pytest couldn't find tests\n    NO_TESTS_COLLECTED = 5\n\n\ndef pytest_addoption(parser):\n    parser.addini(\n        \"norecursedirs\",\n        \"directory patterns to avoid for recursion\",\n        type=\"args\",\n        default=[\".*\", \"build\", \"dist\", \"CVS\", \"_darcs\", \"{arch}\", \"*.egg\", \"venv\"],\n    )\n    parser.addini(\n        \"t",
+        "start_line": 21,
+        "start_column": 539,
+        "end_line": 0,
+        "end_column": 1237,
+        "start_byte": 539,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.doctest.pytest_addoption",
+        "file_path": "src/_pytest/main.py",
+        "file_content": " default=[],\n    )\n    group = parser.getgroup(\"general\", \"running and selection options\")\n    group._addoption(\n        \"-x\",\n        \"--exitfirst\",\n        action=\"store_const\",\n        dest=\"maxfail\",\n        const=1,\n        help=\"exit instantly on first error or failed test.\",\n    ),\n    group._addoption(\n        \"--maxfail\",\n        metavar=\"num\",\n        action=\"store\",\n        type=int,\n        dest=\"maxfail\",\n        default=0,\n        help=\"exit after first num failures or errors.\",\n    )\n    group._addoption(\n        \"--strict-markers\",\n        \"--strict\",\n        action=\"store_true\",\n        help=\"markers not registered in the `markers` section of the configuration file raise errors.\",\n    )\n    group._addoption(\n        \"-c\",\n        metavar=\"file\",\n        type=str,\n        dest=\"inifilename\",\n        help=\"load configuration from `file` instead of trying to locate one of the implicit \"\n        \"configuration files.\",\n    )\n    group._addoption(\n        \"--continue-on-collection-errors\",\n        action=\"store_true\",\n        default=False,\n        dest=\"continue_on_collection_errors\",\n        help=\"Force test execution even if collection errors occur.\",\n    )\n    group._addoption(\n        \"--rootdir\",\n        action=\"store\",\n        dest=\"rootdir\",\n        help=\"Define root directory for tests. Can be relative path: 'root_dir', './root_dir', \"\n        \"'root_dir/another_dir/'; absol",
+        "start_line": 50,
+        "start_column": 1390,
+        "end_line": 0,
+        "end_column": 2808,
+        "start_byte": 1390,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.faulthandler.pytest_addoption",
+        "file_path": "src/_pytest/main.py",
+        "file_content": ", session, runtest loop. \"\"\"\nimport enum\nimport fnmatch\nimport functools\nimport importlib\nimport os\nimport sys\nfrom typing import Dict\n\nimport attr\nimport py\n\nimport _pytest._code\nfrom _pytest import nodes\nfrom _pytest.config import directory_arg\nfrom _py",
+        "start_line": 7,
+        "start_column": 48,
+        "end_line": 0,
+        "end_column": 303,
+        "start_byte": 48,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.fixtures.pytest_addoption",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "",
+        "start_line": 1190,
+        "start_column": 44317,
+        "end_line": 0,
+        "end_column": 44505,
+        "start_byte": 44317,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.helpconfig.pytest_addoption",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "rcs\", \"{arch}\", \"*.egg\", \"venv\"],\n    )\n    parser.addini(\n        \"testpaths\",\n        \"directories to search for tests when no files or directories are given in the \"\n        \"command line.\",\n        type=\"args\",\n        default=[],\n    )\n    group = parser.getgroup(\"general\", \"running and selection options\")\n    group._addoption(\n        \"-x\",\n        \"--exitfirst\",\n        action=\"store_const\",\n        dest=\"maxfail\",\n        const=1,\n        help=\"exit instantly on first error or failed test.\",\n    ),\n    group._addoption(\n        \"--maxfail\",\n        metavar=\"num\",\n        action=\"store\",\n        type=int,\n        dest=\"maxfail\",\n        default=0,\n        help=\"exit after first num failures or errors.\",\n    )\n    group._addoption(\n        \"--strict-markers\",\n        \"--strict\",\n        action=\"store_true\",\n        help=\"markers not registered in the `markers` section of the configuration file raise errors.\",\n    )\n    group._addoption(\n        \"-c\",\n        metavar=\"file\",\n        type=str,\n        dest=\"inifilename\",\n        help=\"load configuration from `file` instead of trying to locate one of the implicit \"\n        \"configuration files.\",\n    )\n    group._addoption(\n        \"--continue-on-collection-errors\",\n        action=\"store_true\",\n        default=False,\n        dest=\"continue_",
+        "start_line": 38,
+        "start_column": 1168,
+        "end_line": 0,
+        "end_column": 2482,
+        "start_byte": 1168,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.hookspec.pytest_addoption",
+        "file_path": "src/_pytest/main.py",
+        "file_content": " to avoid for recursion\",\n        type=\"args\",\n        default=[\".*\", \"build\", \"dist\", \"CVS\", \"_darcs\", \"{arch}\", \"*.egg\", \"venv\"],\n    )\n    parser.addini(\n        \"testpaths\",\n        \"directories to search for tests when no files or directories are given in the \"\n        \"command line.\",\n        type=\"args\",\n        default=[],\n    )\n    group = parser.getgroup(\"general\", \"running and selection options\")\n    group._addoption(\n        \"-x\",\n        \"--exitfirst\",\n        action=\"store_const\",\n        dest=\"maxfail\",\n        const=1,\n        help=\"exit instantly on first error or failed test.\",\n    ),\n    group._addoption(\n        \"--maxfail\",\n        metavar=\"num\",\n        action=\"store\",\n        type=int,\n        dest=\"maxfail\",\n        default=0,\n        help=\"exit after first num failures or errors.\",\n    )\n    group._addoption(\n        \"--strict-markers\",\n        \"--strict\",\n        action=\"store_true\",\n        help=\"markers not registered in the `markers` section of the configuration file raise errors.\",\n    )\n    group._addoption(\n        \"-c\",\n        metavar=\"file\",\n        type=str,\n        dest=\"inifilename\",\n        help=\"load configuration from `file` instead of trying to locate one of the implicit \"\n        \"configuration files.\",\n    )\n    group._addoption(\n        \"--continue-on-collection-errors\",\n        action=\"store_true\",\n        default=False,\n        dest=\"continue_on_collection_errors\",\n        help=\"Force test execution even if collection errors occur.\",\n    )\n    group._addoption(\n        \"--rootdir\",\n",
+        "start_line": 36,
+        "start_column": 1070,
+        "end_line": 0,
+        "end_column": 2624,
+        "start_byte": 1070,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.junitxml.pytest_addoption",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "   raise self.Interrupted(self.shouldstop)\n\n    @hookimpl(tryfirst=True)\n    def pytest_runtest_logreport(self, report):\n        if report.failed and not hasattr(report, \"wasxfail\"):\n            self.testsfailed += 1\n            maxfail = self.config.getvalue(\"maxfail\")\n            if maxfail and self.testsfailed >= maxfail:\n                self.shouldfail = \"stopping after %d failures\" % (self.testsfailed)\n\n    pytest_collectreport = pytest_runtest_logreport\n\n    def isinitpath(self, path):\n        return path in self._initialpaths\n\n    def gethookproxy(self, fspath):\n        # check if we have the common case of running\n        # hooks with all conftest.py files\n        pm = self.config.pluginmanager\n        my_conftestmodules = pm._getconftestmodules(fspath)\n        remove_mods = pm._conftest_plugins.difference(my_conftestmodules)\n        if remove_mods:\n            # one or more conftests are not in use at this fspath\n            proxy = FSHookProxy(fspath, pm, remove_mods)\n        else:\n            # all plugins are active for this fspath\n            proxy = self.config.hook\n        return proxy\n\n    def perform_collect(self, args=None, genitems=True):\n        hook = self.config.hook\n        try:\n            items = self._perform_collect(args, genitems)\n            self.config.pluginmanager.check_pending()\n            hook.pytest_collection_modifyitems(\n  ",
+        "start_line": 382,
+        "start_column": 12558,
+        "end_line": 0,
+        "end_column": 13941,
+        "start_byte": 12558,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.logging.pytest_addoption",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "r.write(\n                        \"{}: {}\\n\".format(excinfo.typename, excinfo.value.msg)\n                    )\n            config.hook.pytest_keyboard_interrupt(excinfo=excinfo)\n            session.exitstatus = exitstatus\n        except:  # noqa\n            excinfo = _pytest._code.ExceptionInfo.from_current()\n            config.notify_exception(excinfo, config.option)\n            session.exitstatus = ExitCode.INTERNAL_ERROR\n            if excinfo.errisinstance(SystemExit):\n                sys.stderr.write(\"mainloop: caught unexpected SystemExit!\\n\")\n\n    finally:\n        excinfo = None  # Explicitly break reference cycle.\n        session.startdir.chdir()\n        if initstate >= 2:\n            config.hook.pytest_sessionfinish(\n                session=session, exitstatus=session.exitstatus\n            )\n        config._ensure_unconfigure()\n    return session.exitstatus\n\n\ndef pytest_cmdline_main(config):\n    return wrap_session(config, _main)\n\n\ndef _main(config, session):\n    \"\"\" default command line protocol for initialization, session,\n    running tests and reporting. \"\"\"\n    config.hook.pytest_collection(session=session)\n    config.hook.pytest_runtestloop(session=session)\n\n    if session.testsfailed:\n        return ExitCode.TESTS_FAILED\n    elif session.testscollected == 0:\n        return ExitCode.NO_TESTS_COLLECTED\n\n\ndef pytest_collection(session):\n    return session.perform_collect()\n\n\ndef pytest_runtestloop(session):\n    if session.testsfailed and not session.config.option.continue_on_collection_errors:\n        raise session.Interrupted(\n            \"%d error%s during collection\"\n            % (session.testsfailed, \"s\" if session.testsfailed != 1 else \"\")\n        )\n\n    if session.config.option.collectonly:\n        return True\n\n    for i, item in enumerate(session.items):\n        nextitem = session.items[i + 1] if i + 1 < len(session.items) else None\n        item.config.hook.pytest_runtest_protocol(item=item, nextitem=nextitem)\n        if session.shouldfail:\n            raise session.Failed(session.shouldfail)\n        if session.shouldstop:\n            raise session.Interrupted(session.shouldstop)\n    return True\n\n\ndef _in_venv(path):\n    \"\"\"Attempts to detect if ``path`` is the root of a Virtual Environment by\n    checking for the existence of the appropriate activate script\"\"\"\n    bindir = path.join(\"Scripts\" if sys.platform.startswith(\"win\") else \"bin\")\n    if not bindir.isdir():\n        return False\n    activates = (\n        \"activate\",\n        \"activate.csh\",\n        \"activate.fish\",\n        \"Activate\",\n        \"Activate.bat\",\n        \"Activate.ps1\",\n    )\n    return any([fname.basename in activates fo",
+        "start_line": 171,
+        "start_column": 6052,
+        "end_line": 0,
+        "end_column": 8708,
+        "start_byte": 6052,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.main.pytest_addoption",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "def pytest_addoption(parser):\n    parser.addini(\n        \"norecursedirs\",\n        \"directory patterns to avoid for recursion\",\n        type=\"args\",\n        default=[\".*\", \"build\", \"dist\", \"CVS\", \"_darcs\", \"{arch}\", \"*.egg\", \"venv\"],\n    )\n    parser.addini(\n        \"testpaths\",\n        \"directories to search for tests when no files or directories are given in the \"\n        \"command line.\",\n        type=\"args\",\n        default=[],\n    )\n    group = parser.getgroup(\"general\", \"running and selection options\")\n    group._addoption(\n        \"-x\",\n        \"--exitfirst\",\n        action=\"store_const\",\n        dest=\"maxfail\",\n        const=1,\n        help=\"exit instantly on first error or failed test.\",\n    ),\n    group._addoption(\n        \"--maxfail\",\n        metavar=\"num\",\n        action=\"store\",\n        type=int,\n        dest=\"maxfail\",\n        default=0,\n        help=\"exit after first num failures or errors.\",\n    )\n    group._addoption(\n        \"--strict-markers\",\n        \"--strict\",\n        action=\"store_true\",\n        help=\"markers not registered in the `markers` section of the configuration file raise errors.\",\n    )\n    group._addoption(\n        \"-c\",\n        metavar=\"file\",\n        type=str,\n        dest=\"inifilename\",\n        help=\"load configuration from `file` instead of trying to locate one of the implicit \"\n        \"configuration files.\",\n    )\n    group._addoption(\n        \"--continue-on-collection-errors\",\n        action=\"store_true\",\n        default=False,\n        dest=\"continue_on_collection_errors\",\n        help=\"Force test execution even if collection errors occur.\",\n    )\n    group._addoption(\n        \"--rootdir\",\n        action=\"store\",\n        dest=\"rootdir\",\n        help=\"Define root directory for tests. Can be relative path: 'root_dir', './root_dir', \"\n        \"'root_dir/another_dir/'; absolute path: '/home/user/root_dir'; path with variables: \"\n        \"'$HOME/root_dir'.\",\n    )\n\n    group = parser.getgroup(\"collect\", \"collection\")\n    group.addoption(\n        \"--collectonly\",\n        \"--collect-only\",\n        action=\"store_true\",\n        help=\"only collect tests, don't execute them.\",\n    ),\n    group.addoption(\n        \"--pyargs\",\n        action=\"store_true\",\n        help=\"try to interpret all arguments as python packages.\",\n    )\n    group.addoption(\n        \"--ignore\",\n        action=\"append\",\n        metavar=\"path\",\n        help=\"ignore path during collection (multi-allowed).\",\n    )\n    group.addoption(\n        \"--ignore-glob\",\n        action=\"append\",\n        metavar=\"path\",\n        help=\"ignore path pattern during collection (multi-allowed).\",\n    )\n    group.addoption(\n        \"--deselect\",\n        action=\"append\",\n        metavar=\"nodeid_prefix\",\n        help=\"deselect item during collection (multi-allowed).\",\n    )\n    # when changing this to --conf-cut-dir, config.py Conftest.setinitial\n    # needs upgrading as well\n    group.addoption(\n        \"--confcutdir\",\n        dest=\"confcutdir\",\n        default=None,\n        metavar=\"dir\",\n        type=functools.partial(directory_arg, optname=\"--confcutdir\"),\n        help=\"only load conftest.py's relative to specified dir.\",\n    )\n    group.addoption(\n        \"--noconftest\",\n        action=\"store_true\",\n        dest=\"noconftest\",\n        default=False,\n        help=\"Don't load any conftest.py files.\",\n    )\n    group.addoption(\n        \"--keepduplicates\",\n        \"--keep-duplicates\",\n        action=\"store_true\",\n        dest=\"keepduplicates\",\n        default=False,\n        help=\"Keep duplicate tests.\",\n    )\n    group.addoption(\n        \"--collect-in-virtualenv\",\n        action=\"store_true\",\n        dest=\"collect_in_virtualenv\",\n        default=False,\n        help=\"Don't ignore tests in a local virtualenv directory\",\n    )\n\n    group = parser.getgroup(\"debugconfig\", \"test session debugging and configuration\")\n    group.addoption(\n        \"--basetemp\",\n        dest=\"basetemp\",\n        default=None,\n        metavar=\"dir\",\n        help=(\n            \"base temporary directory for this test run.\"\n            \"(warning: this directory is removed if it exists)\"\n        ),\n    )",
+        "start_line": 45,
+        "start_column": 969,
+        "end_line": 0,
+        "end_column": 5086,
+        "start_byte": 969,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.mark.pytest_addoption",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "en no files or directories are given in the \"\n        \"command line.\",\n        type=\"args\",\n        default=[],\n    )\n    group = parser.getgroup(\"general\", \"running and selection options\")\n    group._addoption(\n        \"-x\",\n        \"--exitfirst\",\n        action=\"store_const\",\n        dest=\"maxfail\",\n        const=1,\n        help=\"exit instantly on first error or failed test.\",\n    ),\n    group._addoption(\n        \"--maxfail\",\n        metavar=\"num\",\n        action=\"store\",\n        type=int,\n        dest=\"maxfail\",\n        default=0,\n        help=\"exit after first num failures or errors.\",\n    )\n    group._addoption(\n        \"--strict-markers\",\n        \"--strict\",\n        action=\"store_true\",\n        help=\"markers not registered in the `markers` section of the configuration file raise errors.\",\n    )\n    group._addoption(\n        \"-c\",\n        metavar=\"file\",\n        type=str,\n        dest=\"inifilename\",\n        help=\"load configuration from `file` instead of trying to locate one of the implicit \"\n        \"configuration files.\",\n    )\n    group._addoption(\n        \"--continue-on-collection-errors\",\n        action=\"store_true\",\n        default=False,\n        dest=\"continue_on_collection_errors\",\n        help=\"Force test execution even if collection errors occur.\",\n    )\n    group._addoption(\n        \"--rootdir\",\n        action=\"store\",\n        dest=\"rootdir\",\n        help=\"Define root directory for tests. Can be relative path: 'root_dir', './root_dir', \"\n        \"'root_dir/another_dir/'; absolute path: '/home/user/root_dir'; path",
+        "start_line": 36,
+        "start_column": 1291,
+        "end_line": 0,
+        "end_column": 2845,
+        "start_byte": 1291,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.pastebin.pytest_addoption",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "ort functools\nimport importlib\nimport os\nimport sys\nfrom typing import Dict\n\nimport attr\nimport py\n\nimport _pytest._code\nfrom _pytest import nodes\nfrom _pytest.config import directory_arg\nfrom _pytest.config import hookimpl\nfrom _pytest.config import UsageError\nfrom _pytest.outcomes import exit\nfrom _pytest.runner import colle",
+        "start_line": 6,
+        "start_column": 107,
+        "end_line": 0,
+        "end_column": 435,
+        "start_byte": 107,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.pytester.pytest_addoption",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "      type=\"args\",\n        default=[\".*\", \"build\", \"dist\", \"CVS\", \"_darcs\", \"{arch}\", \"*.egg\", \"venv\"],\n    )\n    parser.addini(\n        \"testpaths\",\n        \"directories to search for tests when no files or directories are given in the \"\n        \"command line.\",\n        type=\"args\",\n        default=[],\n    )\n    group = parser.getgroup(\"general\", \"running and selection options\")\n    group._addoption(\n        \"-x\",\n        \"--exitfirst\",\n        action=\"store_const\",\n        dest=\"maxfail\",\n        const=1,\n        help=\"exit instantly on first error or failed test.\",\n    ),\n    group._addoption(\n       ",
+        "start_line": 46,
+        "start_column": 1098,
+        "end_line": 0,
+        "end_column": 1709,
+        "start_byte": 1098,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.python.pytest_addoption",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "maxfail\",\n        metavar=\"num\",\n        action=\"store\",\n        type=int,\n        dest=\"maxfail\",\n        default=0,\n        help=\"exit after first num failures or errors.\",\n    )\n    group._addoption(\n        \"--strict-markers\",\n        \"--strict\",\n        action=\"store_true\",\n        help=\"markers not registered in the `markers` section of the configuration file raise errors.\",\n    )\n    group._addoption(\n        \"-c\",\n        metavar=\"file\",\n        type=str,\n        dest=\"inifilename\",\n        help=\"load configuration from `file` instead of trying to locate one of the implicit \"\n        \"configuration files.\",\n    )\n    group._addoption(\n        \"--continue-on-collection-errors\",\n        action=\"store_true\",\n        default=False,\n        dest=\"continue_on_collection_errors\",\n        help=\"Force test execution even if collection errors occur.\",\n    )\n    group._addoption(\n        \"--rootdir\",\n        action=\"store\",\n        dest=\"rootdir\",\n        help=\"Define root directory for tests. Can be relative path: 'root_dir', './root_dir', \"\n        \"'root_dir/another_dir/'; absolute path: '/home/user/root_dir'; path with variables: \"\n        \"'$HOME/root_dir'.\",\n    )\n\n    group = parser.getgroup(\"collect\", \"collection\")\n    group.addoption(\n        \"--collectonly\",\n        \"--collect-only\",\n        action=\"store_true\",\n        help=\"only collect tests, don't execute them.\",\n    ),\n    group.addoption(\n        \"--pyargs\",\n        action=\"store_true\",\n        help=\"try to interpret all arguments as python packages.\",\n    )\n    group.addoption(\n        \"--ignore\",\n        action=\"append\",\n        metavar=\"path\",\n        help=\"ignore path during colle",
+        "start_line": 56,
+        "start_column": 1713,
+        "end_line": 0,
+        "end_column": 3388,
+        "start_byte": 1713,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.runner.pytest_addoption",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "supply other exit codes as well.\n    \"\"\"\n\n    #: tests passed\n    OK = 0\n    #: tests failed\n    TESTS_FAILED = 1\n    #: pytest was interrupted\n    INTERRUPTED = 2\n    #: an internal error got in the way\n    INTERNAL_ERROR = 3\n    #: pytest was misused\n    USAGE_ERROR = 4\n    #: pytest couldn't find tests\n    N",
+        "start_line": 29,
+        "start_column": 633,
+        "end_line": 0,
+        "end_column": 945,
+        "start_byte": 633,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.setuponly.pytest_addoption",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "ntation of testing process: init, session, runtest loop. \"\"\"\nimport enum\nimport fnmatch\nimport functools\nimport importlib\nimport os\nimport sys\nfrom typing import Dict\n\nimport attr\nimport py\n\nimport _pytest._code\nfrom _pytest import nodes\nfrom _pytest.config import directory_arg\nfrom _pytest.config import hookimpl\nfrom _pytest.config import UsageError\nfrom _pytest.outcomes import exit\nfrom _pytest",
+        "start_line": 3,
+        "start_column": 16,
+        "end_line": 0,
+        "end_column": 415,
+        "start_byte": 16,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.setupplan.pytest_addoption",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "ntation of testing process: init, session, runtest loop. \"\"\"\nimport enum\nimport fnmatch\nimport functools\nimport importlib\nimport os\nimport sys\nfrom typing import Dict\n\nimport attr\nimport py\n\nimport _pytest._code\nfrom _pytest import nodes\nfrom _pytest.config import directory_ar",
+        "start_line": 3,
+        "start_column": 16,
+        "end_line": 0,
+        "end_column": 293,
+        "start_byte": 16,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.skipping.pytest_addoption",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "port nodes\nfrom _pytest.config import directory_arg\nfrom _pytest.config import hookimpl\nfrom _pytest.config import UsageError\nfrom _pytest.outcomes import exit\nfrom _pytest.runner import collect_one_node\nfrom _pytest.runner import SetupState\n\n\nclass ExitCode(enum.IntEnum):\n    \"\"\"\n    .. versionadded:: 5.0\n\n    Encodes the valid exit codes by pytest.\n\n    Currently users and plugins may supply other exit codes as well.\n    \"\"\"\n\n    #: tests passed\n    OK = 0\n    #: tests fail",
+        "start_line": 8,
+        "start_column": 243,
+        "end_line": 0,
+        "end_column": 723,
+        "start_byte": 243,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.stepwise.pytest_addoption",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "ntation of testing process: init, session, runtest loop. \"\"\"\nimport enum\nimport fnmatch\nimport functools\nimport importlib\nimport os\nimport sys\nfrom typing import Dict\n\nimport attr\nimport py\n\nimport _pytest._code\nfrom _pytest import nodes\nfrom _pytest.config import directory_arg\nfrom _pytest.config import hookimpl\nfrom _pytest.config import UsageError\nfrom _pytest.outcomes import exit\nfrom _pytest.runner import collect_one_node\nfrom _pytest.runner import Setup",
+        "start_line": 3,
+        "start_column": 16,
+        "end_line": 0,
+        "end_column": 479,
+        "start_byte": 16,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.terminal.pytest_addoption",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "\n    )\n    group = parser.getgroup(\"general\", \"running and selection options\")\n    group._addoption(\n        \"-x\",\n        \"--exitfirst\",\n        action=\"store_const\",\n        dest=\"maxfail\",\n        const=1,\n        help=\"exit instantly on first error or failed test.\",\n    ),\n    group._addoption(\n        \"--maxfail\",\n        metavar=\"num\",\n        action=\"store\",\n        type=int,\n        dest=\"maxfail\",\n        default=0,\n        help=\"exit after first num failures or errors.\",\n    )\n    group._addoption(\n        \"--strict-markers\",\n        \"--strict\",\n        action=\"store_true\",\n        help=\"markers not registered in the `markers` section of the configuration file raise errors.\",\n    )\n    group._addoption(\n        \"-c\",\n        metavar=\"file\",\n        type=str,\n        dest=\"inifilename\",\n        help=\"load configuration from `file` instead of trying to locate one of the implicit \"\n        \"configuration files.\",\n    )\n    group._addoption(\n        \"--continue-on-collection-errors\",\n        action=\"store_true\",\n        default=False,\n        dest=\"continue_on_collection_errors\",\n        help=\"Force test execution even if collection errors occur.\",\n    )\n    group._addoption(\n        \"--rootdir\",\n        action=\"store\",\n        dest=\"rootdir\",\n        help=\"Define root directory for tests. Can be relative path: 'root_dir', './root_dir', \"\n        \"'root_dir/another_dir/'; absolute path: '/home/user/root_dir'; path with variables: \"\n        \"'$HOME/root_dir'.\",\n    )\n\n    group = parser.getgroup(\"collect\", \"collection\")\n    group.addoption(\n        \"--collectonly\",\n        \"--collect-only\",\n        action=\"store_true\",\n        help=\"only collect tests, don't execute them.\",\n    ),\n    group.addoption(\n        \"--pyargs\",\n        action=\"store_true\",\n        help=\"try to interpret all arguments as python packages.\",\n    )\n    group.addoption(\n        \"--ignore\",\n        action=\"append\",\n        metavar=\"path\",\n        help=\"ignore path during collection (multi-allowed).\",\n    )\n    group.addoption(\n        \"--ignore-glob\",\n        action=\"append\",\n        metavar=\"path\",\n        help=\"ignore path pattern during collection (multi-allowed).\",\n    )\n    group.addoption(\n        \"--deselect\",\n        action=\"append\",\n        metavar=\"nodeid_prefix\",\n        help=\"deselect item during collection (multi-allowed).\",\n    )\n    # when changing this to --conf-cut-dir, config.py Conftest.setinitial\n    # needs upgrading as well\n    group.addoption(\n        \"--confcutdir\",\n        dest=\"confcutdir\",\n        default=None,\n        metavar=\"dir\",\n        type=functools.partial(directory_arg, optname=\"--confcutdir\"),\n        hel",
+        "start_line": 56,
+        "start_column": 1402,
+        "end_line": 0,
+        "end_column": 4066,
+        "start_byte": 1402,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.warnings.pytest_addoption",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "est was misused\n    USAGE_ERROR = 4\n    #: pytest couldn't find tests\n    NO_TESTS_COLLECTED = 5\n\n\ndef pytest_addoption(parser):\n    parser.addini(\n        \"norecursedirs\",\n        \"directory patterns to avoid for recursion\",\n        type=\"args\",\n        default=[\".*\", \"build\", \"dist\", \"CVS\", \"_darcs\", \"{arch}\", \"*.egg\", \"venv\"],\n    )\n    parser.addini(\n        \"testpaths\",\n        \"directories to search for tests when no files or directories are given ",
+        "start_line": 31,
+        "start_column": 870,
+        "end_line": 0,
+        "end_column": 1328,
+        "start_byte": 870,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.report_log.pytest_addoption",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "ion, runtest loop. \"\"\"\nimport enum\nimport fnmatch\nimport functools\nimport importlib\nimport os\nimport sys\nfrom typing import Dict\n\nimport attr\nimport py\n\nimport _pytest._code\nfrom _pytest import nodes\nfrom _pytest.config import directory_arg\nfrom _pytest.config import hookimpl\nfrom _pytest.config impo",
+        "start_line": 6,
+        "start_column": 54,
+        "end_line": 0,
+        "end_column": 355,
+        "start_byte": 54,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.resultlog.pytest_addoption",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "ort functools\nimport importlib\nimport os\nimport sys\nfrom typing import Dict\n\nimport attr\nimport py\n\nimport _pytest._code\nfrom _pytest import nodes\nfrom _pytest.config import directory_arg\nfrom _pytest.config import hookimpl\nfrom _pytest.config import UsageError\nfrom _pytest.outcomes import exit\nfrom _pytest.runner ",
+        "start_line": 8,
+        "start_column": 107,
+        "end_line": 0,
+        "end_column": 423,
+        "start_byte": 107,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.config.Parser.addoption",
+        "file_path": "src/_pytest/config/argparsing.py",
+        "file_content": "def addoption(self, *opts, **attrs):\n        \"\"\" register a command line option.\n\n        :opts: option names, can be short or long options.\n        :attrs: same attributes which the ``add_option()`` function of the\n           `argparse library\n           <http://docs.python.org/2/library/argparse.html>`_\n           accepts.\n\n        After command line parsing options are available on the pytest config\n        object via ``config.option.NAME`` where ``NAME`` is usually set\n        by passing a ``dest`` attribute, for example\n        ``addoption(\"--long\", dest=\"NAME\", ...)``.\n        \"\"\"\n        self._anonymous.addoption(*opts, **attrs)",
+        "start_line": 63,
+        "start_column": 1972,
+        "end_line": 4,
+        "end_column": 2615,
+        "start_byte": 1972,
+        "end_byte": 4
+      }
+    ]
+  },
+  "response": {
+    "scratch_pad": "1. Analyze User Instructions:\n1.1 The user is describing the need for a shorter command-line option for a frequently used pytest argument, `--collect-only`. \n1.2 This issue arises because current command is too lengthy to type frequently.\n1.3 The user indicates a desire to add a single-character shortcut that has the same effect as `--collect-only`.\n1.4 The expected result should be a single-character option that performs the same function as `--collect-only` when used with the pytest command line.\n1.5 To fix this issue, we should introduce a new single-character option that serves the same function as `--collect-only`. We might need to update the argument registration to include this new short option.\n\n2. Make the evaluate:\n2.1 I need to go through each symbol provided to see which, if any, are related to command-line options.\n2.2 The related symbols I should look for might involve argument parsing, command registration, or handling of `--collect-only` specifically.\n2.3 From the symbols given I need to determine where `--collect-only` is implemented or defined and see if it includes the capacity for a short alias.\n2.4 If not explicitly provided, I may need to locate where command line options are configured and ensure a single character option is set.\n2.5 If none of these symbols provide enough insight into how options are registered, I may need additional information from the user.\n\n\n",
+    "symbols": [
+      {
+        "name": "_pytest.main.pytest_addoption",
+        "file_path": "src/_pytest/main.py",
+        "reason": "This symbol contains the implementation for adding options, including '--collect-only'. A new single character shortcut should be added here."
+      },
+      {
+        "name": "_pytest.config.Parser.addoption",
+        "file_path": "src/_pytest/config/argparsing.py",
+        "reason": "This method registers the command line options, therefore, it is where the new shortcut should be implemented."
+      }
+    ],
+    "more_info": [],
+    "is_done": true,
+    "symbols_scratch_pad": [
+      "The symbol seems to contain import statements and an ExitCode class for encoding pytest exit codes. There's partial content of the pytest_addoption which might indicate this is where options are added, but this doesn't specifically relate to handling command-line argument --collect-only yet. I need to further verify this relevance.",
+      "The symbol content is lacking actual implementation of pytest_addoption but is related more to test failures, stopping test execution, and statuses. It seems unlikely this is where the argparse option for --collect-only would be managed.",
+      "This snippet shows arbitrated imports and might relate to testing states. However, there seems to be little connection to where command line options are parsed or added such as --collect-only.",
+      "The symbol indicates part of imports and definitions related to runner setups etc., but not specific to option parsing. Unless it's within the partially present pytest_addoption function, I would need to ignore it.",
+      "The partial defines fixtures that offer test configuration and execution methods rather than pointing towards argparse or option handling relevant for --collect-only.",
+      "The snippet seems incomplete and only vaguely related to path specifications and argument options. Not distinctly related to command-line arguments like --collect-only as visible so far.",
+      "Incomplete snippet regarding enum exit codes, not specific to the handling or arrangement of command-line arguments.",
+      "Help functionality and option parsing might be tackled here, though the snippet does not point at command option adjustments or inline with argparse command-line parsing.",
+      "This is a class command, it doesn't give insights into the handling of a specific --collect-only shortcut. Nevertheless, it's related since parsing options is crucial to implementing command-line arguments.",
+      "Pertains to managing Argument errors and existing classes involving Argument interfaces. Related more to error handling than to defining shortcuts or command options directly.",
+      "Initializes the ArgumentError, not connected directly to command line argument parsing or setup options.",
+      "Contributes to stringification of errors in argument handling rather than option parsing.",
+      "Argument instantiation manages short and long-form options but unless more content focuses on practical applications of pytest arguments, its relation to --collect-only isn't explicit.",
+      "Typ map refers to type conversion associated with parsing, indirectly related if type adjustments needed.",
+      "Argument class init handles option short and long form storage, potential direct relevance requires more context on how the parsing is involved in storing --collect-only identifiers.",
+      "Deals with returning arg names not direct to parsing or `--collect-only` manipulation currently.",
+      "Attr list-updates seem related to storing attributes for parsing, might be where a new option is given attributes, need broader context to connect to `--collect-only`.",
+      "Handles strings for options, thus related as might regulate the form `--collect-only` is kept or modified, guaranteeing formatted correctly.",
+      "The representation method primarily deals with configuration displays of options.",
+      "The addoption function defines options relevant in context, potentially highly related means should add the character shortcut for --collect-only here.",
+      "Discusses plugin registration under hookspec without regard to command line directly.",
+      "Commands are meant to signal state conclusions in testing, not aligning to --collect-only yet.",
+      "Part of hookspec structure, indicating configs, yet lacking focus on actual argument parsing in current snippet.",
+      "Print messages capture hook registrations without direct relevance to command line argument sequences presently.",
+      "Documentation part of command parsing init, however not elucidating placeholders or options closely correlated to `--collect-only`.",
+      "Initially dealing hooks, without clear relation to `--collect-only` option generation.",
+      "Discusses directive plugin registration, not aligning to individual hook registrations yet.",
+      "These sections detail plugin hook registration in a way mostly orthogonal to parsing command line options so far seen.",
+      "Describes another hook-based script setting, instead of registering through command line arguments.",
+      "",
+      "Details registering type specs, rather than command options in this form.",
+      "Specifies system-level hookstarts but drops off before relating to command line usage.",
+      "Snippet involves plugin manager annotation not directly useful for argument shortcuts.",
+      "Given as plugins marking, its focus isn't on internal command selection.",
+      ""
+    ]
+  },
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are an autonomous AI assistant tasked with finding relevant code in an existing \ncodebase based on a reported issue. \nYour task is base on the symbol code to identify how many symbols need to be change to resolve the issue. \n#Input Structure:\n\n* <issue>: Contains the reported issue.\n* <symbol>: the code might to be relevant to the issue.\n\n# Your Task:\n\n1. Analyze User Instructions:\nCarefully read the reported issue within the <issue> tag.\nthink step by step and write out your thoughts in the scratch_pad field.\n1.1 What issue is the user describing?\n1.2 How was this issue caused?\n1.3 If the user described the expected result, what should it be fixed to?\n1.4 If the user did not provide an expected result, what should the expectation be?\n1.5 How should the issue be fixed to meet the expectation?\n\n2. Make the evaluate:\n2.1. Thoroughly analyze each lines in the <symbol> and <symbol> tags.\n2.2. Match the symbol/code/pattern with the key elements, functions, variables, or patterns identified in the reported issue.\n2.3. Evaluate the relevance of each symbol based on how well it aligns with the reported issue and current file context.\n2.4. make the decision how many symbols need to be change to resolve the issue.\n2.5. if you need more file content or symbol information, you can ask the user for more information.\n2.6. relative symbol means, He might be the root cause of the problem, or he could be a part of the process that reproduces the issue.\n\nThink step by step and write out your thoughts in the scratch_pad field.  \n"
+    },
+    {
+      "role": "user",
+      "content": "<issue><description>:pytest --collect-only needs a one char shortcut command\nI find myself needing to run `--collect-only` very often and that cli argument is a very long to type one. \r\n\r\nI do think that it would be great to allocate a character for it, not sure which one yet. Please use up/down thumbs to vote if you would find it useful or not and eventually proposing which char should be used. \r\n\r\nClearly this is a change very easy to implement but first I want to see if others would find it useful or not.\npytest --collect-only needs a one char shortcut command\nI find myself needing to run `--collect-only` very often and that cli argument is a very long to type one. \r\n\r\nI do think that it would be great to allocate a character for it, not sure which one yet. Please use up/down thumbs to vote if you would find it useful or not and eventually proposing which char should be used. \r\n\r\nClearly this is a change very easy to implement but first I want to see if others would find it useful or not.\n</description></issue>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.assertion.pytest_addoption</name><path>src/_pytest/main.py</path><content>rom _pytest import nodes\nfrom _pytest.config import directory_arg\nfrom _pytest.config import hookimpl\nfrom _pytest.config import UsageError\nfrom _pytest.outcomes import exit\nfrom _pytest.runner import collect_one_node\nfrom _pytest.runner import SetupState\n\n\nclass ExitCode(enum.IntEnum):\n    \"\"\"\n    .. versionadded:: 5.0\n\n    Encodes the valid exit codes by pytest.\n\n    Currently users and plugins may supply other exit codes as well.\n    \"\"\"\n\n    #: tests passed\n    OK = 0\n    #: tests failed\n    TESTS_FAILED = 1\n    #: pytest was interrupted\n    INTERRUPTED = 2\n    #: an internal error got in the way\n    INTERNAL_ERROR = 3\n    #: pytest was misused\n    USAGE_ERROR = 4\n    #: pytest couldn't find tests\n    NO_TESTS_COLLECTED = 5\n\n\ndef pytest_addoption(parser):\n    parser.addini(\n        \"norecursedirs\",\n        \"</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.cacheprovider.pytest_addoption</name><path>src/_pytest/main.py</path><content>        self.testsfailed = 0\n        self.testscollected = 0\n        self.shouldstop = False\n        self.shouldfail = False\n        self.trace = config.trace.root.get(\"collection\")\n        self._norecursepatterns = config.getini(\"norecursedirs\")\n        self.startdir = config.invocation_dir\n        self._initialpaths = frozenset()\n        # Keep track of any collected nodes in here, so we don't duplicate fixtures\n        self._node_cache = {}\n        self._bestrelpathcache = _bestrelpath_cache(\n            config.rootdir\n        )  # type: Dict[str, str]\n        # Dirnames of pkgs with dunder-init files.\n        self._pkg_roots = {}\n\n        self.config.pluginmanager.register(self, name=\"session\")\n\n    def __repr__(self):\n        return \"<%s %s exitstatus=%r testsfailed=%d testscollected=%d>\" % (\n            self.__class__.__name__,\n            self.name,\n            getattr(self, \"exitstatus\", \"<UNSET>\"),\n            self.testsfailed,\n            self.testscollected,\n        )\n\n    def _node_location_to_relpath(self, node_path: str) -> str:\n        # bestrelpath is a quite slow function\n        return self._bestrelpathcache[node_path]\n\n    @hookimpl(tryfirst=True)\n    def pytest_collectstart(self):\n        if self.shouldfail:\n            raise self.Failed(self.shouldfail)\n        if self.shouldstop:\n            raise self.Interrupted(self.shouldstop)\n\n    @hookimpl(tryfirst=True)\n    def pytest_runtest_logreport(self, report):\n        if report.failed and not hasattr(report, \"wasxfail\"):\n            self.testsfailed += 1\n            maxfail = self.config.getvalue(\"maxfail\")\n            if maxfail and self.testsfailed >= maxfail:\n                self.shouldfail = \"stopping after %d failures\" % (self.testsfailed)\n\n    pytest_collectrep</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.capture.pytest_addoption</name><path>src/_pytest/main.py</path><content>onfig import UsageError\nfrom _pytest.outcomes import exit\nfrom _pytest.runner import collect_one_node\nfrom _pytest.runner import SetupState\n\n\nclass ExitCode(enum.IntEnum):\n    \"\"\"\n    .. versionadded:: 5.0\n\n    Encodes the valid exit codes by pytest.\n\n    Currently users and plugins may supply other exit codes as well.\n    \"\"\"\n\n    #: tests passed\n    OK = 0\n    #: tests failed\n    TESTS_FAILED = 1\n    #: pytest was interrupted\n    INTERRUPTED = 2\n    #: an internal error go</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.debugging.pytest_addoption</name><path>src/_pytest/main.py</path><content>added:: 5.0\n\n    Encodes the valid exit codes by pytest.\n\n    Currently users and plugins may supply other exit codes as well.\n    \"\"\"\n\n    #: tests passed\n    OK = 0\n    #: tests failed\n    TESTS_FAILED = 1\n    #: pytest was interrupted\n    INTERRUPTED = 2\n    #: an internal error got in the way\n    INTERNAL_ERROR = 3\n    #: pytest was misused\n    USAGE_ERROR = 4\n    #: pytest couldn't find tests\n    NO_TESTS_COLLECTED = 5\n\n\ndef pytest_addoption(parser):\n    parser.addini(\n        \"norecursedirs\",\n        \"directory patterns to avoid for recursion\",\n        type=\"args\",\n        default=[\".*\", \"build\", \"dist\", \"CVS\", \"_darcs\", \"{arch}\", \"*.egg\", \"venv\"],\n    )\n    parser.addini(\n        \"t</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.doctest.pytest_addoption</name><path>src/_pytest/main.py</path><content> default=[],\n    )\n    group = parser.getgroup(\"general\", \"running and selection options\")\n    group._addoption(\n        \"-x\",\n        \"--exitfirst\",\n        action=\"store_const\",\n        dest=\"maxfail\",\n        const=1,\n        help=\"exit instantly on first error or failed test.\",\n    ),\n    group._addoption(\n        \"--maxfail\",\n        metavar=\"num\",\n        action=\"store\",\n        type=int,\n        dest=\"maxfail\",\n        default=0,\n        help=\"exit after first num failures or errors.\",\n    )\n    group._addoption(\n        \"--strict-markers\",\n        \"--strict\",\n        action=\"store_true\",\n        help=\"markers not registered in the `markers` section of the configuration file raise errors.\",\n    )\n    group._addoption(\n        \"-c\",\n        metavar=\"file\",\n        type=str,\n        dest=\"inifilename\",\n        help=\"load configuration from `file` instead of trying to locate one of the implicit \"\n        \"configuration files.\",\n    )\n    group._addoption(\n        \"--continue-on-collection-errors\",\n        action=\"store_true\",\n        default=False,\n        dest=\"continue_on_collection_errors\",\n        help=\"Force test execution even if collection errors occur.\",\n    )\n    group._addoption(\n        \"--rootdir\",\n        action=\"store\",\n        dest=\"rootdir\",\n        help=\"Define root directory for tests. Can be relative path: 'root_dir', './root_dir', \"\n        \"'root_dir/another_dir/'; absol</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.faulthandler.pytest_addoption</name><path>src/_pytest/main.py</path><content>, session, runtest loop. \"\"\"\nimport enum\nimport fnmatch\nimport functools\nimport importlib\nimport os\nimport sys\nfrom typing import Dict\n\nimport attr\nimport py\n\nimport _pytest._code\nfrom _pytest import nodes\nfrom _pytest.config import directory_arg\nfrom _py</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.fixtures.pytest_addoption</name><path>src/_pytest/main.py</path><content></content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.helpconfig.pytest_addoption</name><path>src/_pytest/main.py</path><content>rcs\", \"{arch}\", \"*.egg\", \"venv\"],\n    )\n    parser.addini(\n        \"testpaths\",\n        \"directories to search for tests when no files or directories are given in the \"\n        \"command line.\",\n        type=\"args\",\n        default=[],\n    )\n    group = parser.getgroup(\"general\", \"running and selection options\")\n    group._addoption(\n        \"-x\",\n        \"--exitfirst\",\n        action=\"store_const\",\n        dest=\"maxfail\",\n        const=1,\n        help=\"exit instantly on first error or failed test.\",\n    ),\n    group._addoption(\n        \"--maxfail\",\n        metavar=\"num\",\n        action=\"store\",\n        type=int,\n        dest=\"maxfail\",\n        default=0,\n        help=\"exit after first num failures or errors.\",\n    )\n    group._addoption(\n        \"--strict-markers\",\n        \"--strict\",\n        action=\"store_true\",\n        help=\"markers not registered in the `markers` section of the configuration file raise errors.\",\n    )\n    group._addoption(\n        \"-c\",\n        metavar=\"file\",\n        type=str,\n        dest=\"inifilename\",\n        help=\"load configuration from `file` instead of trying to locate one of the implicit \"\n        \"configuration files.\",\n    )\n    group._addoption(\n        \"--continue-on-collection-errors\",\n        action=\"store_true\",\n        default=False,\n        dest=\"continue_</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.hookspec.pytest_addoption</name><path>src/_pytest/main.py</path><content> to avoid for recursion\",\n        type=\"args\",\n        default=[\".*\", \"build\", \"dist\", \"CVS\", \"_darcs\", \"{arch}\", \"*.egg\", \"venv\"],\n    )\n    parser.addini(\n        \"testpaths\",\n        \"directories to search for tests when no files or directories are given in the \"\n        \"command line.\",\n        type=\"args\",\n        default=[],\n    )\n    group = parser.getgroup(\"general\", \"running and selection options\")\n    group._addoption(\n        \"-x\",\n        \"--exitfirst\",\n        action=\"store_const\",\n        dest=\"maxfail\",\n        const=1,\n        help=\"exit instantly on first error or failed test.\",\n    ),\n    group._addoption(\n        \"--maxfail\",\n        metavar=\"num\",\n        action=\"store\",\n        type=int,\n        dest=\"maxfail\",\n        default=0,\n        help=\"exit after first num failures or errors.\",\n    )\n    group._addoption(\n        \"--strict-markers\",\n        \"--strict\",\n        action=\"store_true\",\n        help=\"markers not registered in the `markers` section of the configuration file raise errors.\",\n    )\n    group._addoption(\n        \"-c\",\n        metavar=\"file\",\n        type=str,\n        dest=\"inifilename\",\n        help=\"load configuration from `file` instead of trying to locate one of the implicit \"\n        \"configuration files.\",\n    )\n    group._addoption(\n        \"--continue-on-collection-errors\",\n        action=\"store_true\",\n        default=False,\n        dest=\"continue_on_collection_errors\",\n        help=\"Force test execution even if collection errors occur.\",\n    )\n    group._addoption(\n        \"--rootdir\",\n</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.junitxml.pytest_addoption</name><path>src/_pytest/main.py</path><content>   raise self.Interrupted(self.shouldstop)\n\n    @hookimpl(tryfirst=True)\n    def pytest_runtest_logreport(self, report):\n        if report.failed and not hasattr(report, \"wasxfail\"):\n            self.testsfailed += 1\n            maxfail = self.config.getvalue(\"maxfail\")\n            if maxfail and self.testsfailed >= maxfail:\n                self.shouldfail = \"stopping after %d failures\" % (self.testsfailed)\n\n    pytest_collectreport = pytest_runtest_logreport\n\n    def isinitpath(self, path):\n        return path in self._initialpaths\n\n    def gethookproxy(self, fspath):\n        # check if we have the common case of running\n        # hooks with all conftest.py files\n        pm = self.config.pluginmanager\n        my_conftestmodules = pm._getconftestmodules(fspath)\n        remove_mods = pm._conftest_plugins.difference(my_conftestmodules)\n        if remove_mods:\n            # one or more conftests are not in use at this fspath\n            proxy = FSHookProxy(fspath, pm, remove_mods)\n        else:\n            # all plugins are active for this fspath\n            proxy = self.config.hook\n        return proxy\n\n    def perform_collect(self, args=None, genitems=True):\n        hook = self.config.hook\n        try:\n            items = self._perform_collect(args, genitems)\n            self.config.pluginmanager.check_pending()\n            hook.pytest_collection_modifyitems(\n  </content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.logging.pytest_addoption</name><path>src/_pytest/main.py</path><content>r.write(\n                        \"{}: {}\\n\".format(excinfo.typename, excinfo.value.msg)\n                    )\n            config.hook.pytest_keyboard_interrupt(excinfo=excinfo)\n            session.exitstatus = exitstatus\n        except:  # noqa\n            excinfo = _pytest._code.ExceptionInfo.from_current()\n            config.notify_exception(excinfo, config.option)\n            session.exitstatus = ExitCode.INTERNAL_ERROR\n            if excinfo.errisinstance(SystemExit):\n                sys.stderr.write(\"mainloop: caught unexpected SystemExit!\\n\")\n\n    finally:\n        excinfo = None  # Explicitly break reference cycle.\n        session.startdir.chdir()\n        if initstate >= 2:\n            config.hook.pytest_sessionfinish(\n                session=session, exitstatus=session.exitstatus\n            )\n        config._ensure_unconfigure()\n    return session.exitstatus\n\n\ndef pytest_cmdline_main(config):\n    return wrap_session(config, _main)\n\n\ndef _main(config, session):\n    \"\"\" default command line protocol for initialization, session,\n    running tests and reporting. \"\"\"\n    config.hook.pytest_collection(session=session)\n    config.hook.pytest_runtestloop(session=session)\n\n    if session.testsfailed:\n        return ExitCode.TESTS_FAILED\n    elif session.testscollected == 0:\n        return ExitCode.NO_TESTS_COLLECTED\n\n\ndef pytest_collection(session):\n    return session.perform_collect()\n\n\ndef pytest_runtestloop(session):\n    if session.testsfailed and not session.config.option.continue_on_collection_errors:\n        raise session.Interrupted(\n            \"%d error%s during collection\"\n            % (session.testsfailed, \"s\" if session.testsfailed != 1 else \"\")\n        )\n\n    if session.config.option.collectonly:\n        return True\n\n    for i, item in enumerate(session.items):\n        nextitem = session.items[i + 1] if i + 1 < len(session.items) else None\n        item.config.hook.pytest_runtest_protocol(item=item, nextitem=nextitem)\n        if session.shouldfail:\n            raise session.Failed(session.shouldfail)\n        if session.shouldstop:\n            raise session.Interrupted(session.shouldstop)\n    return True\n\n\ndef _in_venv(path):\n    \"\"\"Attempts to detect if ``path`` is the root of a Virtual Environment by\n    checking for the existence of the appropriate activate script\"\"\"\n    bindir = path.join(\"Scripts\" if sys.platform.startswith(\"win\") else \"bin\")\n    if not bindir.isdir():\n        return False\n    activates = (\n        \"activate\",\n        \"activate.csh\",\n        \"activate.fish\",\n        \"Activate\",\n        \"Activate.bat\",\n        \"Activate.ps1\",\n    )\n    return any([fname.basename in activates fo</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.main.pytest_addoption</name><path>src/_pytest/main.py</path><content>def pytest_addoption(parser):\n    parser.addini(\n        \"norecursedirs\",\n        \"directory patterns to avoid for recursion\",\n        type=\"args\",\n        default=[\".*\", \"build\", \"dist\", \"CVS\", \"_darcs\", \"{arch}\", \"*.egg\", \"venv\"],\n    )\n    parser.addini(\n        \"testpaths\",\n        \"directories to search for tests when no files or directories are given in the \"\n        \"command line.\",\n        type=\"args\",\n        default=[],\n    )\n    group = parser.getgroup(\"general\", \"running and selection options\")\n    group._addoption(\n        \"-x\",\n        \"--exitfirst\",\n        action=\"store_const\",\n        dest=\"maxfail\",\n        const=1,\n        help=\"exit instantly on first error or failed test.\",\n    ),\n    group._addoption(\n        \"--maxfail\",\n        metavar=\"num\",\n        action=\"store\",\n        type=int,\n        dest=\"maxfail\",\n        default=0,\n        help=\"exit after first num failures or errors.\",\n    )\n    group._addoption(\n        \"--strict-markers\",\n        \"--strict\",\n        action=\"store_true\",\n        help=\"markers not registered in the `markers` section of the configuration file raise errors.\",\n    )\n    group._addoption(\n        \"-c\",\n        metavar=\"file\",\n        type=str,\n        dest=\"inifilename\",\n        help=\"load configuration from `file` instead of trying to locate one of the implicit \"\n        \"configuration files.\",\n    )\n    group._addoption(\n        \"--continue-on-collection-errors\",\n        action=\"store_true\",\n        default=False,\n        dest=\"continue_on_collection_errors\",\n        help=\"Force test execution even if collection errors occur.\",\n    )\n    group._addoption(\n        \"--rootdir\",\n        action=\"store\",\n        dest=\"rootdir\",\n        help=\"Define root directory for tests. Can be relative path: 'root_dir', './root_dir', \"\n        \"'root_dir/another_dir/'; absolute path: '/home/user/root_dir'; path with variables: \"\n        \"'$HOME/root_dir'.\",\n    )\n\n    group = parser.getgroup(\"collect\", \"collection\")\n    group.addoption(\n        \"--collectonly\",\n        \"--collect-only\",\n        action=\"store_true\",\n        help=\"only collect tests, don't execute them.\",\n    ),\n    group.addoption(\n        \"--pyargs\",\n        action=\"store_true\",\n        help=\"try to interpret all arguments as python packages.\",\n    )\n    group.addoption(\n        \"--ignore\",\n        action=\"append\",\n        metavar=\"path\",\n        help=\"ignore path during collection (multi-allowed).\",\n    )\n    group.addoption(\n        \"--ignore-glob\",\n        action=\"append\",\n        metavar=\"path\",\n        help=\"ignore path pattern during collection (multi-allowed).\",\n    )\n    group.addoption(\n        \"--deselect\",\n        action=\"append\",\n        metavar=\"nodeid_prefix\",\n        help=\"deselect item during collection (multi-allowed).\",\n    )\n    # when changing this to --conf-cut-dir, config.py Conftest.setinitial\n    # needs upgrading as well\n    group.addoption(\n        \"--confcutdir\",\n        dest=\"confcutdir\",\n        default=None,\n        metavar=\"dir\",\n        type=functools.partial(directory_arg, optname=\"--confcutdir\"),\n        help=\"only load conftest.py's relative to specified dir.\",\n    )\n    group.addoption(\n        \"--noconftest\",\n        action=\"store_true\",\n        dest=\"noconftest\",\n        default=False,\n        help=\"Don't load any conftest.py files.\",\n    )\n    group.addoption(\n        \"--keepduplicates\",\n        \"--keep-duplicates\",\n        action=\"store_true\",\n        dest=\"keepduplicates\",\n        default=False,\n        help=\"Keep duplicate tests.\",\n    )\n    group.addoption(\n        \"--collect-in-virtualenv\",\n        action=\"store_true\",\n        dest=\"collect_in_virtualenv\",\n        default=False,\n        help=\"Don't ignore tests in a local virtualenv directory\",\n    )\n\n    group = parser.getgroup(\"debugconfig\", \"test session debugging and configuration\")\n    group.addoption(\n        \"--basetemp\",\n        dest=\"basetemp\",\n        default=None,\n        metavar=\"dir\",\n        help=(\n            \"base temporary directory for this test run.\"\n            \"(warning: this directory is removed if it exists)\"\n        ),\n    )</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.mark.pytest_addoption</name><path>src/_pytest/main.py</path><content>en no files or directories are given in the \"\n        \"command line.\",\n        type=\"args\",\n        default=[],\n    )\n    group = parser.getgroup(\"general\", \"running and selection options\")\n    group._addoption(\n        \"-x\",\n        \"--exitfirst\",\n        action=\"store_const\",\n        dest=\"maxfail\",\n        const=1,\n        help=\"exit instantly on first error or failed test.\",\n    ),\n    group._addoption(\n        \"--maxfail\",\n        metavar=\"num\",\n        action=\"store\",\n        type=int,\n        dest=\"maxfail\",\n        default=0,\n        help=\"exit after first num failures or errors.\",\n    )\n    group._addoption(\n        \"--strict-markers\",\n        \"--strict\",\n        action=\"store_true\",\n        help=\"markers not registered in the `markers` section of the configuration file raise errors.\",\n    )\n    group._addoption(\n        \"-c\",\n        metavar=\"file\",\n        type=str,\n        dest=\"inifilename\",\n        help=\"load configuration from `file` instead of trying to locate one of the implicit \"\n        \"configuration files.\",\n    )\n    group._addoption(\n        \"--continue-on-collection-errors\",\n        action=\"store_true\",\n        default=False,\n        dest=\"continue_on_collection_errors\",\n        help=\"Force test execution even if collection errors occur.\",\n    )\n    group._addoption(\n        \"--rootdir\",\n        action=\"store\",\n        dest=\"rootdir\",\n        help=\"Define root directory for tests. Can be relative path: 'root_dir', './root_dir', \"\n        \"'root_dir/another_dir/'; absolute path: '/home/user/root_dir'; path</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.pastebin.pytest_addoption</name><path>src/_pytest/main.py</path><content>ort functools\nimport importlib\nimport os\nimport sys\nfrom typing import Dict\n\nimport attr\nimport py\n\nimport _pytest._code\nfrom _pytest import nodes\nfrom _pytest.config import directory_arg\nfrom _pytest.config import hookimpl\nfrom _pytest.config import UsageError\nfrom _pytest.outcomes import exit\nfrom _pytest.runner import colle</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.pytester.pytest_addoption</name><path>src/_pytest/main.py</path><content>      type=\"args\",\n        default=[\".*\", \"build\", \"dist\", \"CVS\", \"_darcs\", \"{arch}\", \"*.egg\", \"venv\"],\n    )\n    parser.addini(\n        \"testpaths\",\n        \"directories to search for tests when no files or directories are given in the \"\n        \"command line.\",\n        type=\"args\",\n        default=[],\n    )\n    group = parser.getgroup(\"general\", \"running and selection options\")\n    group._addoption(\n        \"-x\",\n        \"--exitfirst\",\n        action=\"store_const\",\n        dest=\"maxfail\",\n        const=1,\n        help=\"exit instantly on first error or failed test.\",\n    ),\n    group._addoption(\n       </content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python.pytest_addoption</name><path>src/_pytest/main.py</path><content>maxfail\",\n        metavar=\"num\",\n        action=\"store\",\n        type=int,\n        dest=\"maxfail\",\n        default=0,\n        help=\"exit after first num failures or errors.\",\n    )\n    group._addoption(\n        \"--strict-markers\",\n        \"--strict\",\n        action=\"store_true\",\n        help=\"markers not registered in the `markers` section of the configuration file raise errors.\",\n    )\n    group._addoption(\n        \"-c\",\n        metavar=\"file\",\n        type=str,\n        dest=\"inifilename\",\n        help=\"load configuration from `file` instead of trying to locate one of the implicit \"\n        \"configuration files.\",\n    )\n    group._addoption(\n        \"--continue-on-collection-errors\",\n        action=\"store_true\",\n        default=False,\n        dest=\"continue_on_collection_errors\",\n        help=\"Force test execution even if collection errors occur.\",\n    )\n    group._addoption(\n        \"--rootdir\",\n        action=\"store\",\n        dest=\"rootdir\",\n        help=\"Define root directory for tests. Can be relative path: 'root_dir', './root_dir', \"\n        \"'root_dir/another_dir/'; absolute path: '/home/user/root_dir'; path with variables: \"\n        \"'$HOME/root_dir'.\",\n    )\n\n    group = parser.getgroup(\"collect\", \"collection\")\n    group.addoption(\n        \"--collectonly\",\n        \"--collect-only\",\n        action=\"store_true\",\n        help=\"only collect tests, don't execute them.\",\n    ),\n    group.addoption(\n        \"--pyargs\",\n        action=\"store_true\",\n        help=\"try to interpret all arguments as python packages.\",\n    )\n    group.addoption(\n        \"--ignore\",\n        action=\"append\",\n        metavar=\"path\",\n        help=\"ignore path during colle</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.runner.pytest_addoption</name><path>src/_pytest/main.py</path><content>supply other exit codes as well.\n    \"\"\"\n\n    #: tests passed\n    OK = 0\n    #: tests failed\n    TESTS_FAILED = 1\n    #: pytest was interrupted\n    INTERRUPTED = 2\n    #: an internal error got in the way\n    INTERNAL_ERROR = 3\n    #: pytest was misused\n    USAGE_ERROR = 4\n    #: pytest couldn't find tests\n    N</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.setuponly.pytest_addoption</name><path>src/_pytest/main.py</path><content>ntation of testing process: init, session, runtest loop. \"\"\"\nimport enum\nimport fnmatch\nimport functools\nimport importlib\nimport os\nimport sys\nfrom typing import Dict\n\nimport attr\nimport py\n\nimport _pytest._code\nfrom _pytest import nodes\nfrom _pytest.config import directory_arg\nfrom _pytest.config import hookimpl\nfrom _pytest.config import UsageError\nfrom _pytest.outcomes import exit\nfrom _pytest</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.setupplan.pytest_addoption</name><path>src/_pytest/main.py</path><content>ntation of testing process: init, session, runtest loop. \"\"\"\nimport enum\nimport fnmatch\nimport functools\nimport importlib\nimport os\nimport sys\nfrom typing import Dict\n\nimport attr\nimport py\n\nimport _pytest._code\nfrom _pytest import nodes\nfrom _pytest.config import directory_ar</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.skipping.pytest_addoption</name><path>src/_pytest/main.py</path><content>port nodes\nfrom _pytest.config import directory_arg\nfrom _pytest.config import hookimpl\nfrom _pytest.config import UsageError\nfrom _pytest.outcomes import exit\nfrom _pytest.runner import collect_one_node\nfrom _pytest.runner import SetupState\n\n\nclass ExitCode(enum.IntEnum):\n    \"\"\"\n    .. versionadded:: 5.0\n\n    Encodes the valid exit codes by pytest.\n\n    Currently users and plugins may supply other exit codes as well.\n    \"\"\"\n\n    #: tests passed\n    OK = 0\n    #: tests fail</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.stepwise.pytest_addoption</name><path>src/_pytest/main.py</path><content>ntation of testing process: init, session, runtest loop. \"\"\"\nimport enum\nimport fnmatch\nimport functools\nimport importlib\nimport os\nimport sys\nfrom typing import Dict\n\nimport attr\nimport py\n\nimport _pytest._code\nfrom _pytest import nodes\nfrom _pytest.config import directory_arg\nfrom _pytest.config import hookimpl\nfrom _pytest.config import UsageError\nfrom _pytest.outcomes import exit\nfrom _pytest.runner import collect_one_node\nfrom _pytest.runner import Setup</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.terminal.pytest_addoption</name><path>src/_pytest/main.py</path><content>\n    )\n    group = parser.getgroup(\"general\", \"running and selection options\")\n    group._addoption(\n        \"-x\",\n        \"--exitfirst\",\n        action=\"store_const\",\n        dest=\"maxfail\",\n        const=1,\n        help=\"exit instantly on first error or failed test.\",\n    ),\n    group._addoption(\n        \"--maxfail\",\n        metavar=\"num\",\n        action=\"store\",\n        type=int,\n        dest=\"maxfail\",\n        default=0,\n        help=\"exit after first num failures or errors.\",\n    )\n    group._addoption(\n        \"--strict-markers\",\n        \"--strict\",\n        action=\"store_true\",\n        help=\"markers not registered in the `markers` section of the configuration file raise errors.\",\n    )\n    group._addoption(\n        \"-c\",\n        metavar=\"file\",\n        type=str,\n        dest=\"inifilename\",\n        help=\"load configuration from `file` instead of trying to locate one of the implicit \"\n        \"configuration files.\",\n    )\n    group._addoption(\n        \"--continue-on-collection-errors\",\n        action=\"store_true\",\n        default=False,\n        dest=\"continue_on_collection_errors\",\n        help=\"Force test execution even if collection errors occur.\",\n    )\n    group._addoption(\n        \"--rootdir\",\n        action=\"store\",\n        dest=\"rootdir\",\n        help=\"Define root directory for tests. Can be relative path: 'root_dir', './root_dir', \"\n        \"'root_dir/another_dir/'; absolute path: '/home/user/root_dir'; path with variables: \"\n        \"'$HOME/root_dir'.\",\n    )\n\n    group = parser.getgroup(\"collect\", \"collection\")\n    group.addoption(\n        \"--collectonly\",\n        \"--collect-only\",\n        action=\"store_true\",\n        help=\"only collect tests, don't execute them.\",\n    ),\n    group.addoption(\n        \"--pyargs\",\n        action=\"store_true\",\n        help=\"try to interpret all arguments as python packages.\",\n    )\n    group.addoption(\n        \"--ignore\",\n        action=\"append\",\n        metavar=\"path\",\n        help=\"ignore path during collection (multi-allowed).\",\n    )\n    group.addoption(\n        \"--ignore-glob\",\n        action=\"append\",\n        metavar=\"path\",\n        help=\"ignore path pattern during collection (multi-allowed).\",\n    )\n    group.addoption(\n        \"--deselect\",\n        action=\"append\",\n        metavar=\"nodeid_prefix\",\n        help=\"deselect item during collection (multi-allowed).\",\n    )\n    # when changing this to --conf-cut-dir, config.py Conftest.setinitial\n    # needs upgrading as well\n    group.addoption(\n        \"--confcutdir\",\n        dest=\"confcutdir\",\n        default=None,\n        metavar=\"dir\",\n        type=functools.partial(directory_arg, optname=\"--confcutdir\"),\n        hel</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.warnings.pytest_addoption</name><path>src/_pytest/main.py</path><content>est was misused\n    USAGE_ERROR = 4\n    #: pytest couldn't find tests\n    NO_TESTS_COLLECTED = 5\n\n\ndef pytest_addoption(parser):\n    parser.addini(\n        \"norecursedirs\",\n        \"directory patterns to avoid for recursion\",\n        type=\"args\",\n        default=[\".*\", \"build\", \"dist\", \"CVS\", \"_darcs\", \"{arch}\", \"*.egg\", \"venv\"],\n    )\n    parser.addini(\n        \"testpaths\",\n        \"directories to search for tests when no files or directories are given </content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.report_log.pytest_addoption</name><path>src/_pytest/main.py</path><content>ion, runtest loop. \"\"\"\nimport enum\nimport fnmatch\nimport functools\nimport importlib\nimport os\nimport sys\nfrom typing import Dict\n\nimport attr\nimport py\n\nimport _pytest._code\nfrom _pytest import nodes\nfrom _pytest.config import directory_arg\nfrom _pytest.config import hookimpl\nfrom _pytest.config impo</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.resultlog.pytest_addoption</name><path>src/_pytest/main.py</path><content>ort functools\nimport importlib\nimport os\nimport sys\nfrom typing import Dict\n\nimport attr\nimport py\n\nimport _pytest._code\nfrom _pytest import nodes\nfrom _pytest.config import directory_arg\nfrom _pytest.config import hookimpl\nfrom _pytest.config import UsageError\nfrom _pytest.outcomes import exit\nfrom _pytest.runner </content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.config.Parser.addoption</name><path>src/_pytest/config/argparsing.py</path><content>def addoption(self, *opts, **attrs):\n        \"\"\" register a command line option.\n\n        :opts: option names, can be short or long options.\n        :attrs: same attributes which the ``add_option()`` function of the\n           `argparse library\n           <http://docs.python.org/2/library/argparse.html>`_\n           accepts.\n\n        After command line parsing options are available on the pytest config\n        object via ``config.option.NAME`` where ``NAME`` is usually set\n        by passing a ``dest`` attribute, for example\n        ``addoption(\"--long\", dest=\"NAME\", ...)``.\n        \"\"\"\n        self._anonymous.addoption(*opts, **attrs)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.config.ArgumentError</name><path>src/_pytest/config/argparsing.py</path><content>class ArgumentError(Exception):\n    \"\"\"\n    Raised if an Argument instance is created with invalid or\n    inconsistent arguments.\n    \"\"\"\n\n    def __init__(self, msg, option):\n        self.msg = msg\n        self.option_id = str(option)\n\n    def __str__(self):\n        if self.option_id:\n            return \"option {}: {}\".format(self.option_id, self.msg)\n        else:\n            return self.msg</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.config.ArgumentError.__init__</name><path>src/_pytest/config/argparsing.py</path><content>def __init__(self, msg, option):\n        self.msg = msg\n        self.option_id = str(option)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.config.ArgumentError.__str__</name><path>src/_pytest/config/argparsing.py</path><content>def __str__(self):\n        if self.option_id:\n            return \"option {}: {}\".format(self.option_id, self.msg)\n        else:\n            return self.msg</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.config.Argument</name><path>src/_pytest/config/argparsing.py</path><content>class Argument:\n    \"\"\"class that mimics the necessary behaviour of optparse.Option\n\n    it's currently a least effort implementation\n    and ignoring choices and integer prefixes\n    https://docs.python.org/3/library/optparse.html#optparse-standard-option-types\n    \"\"\"\n\n    _typ_map = {\"int\": int, \"string\": str, \"float\": float, \"complex\": complex}\n\n    def __init__(self, *names, **attrs):\n        \"\"\"store parms in private vars for use in add_argument\"\"\"\n        self._attrs = attrs\n        self._short_opts = []  # type: List[str]\n        self._long_opts = []  # type: List[str]\n        self.dest = attrs.get(\"dest\")\n        if \"%default\" in (attrs.get(\"help\") or \"\"):\n            warnings.warn(\n                'pytest now uses argparse. \"%default\" should be'\n                ' changed to \"%(default)s\" ',\n                DeprecationWarning,\n                stacklevel=3,\n            )\n        try:\n            typ = attrs[\"type\"]\n        except KeyError:\n            pass\n        else:\n            # this might raise a keyerror as well, don't want to catch that\n            if isinstance(typ, str):\n                if typ == \"choice\":\n                    warnings.warn(\n                        \"`type` argument to addoption() is the string %r.\"\n                        \" For choices this is optional and can be omitted, \"\n                        \" but when supplied should be a type (for example `str` or `int`).\"\n                        \" (options: %s)\" % (typ, names),\n                        DeprecationWarning,\n                        stacklevel=4,\n                    )\n                    # argparse expects a type here take it from\n                    # the type of the first element\n                    attrs[\"type\"] = type(attrs[\"choices\"][0])\n                else:\n                    warnings.warn(\n                        \"`type` argument to addoption() is the string %r, \"\n                        \" but when supplied should be a type (for example `str` or `int`).\"\n                        \" (options: %s)\" % (typ, names),\n                        DeprecationWarning,\n                        stacklevel=4,\n                    )\n                    attrs[\"type\"] = Argument._typ_map[typ]\n                # used in test_parseopt -> test_parse_defaultgetter\n                self.type = attrs[\"type\"]\n            else:\n                self.type = typ\n        try:\n            # attribute existence is tested in Config._processopt\n            self.default = attrs[\"default\"]\n        except KeyError:\n            pass\n        self._set_opt_strings(names)\n        if not self.dest:\n            if self._long_opts:\n                self.dest = self._long_opts[0][2:].replace(\"-\", \"_\")\n            else:\n                try:\n                    self.dest = self._short_opts[0][1:]\n                except IndexError:\n                    raise ArgumentError(\"need a long or short option\", self)\n\n    def names(self):\n        return self._short_opts + self._long_opts\n\n    def attrs(self):\n        # update any attributes set by processopt\n        attrs = \"default dest help\".split()\n        if self.dest:\n            attrs.append(self.dest)\n        for attr in attrs:\n            try:\n                self._attrs[attr] = getattr(self, attr)\n            except AttributeError:\n                pass\n        if self._attrs.get(\"help\"):\n            a = self._attrs[\"help\"]\n            a = a.replace(\"%default\", \"%(default)s\")\n            # a = a.replace('%prog', '%(prog)s')\n            self._attrs[\"help\"] = a\n        return self._attrs\n\n    def _set_opt_strings(self, opts):\n        \"\"\"directly from optparse\n\n        might not be necessary as this is passed to argparse later on\"\"\"\n        for opt in opts:\n            if len(opt) < 2:\n                raise ArgumentError(\n                    \"invalid option string %r: \"\n                    \"must be at least two characters long\" % opt,\n                    self,\n                )\n            elif len(opt) == 2:\n                if not (opt[0] == \"-\" and opt[1] != \"-\"):\n                    raise ArgumentError(\n                        \"invalid short option string %r: \"\n                        \"must be of the form -x, (x any non-dash char)\" % opt,\n                        self,\n                    )\n                self._short_opts.append(opt)\n            else:\n                if not (opt[0:2] == \"--\" and opt[2] != \"-\"):\n                    raise ArgumentError(\n                        \"invalid long option string %r: \"\n                        \"must start with --, followed by non-dash\" % opt,\n                        self,\n                    )\n                self._long_opts.append(opt)\n\n    def __repr__(self) -> str:\n        args = []  # type: List[str]\n        if self._short_opts:\n            args += [\"_short_opts: \" + repr(self._short_opts)]\n        if self._long_opts:\n            args += [\"_long_opts: \" + repr(self._long_opts)]\n        args += [\"dest: \" + repr(self.dest)]\n        if hasattr(self, \"type\"):\n            args += [\"type: \" + repr(self.type)]\n        if hasattr(self, \"default\"):\n            args += [\"default: \" + repr(self.default)]\n        return \"Argument({})\".format(\", \".join(args))</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.config.Argument._typ_map</name><path>src/_pytest/config/argparsing.py</path><content>_typ_map = {\"int\": int, \"string\": str, \"float\": float, \"complex\": complex}</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.config.Argument.__init__</name><path>src/_pytest/config/argparsing.py</path><content>def __init__(self, *names, **attrs):\n        \"\"\"store parms in private vars for use in add_argument\"\"\"\n        self._attrs = attrs\n        self._short_opts = []  # type: List[str]\n        self._long_opts = []  # type: List[str]\n        self.dest = attrs.get(\"dest\")\n        if \"%default\" in (attrs.get(\"help\") or \"\"):\n            warnings.warn(\n                'pytest now uses argparse. \"%default\" should be'\n                ' changed to \"%(default)s\" ',\n                DeprecationWarning,\n                stacklevel=3,\n            )\n        try:\n            typ = attrs[\"type\"]\n        except KeyError:\n            pass\n        else:\n            # this might raise a keyerror as well, don't want to catch that\n            if isinstance(typ, str):\n                if typ == \"choice\":\n                    warnings.warn(\n                        \"`type` argument to addoption() is the string %r.\"\n                        \" For choices this is optional and can be omitted, \"\n                        \" but when supplied should be a type (for example `str` or `int`).\"\n                        \" (options: %s)\" % (typ, names),\n                        DeprecationWarning,\n                        stacklevel=4,\n                    )\n                    # argparse expects a type here take it from\n                    # the type of the first element\n                    attrs[\"type\"] = type(attrs[\"choices\"][0])\n                else:\n                    warnings.warn(\n                        \"`type` argument to addoption() is the string %r, \"\n                        \" but when supplied should be a type (for example `str` or `int`).\"\n                        \" (options: %s)\" % (typ, names),\n                        DeprecationWarning,\n                        stacklevel=4,\n                    )\n                    attrs[\"type\"] = Argument._typ_map[typ]\n                # used in test_parseopt -> test_parse_defaultgetter\n                self.type = attrs[\"type\"]\n            else:\n                self.type = typ\n        try:\n            # attribute existence is tested in Config._processopt\n            self.default = attrs[\"default\"]\n        except KeyError:\n            pass\n        self._set_opt_strings(names)\n        if not self.dest:\n            if self._long_opts:\n                self.dest = self._long_opts[0][2:].replace(\"-\", \"_\")\n            else:\n                try:\n                    self.dest = self._short_opts[0][1:]\n                except IndexError:\n                    raise ArgumentError(\"need a long or short option\", self)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.config.Argument.names</name><path>src/_pytest/config/argparsing.py</path><content>def names(self):\n        return self._short_opts + self._long_opts</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.config.Argument.attrs</name><path>src/_pytest/config/argparsing.py</path><content>def attrs(self):\n        # update any attributes set by processopt\n        attrs = \"default dest help\".split()\n        if self.dest:\n            attrs.append(self.dest)\n        for attr in attrs:\n            try:\n                self._attrs[attr] = getattr(self, attr)\n            except AttributeError:\n                pass\n        if self._attrs.get(\"help\"):\n            a = self._attrs[\"help\"]\n            a = a.replace(\"%default\", \"%(default)s\")\n            # a = a.replace('%prog', '%(prog)s')\n            self._attrs[\"help\"] = a\n        return self._attrs</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.config.Argument._set_opt_strings</name><path>src/_pytest/config/argparsing.py</path><content>def _set_opt_strings(self, opts):\n        \"\"\"directly from optparse\n\n        might not be necessary as this is passed to argparse later on\"\"\"\n        for opt in opts:\n            if len(opt) < 2:\n                raise ArgumentError(\n                    \"invalid option string %r: \"\n                    \"must be at least two characters long\" % opt,\n                    self,\n                )\n            elif len(opt) == 2:\n                if not (opt[0] == \"-\" and opt[1] != \"-\"):\n                    raise ArgumentError(\n                        \"invalid short option string %r: \"\n                        \"must be of the form -x, (x any non-dash char)\" % opt,\n                        self,\n                    )\n                self._short_opts.append(opt)\n            else:\n                if not (opt[0:2] == \"--\" and opt[2] != \"-\"):\n                    raise ArgumentError(\n                        \"invalid long option string %r: \"\n                        \"must start with --, followed by non-dash\" % opt,\n                        self,\n                    )\n                self._long_opts.append(opt)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.config.Argument.__repr__</name><path>src/_pytest/config/argparsing.py</path><content>def __repr__(self) -> str:\n        args = []  # type: List[str]\n        if self._short_opts:\n            args += [\"_short_opts: \" + repr(self._short_opts)]\n        if self._long_opts:\n            args += [\"_long_opts: \" + repr(self._long_opts)]\n        args += [\"dest: \" + repr(self.dest)]\n        if hasattr(self, \"type\"):\n            args += [\"type: \" + repr(self.type)]\n        if hasattr(self, \"default\"):\n            args += [\"default: \" + repr(self.default)]\n        return \"Argument({})\".format(\", \".join(args))</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.config.OptionGroup.addoption</name><path>src/_pytest/config/argparsing.py</path><content>def addoption(self, *optnames, **attrs):\n        \"\"\" add an option to this group.\n\n        if a shortened version of a long option is specified it will\n        be suppressed in the help. addoption('--twowords', '--two-words')\n        results in help showing '--two-words' only, but --twowords gets\n        accepted **and** the automatic destination is in args.twowords\n        \"\"\"\n        conflict = set(optnames).intersection(\n            name for opt in self.options for name in opt.names()\n        )\n        if conflict:\n            raise ValueError(\"option names %s already added\" % conflict)\n        option = Argument(*optnames, **attrs)\n        self._addoption_instance(option, shortupper=False)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.assertion.pytest_addoption</name><path>src/_pytest/hookspec.py</path><content>----------\n# Initialization hooks called for every plugin\n# -------------------------------------------------------------------------\n\n\n@hookspec(historic=True)\ndef pytest_addhooks(pluginmanager):\n    \"\"\"called at plugin registration time to allow adding new hooks via a call to\n    ``pluginmanager.add_hookspecs(module_or_class, prefix)``.\n\n\n    :param _pytest.config.PytestPluginManager pluginmanager: pytest plugin manager\n\n    .. note::\n        This hook is incompatible with ``hookwrapper=True``.\n    \"\"\"\n\n\n@hookspec(historic=True)\ndef pytest_plugin_registered(plugin, manager):\n    \"\"\" a new pytest plugin got registered.\n\n    :param plugin: the plugin module or instance\n    :param _pytest.config.PytestPluginManager manager: pytest plugin manager\n\n    .. note::\n        This hook is incompatible with ``hookwrapper=</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.cacheprovider.pytest_addoption</name><path>src/_pytest/hookspec.py</path><content>_logfinish(nodeid, location):\n    \"\"\" signal the complete finish of running a single test item.\n\n    This hook will be called **after** :func:`pytest_runtest_setup`, :func:`pytest_runtest_call` and\n    :func:`pytest_runtest_teardown` hooks.\n\n    :param str nodeid: full id of the item\n    :param location: a triple of ``(filename, linenum, testname)``\n    \"\"\"\n\n\ndef pytest_runtest_setup(item):\n    \"\"\" called before ``pytest_runtest_call(item)``. \"\"\"\n\n\ndef pytest_runtest_call(item):\n    \"\"\" called to execute the test ``item``. \"\"\"\n\n\ndef pytest_runtest_teardown(item, nextitem):\n    \"\"\" called after ``pytest_runtest_call``.\n\n    :arg nextitem: the scheduled-to-be-next test item (None if no further\n                   test item is scheduled).  This argument can be used to\n                   perform exact teardowns, i.e. calling just enough finalizers\n                   so that nextitem only needs to call setup-functions.\n    \"\"\"\n\n\n@hookspec(firstresult=True)\ndef pytest_runtest_makereport(item, call):\n    \"\"\" return a :py:class:`_pytest.runner.TestReport` object\n    for the given :py:class:`pytest.Item <_pytest.main.Item>` and\n    :py:class:`_pytest.runner.CallInfo`.\n\n    Stops at first non-None result, see :ref:`firstresult` \"\"\"\n\n\ndef pytest_runtest_logreport(report):\n    \"\"\" process a test setup/call/teardown report relating to\n    the respective phase of executing a test. \"\"\"\n\n\n@hookspec(firstresult=True)\ndef pytest_report_to_serializable(config, report):\n    \"\"\"\n    Serializes the given report object into a data structure suitable for sending\n    over the wire, e.g. converted to JSON.\n    \"\"\"\n\n\n@hookspec(firstresult=True)\ndef pytest_report_from_serializable(config, data):\n    \"\"\"\n    Restores a report object previously serialized with pytes</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.capture.pytest_addoption</name><path>src/_pytest/hookspec.py</path><content>-----------------\n\n\n@hookspec(historic=True)\ndef pytest_addhooks(pluginmanager):\n    \"\"\"called at plugin registration time to allow adding new hooks via a call to\n    ``pluginmanager.add_hookspecs(module_or_class, prefix)``.\n\n\n    :param _pytest.config.PytestPluginManager pluginmanager: pytest plugin manager\n\n    .. note::\n        This hook is incompatible with ``hookwrapper=True``.\n    \"\"\"\n\n\n@hookspec(historic=True)\ndef pytest_plugin_registered(plugin, manager):\n    \"\"\" a n</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.debugging.pytest_addoption</name><path>src/_pytest/hookspec.py</path><content>cs(module_or_class, prefix)``.\n\n\n    :param _pytest.config.PytestPluginManager pluginmanager: pytest plugin manager\n\n    .. note::\n        This hook is incompatible with ``hookwrapper=True``.\n    \"\"\"\n\n\n@hookspec(historic=True)\ndef pytest_plugin_registered(plugin, manager):\n    \"\"\" a new pytest plugin got registered.\n\n    :param plugin: the plugin module or instance\n    :param _pytest.config.PytestPluginManager manager: pytest plugin manager\n\n    .. note::\n        This hook is incompatible with ``hookwrapper=True``.\n    \"\"\"\n\n\n@hookspec(historic=True)\ndef pytest_addoption(parser, pluginmanager):\n    \"\"\"register argparse-style options and ini-style config values,\n    called once at the beginn</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.doctest.pytest_addoption</name><path>src/_pytest/hookspec.py</path><content>t directory due to how pytest\n        :ref:`discovers plugins during startup <pluginorder>`.\n\n    :arg _pytest.config.Parser parser: To add command line options, call\n        :py:func:`parser.addoption(...) <_pytest.config.Parser.addoption>`.\n        To add ini-file values call :py:func:`parser.addini(...)\n        <_pytest.config.Parser.addini>`.\n\n    :arg _pytest.config.PytestPluginManager pluginmanager: pytest plugin manager,\n        which can be used to install :py:func:`hookspec`'s or :py:func:`hookimpl`'s\n        and allow one plugin to call another plugin's hooks to change how\n        command line options are added.\n\n    Options can later be accessed through the\n    :py:class:`config <_pytest.config.Config>` object, respectively:\n\n    - :py:func:`config.getoption(name) <_pytest.config.Config.getoption>` to\n      retrieve the value of a command line option.\n\n    - :py:func:`config.getini(name) <_pytest.config.Config.getini>` to retrieve\n      a value read from an ini-style file.\n\n    The config object is passed around on many internal objects via the ``.config``\n    attribute or can be retrieved as the ``pytestconfig`` fixture.\n\n    .. note::\n        This hook is incompatible with ``hookwrapper=True``.\n    \"\"\"\n\n\n@hookspec(historic=True)\ndef pytest_configure(config):\n    \"\"\"\n    Allows plugins and conftest files to perform initial configuration.\n\n    This hook is called for every plugin and </content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.faulthandler.pytest_addoption</name><path>src/_pytest/hookspec.py</path><content>ked from main.py and builtin plugins.  \"\"\"\nfrom pluggy import HookspecMarker\n\n\nhookspec = HookspecMarker(\"pytest\")\n\n# -------------------------------------------------------------------------\n# Initialization hooks called for every plugin\n# --------------</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.fixtures.pytest_addoption</name><path>src/_pytest/hookspec.py</path><content></content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.helpconfig.pytest_addoption</name><path>src/_pytest/hookspec.py</path><content>le options and ini-style config values,\n    called once at the beginning of a test run.\n\n    .. note::\n\n        This function should be implemented only in plugins or ``conftest.py``\n        files situated at the tests root directory due to how pytest\n        :ref:`discovers plugins during startup <pluginorder>`.\n\n    :arg _pytest.config.Parser parser: To add command line options, call\n        :py:func:`parser.addoption(...) <_pytest.config.Parser.addoption>`.\n        To add ini-file values call :py:func:`parser.addini(...)\n        <_pytest.config.Parser.addini>`.\n\n    :arg _pytest.config.PytestPluginManager pluginmanager: pytest plugin manager,\n        which can be used to install :py:func:`hookspec`'s or :py:func:`hookimpl`'s\n        and allow one plugin to call another plugin's hooks to change how\n        command line options are added.\n\n    Options can later be accessed through the\n    :py:class:`config <_pytest.config.Config>` object, respectively:\n\n    - :py:func:`config.getoption(name) <_pytest.config.Config.getoption>` to\n      retrieve the value of a command line option.\n\n    - :py:func:`config.getini(name) <_pytest.config.Config.getini>` to retrieve\n      a value read from an ini-style file.\n\n    The config object is passed around on many internal objects via the ``.config``\n    attr</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.hookspec.pytest_addoption</name><path>src/_pytest/hookspec.py</path><content>@hookspec(historic=True)\ndef pytest_addoption(parser, pluginmanager):\n    \"\"\"register argparse-style options and ini-style config values,\n    called once at the beginning of a test run.\n\n    .. note::\n\n        This function should be implemented only in plugins or ``conftest.py``\n        files situated at the tests root directory due to how pytest\n        :ref:`discovers plugins during startup <pluginorder>`.\n\n    :arg _pytest.config.Parser parser: To add command line options, call\n        :py:func:`parser.addoption(...) <_pytest.config.Parser.addoption>`.\n        To add ini-file values call :py:func:`parser.addini(...)\n        <_pytest.config.Parser.addini>`.\n\n    :arg _pytest.config.PytestPluginManager pluginmanager: pytest plugin manager,\n        which can be used to install :py:func:`hookspec`'s or :py:func:`hookimpl`'s\n        and allow one plugin to call another plugin's hooks to change how\n        command line options are added.\n\n    Options can later be accessed through the\n    :py:class:`config <_pytest.config.Config>` object, respectively:\n\n    - :py:func:`config.getoption(name) <_pytest.config.Config.getoption>` to\n      retrieve the value of a command line option.\n\n    - :py:func:`config.getini(name) <_pytest.config.Config.getini>` to retrieve\n      a value read from an ini-style file.\n\n    The config object is passed around on many internal objects via the ``.config``\n    attribute or can be retrieved as the ``pytestconfig`` fixture.\n\n    .. note::\n        This hook is incompatible with ``hookwrapper=True``.\n    \"\"\"</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.junitxml.pytest_addoption</name><path>src/_pytest/hookspec.py</path><content>elating to\n    the respective phase of executing a test. \"\"\"\n\n\n@hookspec(firstresult=True)\ndef pytest_report_to_serializable(config, report):\n    \"\"\"\n    Serializes the given report object into a data structure suitable for sending\n    over the wire, e.g. converted to JSON.\n    \"\"\"\n\n\n@hookspec(firstresult=True)\ndef pytest_report_from_serializable(config, data):\n    \"\"\"\n    Restores a report object previously serialized with pytest_report_to_serializable().\n    \"\"\"\n\n\n# -------------------------------------------------------------------------\n# Fixture related hooks\n# -------------------------------------------------------------------------\n\n\n@hookspec(firstresult=True)\ndef pytest_fixture_setup(fixturedef, request):\n    \"\"\" performs fixture setup execution.\n\n    :return: The return value of the call to the fixture function\n\n    Stops at first non-None result, see :ref:`firstresult`\n\n    .. note::\n        If the fixture function returns None, other implementations of\n        this hook function will continue to be called, according to the\n        behavior of the :ref:`firstresult` option.\n    \"\"\"\n\n\ndef pytest_fixture_post_finalizer(fixturedef, request):\n    \"\"\" called after fixture teardown, but before the cache is cleared so\n    the fixture result cache ``fixturedef.cached_result`` can\n    still be accessed.\"\"\"\n\n\n# -------------------------------------------------</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.logging.pytest_addoption</name><path>src/_pytest/hookspec.py</path><content>onfig.Config config: pytest config object\n    :param List[_pytest.nodes.Item] items: list of item objects\n    \"\"\"\n\n\ndef pytest_collection_finish(session):\n    \"\"\" called after collection has been performed and modified.\n\n    :param _pytest.main.Session session: the pytest session object\n    \"\"\"\n\n\n@hookspec(firstresult=True)\ndef pytest_ignore_collect(path, config):\n    \"\"\" return True to prevent considering this path for collection.\n    This hook is consulted for all files and directories prior to calling\n    more specific hooks.\n\n    Stops at first non-None result, see :ref:`firstresult`\n\n    :param path: a :py:class:`py.path.local` - the path to analyze\n    :param _pytest.config.Config config: pytest config object\n    \"\"\"\n\n\n@hookspec(firstresult=True)\ndef pytest_collect_directory(path, parent):\n    \"\"\" called before traversing a directory for collection files.\n\n    Stops at first non-None result, see :ref:`firstresult`\n\n    :param path: a :py:class:`py.path.local` - the path to analyze\n    \"\"\"\n\n\ndef pytest_collect_file(path, parent):\n    \"\"\" return collection Node or None for the given path. Any new node\n    needs to have the specified ``parent`` as a parent.\n\n    :param path: a :py:class:`py.path.local` - the path to collect\n    \"\"\"\n\n\n# logging hooks for collection\n\n\ndef pytest_collectstart(collector):\n    \"\"\" collector starts collecting. \"\"\"\n\n\ndef pytest_itemcollected(item):\n    \"\"\" we just collected a test item. \"\"\"\n\n\ndef pytest_collectreport(report):\n    \"\"\" collector finished collecting. \"\"\"\n\n\ndef pytest_deselected(items):\n    \"\"\" called for test items deselected, e.g. by keyword. \"\"\"\n\n\n@hookspec(firstresult=True)\ndef pytest_make_collect_report(collector):\n    \"\"\" perform ``collector.collect()`` and return a CollectReport.\n\n    Stops at first non-None result, see :ref:`firstresult` \"\"\"\n\n\n# -------------------------------------------------------------------------\n# Python test function related hooks\n# -------------------------------------------------------------------------\n\n\n@hookspec(firstresult=True)\ndef pytest_pycollect_makemodule(path, parent):\n    \"\"\" return a Module collector or None for the given path.\n    This hook will be called for each matching test module path.\n    The pytest_collect_file hook needs to be used if you want to\n    create test modules for files that do not match as a test module.\n\n    Stops at first non-None result, see :ref:`firstresult`\n\n    :param path: a :py:class:`py.path.local` - the path of module to collect\n    \"\"\"\n\n\n@hookspec(firstresult=True)\ndef pytest_pycollect_makeitem(collector, name, obj):\n    \"\"\" return custom item/collector for a python object in a module, or N</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.main.pytest_addoption</name><path>src/_pytest/hookspec.py</path><content>plugin manager\n\n    .. note::\n        This hook is incompatible with ``hookwrapper=True``.\n    \"\"\"\n\n\n@hookspec(historic=True)\ndef pytest_addoption(parser, pluginmanager):\n    \"\"\"register argparse-style options and ini-style config values,\n    called once at the beginning of a test run.\n\n    .. note::\n\n        This function should be implemented only in plugins or ``conftest.py``\n        files situated at the tests root directory due to how pytest\n        :ref:`discovers plugins during startup <pluginorder>`.\n\n    :arg _pytest.config.Parser parser: To add command line options, call\n        :py:func:`parser.addoption(...) <_pytest.config.Parser.addoption>`.\n        To add ini-file values call :py:func:`parser.addini(...)\n        <_pytest.config.Parser.addini>`.\n\n    :arg _pytest.config.PytestPluginManager pluginmanager: pytest plugin manager,\n        which can be used to install :py:func:`hookspec`'s or :py:func:`hookimpl`'s\n        and allow one plugin to call another plugin's hooks to change how\n        command line options are added.\n\n    Options can later be accessed through the\n    :py:class:`config <_pytest.config.Config>` object, respectively:\n\n    - :py:func:`config.getoption(name) <_pytest.config.Config.getoption>` to\n      retrieve the value of a command line option.\n\n    - :py:func:`config.getini(name) <_pytest.config.Config.getini>` to retrieve\n      a value read from an ini-style file.\n\n    The config object is passed around on many internal objects via the ``.config``\n    attribute or can be retrieved as the ``pytestconfig`` fixture.\n\n    .. note::\n        This hook is incompatible with ``hookwrapper=True``.\n    \"\"\"\n\n\n@hookspec(historic=True)\ndef pytest_configure(config):\n    \"\"\"\n    Allows plugins and conftest files to perform initial configuration.\n\n    This hook is called for every plugin and initial conftest file\n    after command line options have been parsed.\n\n    After that, the hook is called for other conftest files as they are\n    imported.\n\n    .. note::\n        This hook is incompatible with ``hookwrapper=True``.\n\n    :arg _pytest.config.Config config: pytest config object\n    \"\"\"\n\n\n# -------------------------------------------------------------------------\n# Bootstrapping hooks called for plugins registered early enough:\n# internal and 3rd party plugins.\n# -------------------------------------------------------------------------\n\n\n@hookspec(firstresult=True)\ndef pytest_cmdline_parse(pluginmanager, args):\n    \"\"\"return initialized config object, parsing the specified args.\n\n    Stops at first non-None result, see :ref:`firstresult`\n\n    .. note::\n        This hook will only be called for plugin classes passed to the ``plugins`` arg when using `pytest.main`_ to\n        perform an in-process test run.\n\n    :param _pytest.config.PytestPluginManager pluginmanager: pytest plugin manager\n    :param list[str] args: list of arguments passed on the command line\n    \"\"\"\n\n\ndef pytest_cmdline_preparse(config, args):\n    \"\"\"(**Deprecated**) modify command line arguments before option parsing.\n\n    This hook is considered deprecated and will be removed in a future pytest version. Consider\n    using :func:`pytest_load_initial_conftests` instead.\n\n    .. note::\n        This hook will not be called for ``conftest.py`` files, only for setuptools plugins.\n\n    :param _pytest.config.Config config: pytest config object\n    :param list[str] args: list of arguments passed on the command line\n    \"\"\"\n\n\n@hookspec(firstresult=True)\ndef pytest_cmdline_main(config):\n    \"\"\" called for performing the main command line action. The default\n    implementation will invoke the configure hooks and runtest_mainloop.\n\n    .. note::\n        This hook will not be called for ``conftest.py`` files, only for setuptools plugins.\n\n    Stops at first non-None result, see :ref:`firstresult`\n\n    :param _pytest.config.Config config: pytest config object\n    \"\"\"\n\n\ndef pytest_load_initial_conftests(early_config, parser, args):\n    \"\"\" implements the loading of initial conftest files ahead\n    of command line option parsing.\n\n    .. note::\n        This hook will not </content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.mark.pytest_addoption</name><path>src/_pytest/hookspec.py</path><content>on should be implemented only in plugins or ``conftest.py``\n        files situated at the tests root directory due to how pytest\n        :ref:`discovers plugins during startup <pluginorder>`.\n\n    :arg _pytest.config.Parser parser: To add command line options, call\n        :py:func:`parser.addoption(...) <_pytest.config.Parser.addoption>`.\n        To add ini-file values call :py:func:`parser.addini(...)\n        <_pytest.config.Parser.addini>`.\n\n    :arg _pytest.config.PytestPluginManager pluginmanager: pytest plugin manager,\n        which can be used to install :py:func:`hookspec`'s or :py:func:`hookimpl`'s\n        and allow one plugin to call another plugin's hooks to change how\n        command line options are added.\n\n    Options can later be accessed through the\n    :py:class:`config <_pytest.config.Config>` object, respectively:\n\n    - :py:func:`config.getoption(name) <_pytest.config.Config.getoption>` to\n      retrieve the value of a command line option.\n\n    - :py:func:`config.getini(name) <_pytest.config.Config.getini>` to retrieve\n      a value read from an ini-style file.\n\n    The config object is passed around on many internal objects via the ``.config``\n    attribute or can be retrieved as the ``pytestconfig`` fixture.\n\n    .. note::\n        This hook is incompatible with ``hookwrapper=True``.\n    \"\"\"\n\n\n@hookspec(historic=True)\ndef pytest_configure(config):\n    \"\"\"\n    Allows plugins and conftest files to perform initial configuration.\n\n    This hook is called for every plugin and initial conftest file\n    after comma</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.pastebin.pytest_addoption</name><path>src/_pytest/hookspec.py</path><content>rt HookspecMarker\n\n\nhookspec = HookspecMarker(\"pytest\")\n\n# -------------------------------------------------------------------------\n# Initialization hooks called for every plugin\n# -------------------------------------------------------------------------\n\n\n@hookspec(historic=True)\ndef pytest_addhooks(pluginmanager):\n    \"\"\"ca</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.pytester.pytest_addoption</name><path>src/_pytest/hookspec.py</path><content> pytest_addoption(parser, pluginmanager):\n    \"\"\"register argparse-style options and ini-style config values,\n    called once at the beginning of a test run.\n\n    .. note::\n\n        This function should be implemented only in plugins or ``conftest.py``\n        files situated at the tests root directory due to how pytest\n        :ref:`discovers plugins during startup <pluginorder>`.\n\n    :arg _pytest.config.Parser parser: To add command line options, call\n        :py:func:`parser.addoption(...) <_pytest.config.Parser.addoption>`.\n        To add ini-file values call :py:func:`parser.addini(...)\n        <_p</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python.pytest_addoption</name><path>src/_pytest/hookspec.py</path><content>t.config.Parser.addini>`.\n\n    :arg _pytest.config.PytestPluginManager pluginmanager: pytest plugin manager,\n        which can be used to install :py:func:`hookspec`'s or :py:func:`hookimpl`'s\n        and allow one plugin to call another plugin's hooks to change how\n        command line options are added.\n\n    Options can later be accessed through the\n    :py:class:`config <_pytest.config.Config>` object, respectively:\n\n    - :py:func:`config.getoption(name) <_pytest.config.Config.getoption>` to\n      retrieve the value of a command line option.\n\n    - :py:func:`config.getini(name) <_pytest.config.Config.getini>` to retrieve\n      a value read from an ini-style file.\n\n    The config object is passed around on many internal objects via the ``.config``\n    attribute or can be retrieved as the ``pytestconfig`` fixture.\n\n    .. note::\n        This hook is incompatible with ``hookwrapper=True``.\n    \"\"\"\n\n\n@hookspec(historic=True)\ndef pytest_configure(config):\n    \"\"\"\n    Allows plugins and conftest files to perform initial configuration.\n\n    This hook is called for every plugin and initial conftest file\n    after command line options have been parsed.\n\n    After that, the hook is called for other conftest files as they are\n    imported.\n\n    .. note::\n        This hook is incompatible with ``hookwrapper=True``.\n\n    :arg _pytest.config.Config config: pytest config object\n    \"\"\"\n\n\n# -------------------------------------------------------------------------\n# Bootstrapping hooks called for plugins registered early enough:\n# internal and 3rd party plugins.\n# -------------------------------------------------------------------------\n\n\n@hookspec(firstresult</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.runner.pytest_addoption</name><path>src/_pytest/hookspec.py</path><content>pytest plugin manager\n\n    .. note::\n        This hook is incompatible with ``hookwrapper=True``.\n    \"\"\"\n\n\n@hookspec(historic=True)\ndef pytest_plugin_registered(plugin, manager):\n    \"\"\" a new pytest plugin got registered.\n\n    :param plugin: the plugin module or instance\n    :param _pytest.config.PytestPlugin</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.setuponly.pytest_addoption</name><path>src/_pytest/hookspec.py</path><content>cations for pytest plugins, invoked from main.py and builtin plugins.  \"\"\"\nfrom pluggy import HookspecMarker\n\n\nhookspec = HookspecMarker(\"pytest\")\n\n# -------------------------------------------------------------------------\n# Initialization hooks called for every plugin\n# -------------------------------------------------------------------------\n\n\n@hookspec(historic=True)\ndef pytest_addhooks(plugi</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.setupplan.pytest_addoption</name><path>src/_pytest/hookspec.py</path><content>cations for pytest plugins, invoked from main.py and builtin plugins.  \"\"\"\nfrom pluggy import HookspecMarker\n\n\nhookspec = HookspecMarker(\"pytest\")\n\n# -------------------------------------------------------------------------\n# Initialization hooks called for every plugin\n# ----</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.skipping.pytest_addoption</name><path>src/_pytest/hookspec.py</path><content>nitialization hooks called for every plugin\n# -------------------------------------------------------------------------\n\n\n@hookspec(historic=True)\ndef pytest_addhooks(pluginmanager):\n    \"\"\"called at plugin registration time to allow adding new hooks via a call to\n    ``pluginmanager.add_hookspecs(module_or_class, prefix)``.\n\n\n    :param _pytest.config.PytestPluginManager pluginmanager: pytest plugin manager\n\n    .. note::\n        This hook is incompatible with ``hookwrapper=</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.stepwise.pytest_addoption</name><path>src/_pytest/hookspec.py</path><content>cations for pytest plugins, invoked from main.py and builtin plugins.  \"\"\"\nfrom pluggy import HookspecMarker\n\n\nhookspec = HookspecMarker(\"pytest\")\n\n# -------------------------------------------------------------------------\n# Initialization hooks called for every plugin\n# -------------------------------------------------------------------------\n\n\n@hookspec(historic=True)\ndef pytest_addhooks(pluginmanager):\n    \"\"\"called at plugin registration time to allow ad</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.terminal.pytest_addoption</name><path>src/_pytest/hookspec.py</path><content>due to how pytest\n        :ref:`discovers plugins during startup <pluginorder>`.\n\n    :arg _pytest.config.Parser parser: To add command line options, call\n        :py:func:`parser.addoption(...) <_pytest.config.Parser.addoption>`.\n        To add ini-file values call :py:func:`parser.addini(...)\n        <_pytest.config.Parser.addini>`.\n\n    :arg _pytest.config.PytestPluginManager pluginmanager: pytest plugin manager,\n        which can be used to install :py:func:`hookspec`'s or :py:func:`hookimpl`'s\n        and allow one plugin to call another plugin's hooks to change how\n        command line options are added.\n\n    Options can later be accessed through the\n    :py:class:`config <_pytest.config.Config>` object, respectively:\n\n    - :py:func:`config.getoption(name) <_pytest.config.Config.getoption>` to\n      retrieve the value of a command line option.\n\n    - :py:func:`config.getini(name) <_pytest.config.Config.getini>` to retrieve\n      a value read from an ini-style file.\n\n    The config object is passed around on many internal objects via the ``.config``\n    attribute or can be retrieved as the ``pytestconfig`` fixture.\n\n    .. note::\n        This hook is incompatible with ``hookwrapper=True``.\n    \"\"\"\n\n\n@hookspec(historic=True)\ndef pytest_configure(config):\n    \"\"\"\n    Allows plugins and conftest files to perform initial configuration.\n\n    This hook is called for every plugin and initial conftest file\n    after command line options have been parsed.\n\n    After that, the hook is called for other conftest files as they are\n    imported.\n\n    .. note::\n        This hook is incompatible with ``hookwrapper=True``.\n\n    :arg _pytest.config.Config config: pytest config object\n    \"\"\"\n\n\n# -------------------------------------------------------------------------\n# Bootstrapping hooks called for plugins registered early enough:\n# internal and 3rd party plugins.\n# -------------------------------------------------------------------------\n\n\n@hookspec(firstresult=True)\ndef pytest_cmdline_parse(pluginmanager, args):\n    \"\"\"return initialized config object, parsing the specified args.\n\n    Stops at first non-None result, see :ref:`firstresult`\n\n    .. note::\n        This hook will only be called for plugin classes passed to the ``plugins`` arg when using `pytest.main`_ to\n        perform an in-process test run.\n\n    :param _pytest.config.PytestPluginManager pluginmanager: pytest plugin manager\n    :param list[str] args: list of arguments passed on the command line\n    \"\"\"\n\n\ndef pytest_cmdline_preparse(config, args):\n    \"\"\"(**Deprecated**) modify command line arguments before option parsing.\n\n    This hook is considered deprecate</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.warnings.pytest_addoption</name><path>src/_pytest/hookspec.py</path><content>lugin: the plugin module or instance\n    :param _pytest.config.PytestPluginManager manager: pytest plugin manager\n\n    .. note::\n        This hook is incompatible with ``hookwrapper=True``.\n    \"\"\"\n\n\n@hookspec(historic=True)\ndef pytest_addoption(parser, pluginmanager):\n    \"\"\"register argparse-style options and ini-style config values,\n    called once at the beginning of a test run.\n\n    .. note::\n\n        This function should be implemented only in plug</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.report_log.pytest_addoption</name><path>src/_pytest/hookspec.py</path><content>om main.py and builtin plugins.  \"\"\"\nfrom pluggy import HookspecMarker\n\n\nhookspec = HookspecMarker(\"pytest\")\n\n# -------------------------------------------------------------------------\n# Initialization hooks called for every plugin\n# ------------------------------------------------------------------</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.resultlog.pytest_addoption</name><path>src/_pytest/hookspec.py</path><content>rt HookspecMarker\n\n\nhookspec = HookspecMarker(\"pytest\")\n\n# -------------------------------------------------------------------------\n# Initialization hooks called for every plugin\n# -------------------------------------------------------------------------\n\n\n@hookspec(historic=True)\ndef pytest_addhooks(pluginmanager</content></symbol>"
+    }
+  ],
+  "completion": {
+    "id": "chatcmpl-9y3YW8iNEtAF6WjCOj8fyUnbmubxT",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\"scratch_pad\":\"1. Analyze User Instructions:\\n1.1 The user is describing the need for a shorter command-line option for a frequently used pytest argument, `--collect-only`. \\n1.2 This issue arises because current command is too lengthy to type frequently.\\n1.3 The user indicates a desire to add a single-character shortcut that has the same effect as `--collect-only`.\\n1.4 The expected result should be a single-character option that performs the same function as `--collect-only` when used with the pytest command line.\\n1.5 To fix this issue, we should introduce a new single-character option that serves the same function as `--collect-only`. We might need to update the argument registration to include this new short option.\\n\\n2. Make the evaluate:\\n2.1 I need to go through each symbol provided to see which, if any, are related to command-line options.\\n2.2 The related symbols I should look for might involve argument parsing, command registration, or handling of `--collect-only` specifically.\\n2.3 From the symbols given I need to determine where `--collect-only` is implemented or defined and see if it includes the capacity for a short alias.\\n2.4 If not explicitly provided, I may need to locate where command line options are configured and ensure a single character option is set.\\n2.5 If none of these symbols provide enough insight into how options are registered, I may need additional information from the user.\\n\\n\\n\",\"symbols\":[{\"name\":\"_pytest.main.pytest_addoption\",\"file_path\":\"src/_pytest/main.py\",\"reason\":\"This symbol contains the implementation for adding options, including '--collect-only'. A new single character shortcut should be added here.\"},{\"name\":\"_pytest.config.Parser.addoption\",\"file_path\":\"src/_pytest/config/argparsing.py\",\"reason\":\"This method registers the command line options, therefore, it is where the new shortcut should be implemented.\"}],\"more_info\":[],\"is_done\":true,\"symbols_scratch_pad\":[\"The symbol seems to contain import statements and an ExitCode class for encoding pytest exit codes. There's partial content of the pytest_addoption which might indicate this is where options are added, but this doesn't specifically relate to handling command-line argument --collect-only yet. I need to further verify this relevance.\",\"The symbol content is lacking actual implementation of pytest_addoption but is related more to test failures, stopping test execution, and statuses. It seems unlikely this is where the argparse option for --collect-only would be managed.\",\"This snippet shows arbitrated imports and might relate to testing states. However, there seems to be little connection to where command line options are parsed or added such as --collect-only.\",\"The symbol indicates part of imports and definitions related to runner setups etc., but not specific to option parsing. Unless it's within the partially present pytest_addoption function, I would need to ignore it.\",\"The partial defines fixtures that offer test configuration and execution methods rather than pointing towards argparse or option handling relevant for --collect-only.\",\"The snippet seems incomplete and only vaguely related to path specifications and argument options. Not distinctly related to command-line arguments like --collect-only as visible so far.\",\"Incomplete snippet regarding enum exit codes, not specific to the handling or arrangement of command-line arguments.\",\"Help functionality and option parsing might be tackled here, though the snippet does not point at command option adjustments or inline with argparse command-line parsing.\",\"This is a class command, it doesn't give insights into the handling of a specific --collect-only shortcut. Nevertheless, it's related since parsing options is crucial to implementing command-line arguments.\",\"Pertains to managing Argument errors and existing classes involving Argument interfaces. Related more to error handling than to defining shortcuts or command options directly.\",\"Initializes the ArgumentError, not connected directly to command line argument parsing or setup options.\",\"Contributes to stringification of errors in argument handling rather than option parsing.\",\"Argument instantiation manages short and long-form options but unless more content focuses on practical applications of pytest arguments, its relation to --collect-only isn't explicit.\",\"Typ map refers to type conversion associated with parsing, indirectly related if type adjustments needed.\",\"Argument class init handles option short and long form storage, potential direct relevance requires more context on how the parsing is involved in storing --collect-only identifiers.\",\"Deals with returning arg names not direct to parsing or `--collect-only` manipulation currently.\",\"Attr list-updates seem related to storing attributes for parsing, might be where a new option is given attributes, need broader context to connect to `--collect-only`.\",\"Handles strings for options, thus related as might regulate the form `--collect-only` is kept or modified, guaranteeing formatted correctly.\",\"The representation method primarily deals with configuration displays of options.\",\"The addoption function defines options relevant in context, potentially highly related means should add the character shortcut for --collect-only here.\",\"Discusses plugin registration under hookspec without regard to command line directly.\",\"Commands are meant to signal state conclusions in testing, not aligning to --collect-only yet.\",\"Part of hookspec structure, indicating configs, yet lacking focus on actual argument parsing in current snippet.\",\"Print messages capture hook registrations without direct relevance to command line argument sequences presently.\",\"Documentation part of command parsing init, however not elucidating placeholders or options closely correlated to `--collect-only`.\",\"Initially dealing hooks, without clear relation to `--collect-only` option generation.\",\"Discusses directive plugin registration, not aligning to individual hook registrations yet.\",\"These sections detail plugin hook registration in a way mostly orthogonal to parsing command line options so far seen.\",\"Describes another hook-based script setting, instead of registering through command line arguments.\",\"\",\"Details registering type specs, rather than command options in this form.\",\"Specifies system-level hookstarts but drops off before relating to command line usage.\",\"Snippet involves plugin manager annotation not directly useful for argument shortcuts.\",\"Given as plugins marking, its focus isn't on internal command selection.\",\"\"]}",
+          "refusal": null,
+          "role": "assistant",
+          "function_call": null,
+          "tool_calls": [],
+          "parsed": {
+            "scratch_pad": "1. Analyze User Instructions:\n1.1 The user is describing the need for a shorter command-line option for a frequently used pytest argument, `--collect-only`. \n1.2 This issue arises because current command is too lengthy to type frequently.\n1.3 The user indicates a desire to add a single-character shortcut that has the same effect as `--collect-only`.\n1.4 The expected result should be a single-character option that performs the same function as `--collect-only` when used with the pytest command line.\n1.5 To fix this issue, we should introduce a new single-character option that serves the same function as `--collect-only`. We might need to update the argument registration to include this new short option.\n\n2. Make the evaluate:\n2.1 I need to go through each symbol provided to see which, if any, are related to command-line options.\n2.2 The related symbols I should look for might involve argument parsing, command registration, or handling of `--collect-only` specifically.\n2.3 From the symbols given I need to determine where `--collect-only` is implemented or defined and see if it includes the capacity for a short alias.\n2.4 If not explicitly provided, I may need to locate where command line options are configured and ensure a single character option is set.\n2.5 If none of these symbols provide enough insight into how options are registered, I may need additional information from the user.\n\n\n",
+            "symbols": [
+              {
+                "name": "_pytest.main.pytest_addoption",
+                "file_path": "src/_pytest/main.py",
+                "reason": "This symbol contains the implementation for adding options, including '--collect-only'. A new single character shortcut should be added here."
+              },
+              {
+                "name": "_pytest.config.Parser.addoption",
+                "file_path": "src/_pytest/config/argparsing.py",
+                "reason": "This method registers the command line options, therefore, it is where the new shortcut should be implemented."
+              }
+            ],
+            "more_info": [],
+            "is_done": true,
+            "symbols_scratch_pad": [
+              "The symbol seems to contain import statements and an ExitCode class for encoding pytest exit codes. There's partial content of the pytest_addoption which might indicate this is where options are added, but this doesn't specifically relate to handling command-line argument --collect-only yet. I need to further verify this relevance.",
+              "The symbol content is lacking actual implementation of pytest_addoption but is related more to test failures, stopping test execution, and statuses. It seems unlikely this is where the argparse option for --collect-only would be managed.",
+              "This snippet shows arbitrated imports and might relate to testing states. However, there seems to be little connection to where command line options are parsed or added such as --collect-only.",
+              "The symbol indicates part of imports and definitions related to runner setups etc., but not specific to option parsing. Unless it's within the partially present pytest_addoption function, I would need to ignore it.",
+              "The partial defines fixtures that offer test configuration and execution methods rather than pointing towards argparse or option handling relevant for --collect-only.",
+              "The snippet seems incomplete and only vaguely related to path specifications and argument options. Not distinctly related to command-line arguments like --collect-only as visible so far.",
+              "Incomplete snippet regarding enum exit codes, not specific to the handling or arrangement of command-line arguments.",
+              "Help functionality and option parsing might be tackled here, though the snippet does not point at command option adjustments or inline with argparse command-line parsing.",
+              "This is a class command, it doesn't give insights into the handling of a specific --collect-only shortcut. Nevertheless, it's related since parsing options is crucial to implementing command-line arguments.",
+              "Pertains to managing Argument errors and existing classes involving Argument interfaces. Related more to error handling than to defining shortcuts or command options directly.",
+              "Initializes the ArgumentError, not connected directly to command line argument parsing or setup options.",
+              "Contributes to stringification of errors in argument handling rather than option parsing.",
+              "Argument instantiation manages short and long-form options but unless more content focuses on practical applications of pytest arguments, its relation to --collect-only isn't explicit.",
+              "Typ map refers to type conversion associated with parsing, indirectly related if type adjustments needed.",
+              "Argument class init handles option short and long form storage, potential direct relevance requires more context on how the parsing is involved in storing --collect-only identifiers.",
+              "Deals with returning arg names not direct to parsing or `--collect-only` manipulation currently.",
+              "Attr list-updates seem related to storing attributes for parsing, might be where a new option is given attributes, need broader context to connect to `--collect-only`.",
+              "Handles strings for options, thus related as might regulate the form `--collect-only` is kept or modified, guaranteeing formatted correctly.",
+              "The representation method primarily deals with configuration displays of options.",
+              "The addoption function defines options relevant in context, potentially highly related means should add the character shortcut for --collect-only here.",
+              "Discusses plugin registration under hookspec without regard to command line directly.",
+              "Commands are meant to signal state conclusions in testing, not aligning to --collect-only yet.",
+              "Part of hookspec structure, indicating configs, yet lacking focus on actual argument parsing in current snippet.",
+              "Print messages capture hook registrations without direct relevance to command line argument sequences presently.",
+              "Documentation part of command parsing init, however not elucidating placeholders or options closely correlated to `--collect-only`.",
+              "Initially dealing hooks, without clear relation to `--collect-only` option generation.",
+              "Discusses directive plugin registration, not aligning to individual hook registrations yet.",
+              "These sections detail plugin hook registration in a way mostly orthogonal to parsing command line options so far seen.",
+              "Describes another hook-based script setting, instead of registering through command line arguments.",
+              "",
+              "Details registering type specs, rather than command options in this form.",
+              "Specifies system-level hookstarts but drops off before relating to command line usage.",
+              "Snippet involves plugin manager annotation not directly useful for argument shortcuts.",
+              "Given as plugins marking, its focus isn't on internal command selection.",
+              ""
+            ]
+          }
+        }
+      }
+    ],
+    "created": 1724100376,
+    "model": "gpt-4o-2024-08-06",
+    "object": "chat.completion",
+    "service_tier": null,
+    "system_fingerprint": "fp_2a322c9ffc",
+    "usage": {
+      "completion_tokens": 1205,
+      "prompt_tokens": 17093,
+      "total_tokens": 18298
+    }
+  }
+}

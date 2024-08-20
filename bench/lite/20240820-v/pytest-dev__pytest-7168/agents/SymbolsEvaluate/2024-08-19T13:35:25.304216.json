@@ -1,0 +1,1435 @@
+{
+  "name": "SymbolsEvaluate",
+  "model": "gpt-4o-2024-08-06",
+  "metadata": {
+    "token_count": 0,
+    "cost": 0
+  },
+  "issue": "<description>:INTERNALERROR when exception in __repr__\nMinimal code to reproduce the issue: \r\n```python\r\nclass SomeClass:\r\n    def __getattribute__(self, attr):\r\n        raise\r\n    def __repr__(self):\r\n        raise\r\ndef test():\r\n    SomeClass().attr\r\n```\r\nSession traceback:\r\n```\r\n============================= test session starts ==============================\r\nplatform darwin -- Python 3.8.1, pytest-5.4.1, py-1.8.1, pluggy-0.13.1 -- /usr/local/opt/python@3.8/bin/python3.8\r\ncachedir: .pytest_cache\r\nrootdir: ******\r\nplugins: asyncio-0.10.0, mock-3.0.0, cov-2.8.1\r\ncollecting ... collected 1 item\r\n\r\ntest_pytest.py::test \r\nINTERNALERROR> Traceback (most recent call last):\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/main.py\", line 191, in wrap_session\r\nINTERNALERROR>     session.exitstatus = doit(config, session) or 0\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/main.py\", line 247, in _main\r\nINTERNALERROR>     config.hook.pytest_runtestloop(session=session)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/hooks.py\", line 286, in __call__\r\nINTERNALERROR>     return self._hookexec(self, self.get_hookimpls(), kwargs)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/manager.py\", line 93, in _hookexec\r\nINTERNALERROR>     return self._inner_hookexec(hook, methods, kwargs)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/manager.py\", line 84, in <lambda>\r\nINTERNALERROR>     self._inner_hookexec = lambda hook, methods, kwargs: hook.multicall(\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/callers.py\", line 208, in _multicall\r\nINTERNALERROR>     return outcome.get_result()\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/callers.py\", line 80, in get_result\r\nINTERNALERROR>     raise ex[1].with_traceback(ex[2])\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/callers.py\", line 187, in _multicall\r\nINTERNALERROR>     res = hook_impl.function(*args)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/main.py\", line 272, in pytest_runtestloop\r\nINTERNALERROR>     item.config.hook.pytest_runtest_protocol(item=item, nextitem=nextitem)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/hooks.py\", line 286, in __call__\r\nINTERNALERROR>     return self._hookexec(self, self.get_hookimpls(), kwargs)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/manager.py\", line 93, in _hookexec\r\nINTERNALERROR>     return self._inner_hookexec(hook, methods, kwargs)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/manager.py\", line 84, in <lambda>\r\nINTERNALERROR>     self._inner_hookexec = lambda hook, methods, kwargs: hook.multicall(\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/callers.py\", line 208, in _multicall\r\nINTERNALERROR>     return outcome.get_result()\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/callers.py\", line 80, in get_result\r\nINTERNALERROR>     raise ex[1].with_traceback(ex[2])\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/callers.py\", line 187, in _multicall\r\nINTERNALERROR>     res = hook_impl.function(*args)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/runner.py\", line 85, in pytest_runtest_protocol\r\nINTERNALERROR>     runtestprotocol(item, nextitem=nextitem)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/runner.py\", line 100, in runtestprotocol\r\nINTERNALERROR>     reports.append(call_and_report(item, \"call\", log))\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/runner.py\", line 188, in call_and_report\r\nINTERNALERROR>     report = hook.pytest_runtest_makereport(item=item, call=call)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/hooks.py\", line 286, in __call__\r\nINTERNALERROR>     return self._hookexec(self, self.get_hookimpls(), kwargs)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/manager.py\", line 93, in _hookexec\r\nINTERNALERROR>     return self._inner_hookexec(hook, methods, kwargs)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/manager.py\", line 84, in <lambda>\r\nINTERNALERROR>     self._inner_hookexec = lambda hook, methods, kwargs: hook.multicall(\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/callers.py\", line 203, in _multicall\r\nINTERNALERROR>     gen.send(outcome)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/skipping.py\", line 129, in pytest_runtest_makereport\r\nINTERNALERROR>     rep = outcome.get_result()\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/callers.py\", line 80, in get_result\r\nINTERNALERROR>     raise ex[1].with_traceback(ex[2])\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/callers.py\", line 187, in _multicall\r\nINTERNALERROR>     res = hook_impl.function(*args)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/runner.py\", line 260, in pytest_runtest_makereport\r\nINTERNALERROR>     return TestReport.from_item_and_call(item, call)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/reports.py\", line 294, in from_item_and_call\r\nINTERNALERROR>     longrepr = item.repr_failure(excinfo)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/python.py\", line 1513, in repr_failure\r\nINTERNALERROR>     return self._repr_failure_py(excinfo, style=style)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/nodes.py\", line 355, in _repr_failure_py\r\nINTERNALERROR>     return excinfo.getrepr(\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_code/code.py\", line 634, in getrepr\r\nINTERNALERROR>     return fmt.repr_excinfo(self)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_code/code.py\", line 879, in repr_excinfo\r\nINTERNALERROR>     reprtraceback = self.repr_traceback(excinfo_)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_code/code.py\", line 823, in repr_traceback\r\nINTERNALERROR>     reprentry = self.repr_traceback_entry(entry, einfo)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_code/code.py\", line 784, in repr_traceback_entry\r\nINTERNALERROR>     reprargs = self.repr_args(entry) if not short else None\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_code/code.py\", line 693, in repr_args\r\nINTERNALERROR>     args.append((argname, saferepr(argvalue)))\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_io/saferepr.py\", line 82, in saferepr\r\nINTERNALERROR>     return SafeRepr(maxsize).repr(obj)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_io/saferepr.py\", line 51, in repr\r\nINTERNALERROR>     s = _format_repr_exception(exc, x)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_io/saferepr.py\", line 23, in _format_repr_exception\r\nINTERNALERROR>     exc_info, obj.__class__.__name__, id(obj)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_io/saferepr.py\", line 47, in repr\r\nINTERNALERROR>     s = super().repr(x)\r\nINTERNALERROR>   File \"/usr/local/Cellar/python@3.8/3.8.1/Frameworks/Python.framework/Versions/3.8/lib/python3.8/reprlib.py\", line 52, in repr\r\nINTERNALERROR>     return self.repr1(x, self.maxlevel)\r\nINTERNALERROR>   File \"/usr/local/Cellar/python@3.8/3.8.1/Frameworks/Python.framework/Versions/3.8/lib/python3.8/reprlib.py\", line 62, in repr1\r\nINTERNALERROR>     return self.repr_instance(x, level)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_io/saferepr.py\", line 60, in repr_instance\r\nINTERNALERROR>     s = _format_repr_exception(exc, x)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_io/saferepr.py\", line 23, in _format_repr_exception\r\nINTERNALERROR>     exc_info, obj.__class__.__name__, id(obj)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_io/saferepr.py\", line 56, in repr_instance\r\nINTERNALERROR>     s = repr(x)\r\nINTERNALERROR>   File \"/Users/stiflou/Documents/projets/apischema/tests/test_pytest.py\", line 6, in __repr__\r\nINTERNALERROR>     raise\r\nINTERNALERROR> RuntimeError: No active exception to reraise\r\n\r\n============================ no tests ran in 0.09s ============================\r\n```\n</description>",
+  "request": {
+    "related_symbols": [
+      {
+        "name": "_pytest._code.FormattedExcinfo.repr_traceback_entry",
+        "file_path": "src/_pytest/_code/code.py",
+        "file_content": "def repr_traceback_entry(\n        self, entry: TracebackEntry, excinfo: Optional[ExceptionInfo] = None\n    ) -> \"ReprEntry\":\n        import _pytest._code\n\n        source = self._getentrysource(entry)\n        if source is None:\n            source = _pytest._code.Source(\"???\")\n            line_index = 0\n        else:\n            line_index = entry.lineno - entry.getfirstlinesource()\n\n        lines = []  # type: List[str]\n        style = entry._repr_style if entry._repr_style is not None else self.style\n        if style in (\"short\", \"long\"):\n            short = style == \"short\"\n            reprargs = self.repr_args(entry) if not short else None\n            s = self.get_source(source, line_index, excinfo, short=short)\n            lines.extend(s)\n            if short:\n                message = \"in %s\" % (entry.name)\n            else:\n                message = excinfo and excinfo.typename or \"\"\n            path = self._makepath(entry.path)\n            reprfileloc = ReprFileLocation(path, entry.lineno + 1, message)\n            localsrepr = self.repr_locals(entry.locals)\n            return ReprEntry(lines, reprargs, localsrepr, reprfileloc, style)\n        if excinfo:\n            lines.extend(self.get_exconly(excinfo, indent=4))\n        return ReprEntry(lines, None, None, None, style)",
+        "start_line": 768,
+        "start_column": 25949,
+        "end_line": 4,
+        "end_column": 27245,
+        "start_byte": 25949,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.FormattedExcinfo.repr_traceback",
+        "file_path": "src/_pytest/_code/code.py",
+        "file_content": "def repr_traceback(self, excinfo: ExceptionInfo) -> \"ReprTraceback\":\n        traceback = excinfo.traceback\n        if self.tbfilter:\n            traceback = traceback.filter()\n\n        if excinfo.errisinstance(RecursionError):\n            traceback, extraline = self._truncate_recursive_traceback(traceback)\n        else:\n            extraline = None\n\n        last = traceback[-1]\n        entries = []\n        for index, entry in enumerate(traceback):\n            einfo = (last == entry) and excinfo or None\n            reprentry = self.repr_traceback_entry(entry, einfo)\n            entries.append(reprentry)\n        return ReprTraceback(entries, extraline, style=self.style)",
+        "start_line": 809,
+        "start_column": 27527,
+        "end_line": 4,
+        "end_column": 28203,
+        "start_byte": 27527,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.ReprExceptionInfo.reprtraceback",
+        "file_path": "src/_pytest/_code/code.py",
+        "file_content": "reprtraceback = attr.ib(type=\"ReprTraceback\")",
+        "start_line": 971,
+        "start_column": 33932,
+        "end_line": 4,
+        "end_column": 33977,
+        "start_byte": 33932,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.ReprExceptionInfo.reprcrash",
+        "file_path": "src/_pytest/_code/code.py",
+        "file_content": "reprcrash = attr.ib(type=\"ReprFileLocation\")",
+        "start_line": 972,
+        "start_column": 33982,
+        "end_line": 4,
+        "end_column": 34026,
+        "start_byte": 33982,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.fixtures.FixtureFunctionMarker",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "\n            elif isinstance(id_value, (float, int, bool)):\n                new_ids.append(str(id_value))\n            else:\n                msg = \"In {}: ids must be list of string/float/int/bool, found: {} (type: {!r}) at index {}\"\n                fail(\n                    msg.format(func_name, saferepr(id_value), type(id_value), idx),\n                    pytrace=False,\n                )\n        return new_ids\n\n    def _resolve_arg_value_types(\n        self,\n        argnames: typing.Sequence[str],\n        indirect: Union[bool, typing.Sequence[str]],\n    ) -> Dict[str, str]:\n        \"\"\"Resolves if each parametrized argument must be considered a parameter to a fixture or a \"funcarg\"\n        to the function, based on the ``indirect`` parameter of the parametrized() call.\n\n        :param List[str] argnames: list of argument names passed to ``parametrize()``.\n        :param indirect: same ``indirect`` parameter of ``parametrize()``.\n        :rtype: Dict[str, str]\n            A dict mapping each arg name to either:\n            * \"params\" if the argname should be the parameter of a fixture of the same name.\n            * \"funcargs\" if the argname should be a parameter ",
+        "start_line": 1010,
+        "start_column": 38707,
+        "end_line": 0,
+        "end_column": 39888,
+        "start_byte": 38707,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.fixtures.FixtureFunctionMarker.scope",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "ol)):\n           ",
+        "start_line": 1012,
+        "start_column": 38761,
+        "end_line": 4,
+        "end_column": 38778,
+        "start_byte": 38761,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.fixtures.FixtureFunctionMarker.params",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "new_ids.append(str(id_value))\n            else:\n           ",
+        "start_line": 1013,
+        "start_column": 38783,
+        "end_line": 4,
+        "end_column": 38842,
+        "start_byte": 38783,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.fixtures.FixtureFunctionMarker.autouse",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "msg = \"In {}: ids must be list o",
+        "start_line": 1014,
+        "start_column": 38847,
+        "end_line": 4,
+        "end_column": 38879,
+        "start_byte": 38847,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.fixtures.FixtureFunctionMarker.ids",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "ail(\n                    msg.format(func_name, saferepr(id_v",
+        "start_line": 1016,
+        "start_column": 38957,
+        "end_line": 4,
+        "end_column": 39017,
+        "start_byte": 38957,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.fixtures.FixtureFunctionMarker.name",
+        "file_path": "src/_pytest/python.py",
+        "file_content": ", idx),\n                    ",
+        "start_line": 1017,
+        "start_column": 39038,
+        "end_line": 4,
+        "end_column": 39066,
+        "start_byte": 39038,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.fixtures.FixtureFunctionMarker.__call__",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "e=False,\n                )\n        return new_ids\n\n    def _resolve_arg_value_types(\n        self,\n        argnames: typing.Sequence[str],\n        indirect: Union[bool, typing.Sequence[str]],\n    ) -> Dict[str, str]:\n        \"\"\"Resolves if each parametrized argument must be considered a parameter to a fixture or a \"funcarg\"\n        to the function, based on the ``indirect`` parameter of the parametrized() call.\n\n        :param List[str] argnames: list of argument names passed to ``parametrize()``.\n        :param indirect: same ``indirect`` parameter of ``parametrize()``.\n        :rtype: Dict[str, str]\n            A dict mapping each arg name to either:\n            * \"params\" if the argname should be the parameter of a fixture of the same name.\n            * \"funcargs\" if the argname should be a parameter ",
+        "start_line": 1019,
+        "start_column": 39072,
+        "end_line": 4,
+        "end_column": 39888,
+        "start_byte": 39072,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.python.Function",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "class Function(PyobjMixin, nodes.Item):\n    \"\"\" a Function Item is responsible for setting up and executing a\n    Python test function.\n    \"\"\"\n\n    # disable since functions handle it themselves\n    _ALLOW_MARKERS = False\n\n    def __init__(\n        self,\n        name,\n        parent,\n        args=None,\n        config=None,\n        callspec: Optional[CallSpec2] = None,\n        callobj=NOTSET,\n        keywords=None,\n        session=None,\n        fixtureinfo: Optional[FuncFixtureInfo] = None,\n        originalname=None,\n    ) -> None:\n        super().__init__(name, parent, config=config, session=session)\n        self._args = args\n        if callobj is not NOTSET:\n            self.obj = callobj\n\n        self.keywords.update(self.obj.__dict__)\n        self.own_markers.extend(get_unpacked_marks(self.obj))\n        if callspec:\n            self.callspec = callspec\n            # this is total hostile and a mess\n            # keywords are broken by design by now\n            # this will be redeemed later\n            for mark in callspec.marks:\n                # feel free to cry, this was broken for years before\n                # and keywords cant fix it per design\n                self.keywords[mark.name] = mark\n            self.own_markers.extend(normalize_mark_list(callspec.marks))\n        if keywords:\n            self.keywords.update(keywords)\n\n        # todo: this is a hell of a hack\n        # https://github.com/pytest-dev/pytest/issues/4569\n\n        self.keywords.update(\n            {\n                mark.name: True\n                for mark in self.iter_markers()\n                if mark.name not in self.keywords\n            }\n        )\n\n        if fixtureinfo is None:\n            fixtureinfo = self.session._fixturemanager.getfixtureinfo(\n                self, self.obj, self.cls, funcargs=True\n            )\n        self._fixtureinfo = fixtureinfo  # type: FuncFixtureInfo\n        self.fixturenames = fixtureinfo.names_closure\n        self._initrequest()\n\n        #: original function name, without any decorations (for example\n        #: parametrization adds a ``\"[...]\"`` suffix to function names).\n        #:\n        #: .. versionadded:: 3.0\n        self.originalname = originalname\n\n    @classmethod\n    def from_parent(cls, parent, **kw):  # todo: determine sound type limitations\n        \"\"\"\n        The public  constructor\n        \"\"\"\n        return super().from_parent(parent=parent, **kw)\n\n    def _initrequest(self):\n        self.funcargs = {}\n        self._request = fixtures.FixtureRequest(self)\n\n    @property\n    def function(self):\n        \"underlying python 'function' object\"\n        return getimfunc(self.obj)\n\n    def _getobj(self):\n        name = self.name\n        i = name.find(\"[\")  # parametrization\n        if i != -1:\n            name = name[:i]\n        return getattr(self.parent.obj, name)\n\n    @property\n    def _pyfuncitem(self):\n        \"(compatonly) for code expecting pytest-2.2 style request objects\"\n        return self\n\n    @property\n    def funcargnames(self):\n        \"\"\" alias attribute for ``fixturenames`` for pre-2.3 compatibility\"\"\"\n        warnings.warn(FUNCARGNAMES, stacklevel=2)\n        return self.fixturenames\n\n    def runtest(self) -> None:\n        \"\"\" execute the underlying test function. \"\"\"\n        self.ihook.pytest_pyfunc_call(pyfuncitem=self)\n\n    def setup(self) -> None:\n        if isinstance(self.parent, Instance):\n            self.parent.newinstance()\n            self.obj = self._getobj()\n        self._request._fillfixtures()\n\n    def _prunetraceback(self, excinfo: ExceptionInfo) -> None:\n        if hasattr(self, \"_obj\") and not self.config.getoption(\"fulltrace\", False):\n            code = _pytest._code.Code(get_real_func(self.obj))\n            path, firstlineno = code.path, code.firstlineno\n            traceback = excinfo.traceback\n            ntraceback = traceback.cut(path=path, firstlineno=firstlineno)\n            if ntraceback == traceback:\n                ntraceback = ntraceback.cut(path=path)\n                if ntraceback == traceback:\n                    ntraceback = ntraceback.filter(filter_traceback)\n                    if not ntraceback:\n                        ntraceback = traceback\n\n            excinfo.traceback = ntraceback.filter()\n            # issue364: mark all but first and last frames to\n            # only show a single-line message for each frame\n            if self.config.getoption(\"tbstyle\", \"auto\") == \"auto\":\n                if len(excinfo.traceback) > 2:\n                    for entry in excinfo.traceback[1:-1]:\n                        entry.set_repr_style(\"short\")\n\n    def repr_failure(self, excinfo, outerr=None):\n        assert outerr is None, \"XXX outerr usage is deprecated\"\n        style = self.config.getoption(\"tbstyle\", \"auto\")\n        if style == \"auto\":\n            style = \"long\"\n        return self._repr_failure_py(excinfo, style=style)",
+        "start_line": 1409,
+        "start_column": 52332,
+        "end_line": 0,
+        "end_column": 57213,
+        "start_byte": 52332,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.python.Function._ALLOW_MARKERS",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "_ALLOW_MARKERS = False",
+        "start_line": 1415,
+        "start_column": 52532,
+        "end_line": 4,
+        "end_column": 52554,
+        "start_byte": 52532,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.python.Function.__init__",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "def __init__(\n        self,\n        name,\n        parent,\n        args=None,\n        config=None,\n        callspec: Optional[CallSpec2] = None,\n        callobj=NOTSET,\n        keywords=None,\n        session=None,\n        fixtureinfo: Optional[FuncFixtureInfo] = None,\n        originalname=None,\n    ) -> None:\n        super().__init__(name, parent, config=config, session=session)\n        self._args = args\n        if callobj is not NOTSET:\n            self.obj = callobj\n\n        self.keywords.update(self.obj.__dict__)\n        self.own_markers.extend(get_unpacked_marks(self.obj))\n        if callspec:\n            self.callspec = callspec\n            # this is total hostile and a mess\n            # keywords are broken by design by now\n            # this will be redeemed later\n            for mark in callspec.marks:\n                # feel free to cry, this was broken for years before\n                # and keywords cant fix it per design\n                self.keywords[mark.name] = mark\n            self.own_markers.extend(normalize_mark_list(callspec.marks))\n        if keywords:\n            self.keywords.update(keywords)\n\n        # todo: this is a hell of a hack\n        # https://github.com/pytest-dev/pytest/issues/4569\n\n        self.keywords.update(\n            {\n                mark.name: True\n                for mark in self.iter_markers()\n                if mark.name not in self.keywords\n            }\n        )\n\n        if fixtureinfo is None:\n            fixtureinfo = self.session._fixturemanager.getfixtureinfo(\n                self, self.obj, self.cls, funcargs=True\n            )\n        self._fixtureinfo = fixtureinfo  # type: FuncFixtureInfo\n        self.fixturenames = fixtureinfo.names_closure\n        self._initrequest()\n\n        #: original function name, without any decorations (for example\n        #: parametrization adds a ``\"[...]\"`` suffix to function names).\n        #:\n        #: .. versionadded:: 3.0\n        self.originalname = originalname",
+        "start_line": 1417,
+        "start_column": 52560,
+        "end_line": 4,
+        "end_column": 54540,
+        "start_byte": 52560,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.python.Function.from_parent",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "@classmethod\n    def from_parent(cls, parent, **kw):  # todo: determine sound type limitations\n        \"\"\"\n        The public  constructor\n        \"\"\"\n        return super().from_parent(parent=parent, **kw)",
+        "start_line": 1475,
+        "start_column": 54546,
+        "end_line": 4,
+        "end_column": 54752,
+        "start_byte": 54546,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.python.Function._initrequest",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "def _initrequest(self):\n        self.funcargs = {}\n        self._request = fixtures.FixtureRequest(self)",
+        "start_line": 1482,
+        "start_column": 54758,
+        "end_line": 4,
+        "end_column": 54862,
+        "start_byte": 54758,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.python.Function.function",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "@property\n    def function(self):\n        \"underlying python 'function' object\"\n        return getimfunc(self.obj)",
+        "start_line": 1486,
+        "start_column": 54868,
+        "end_line": 4,
+        "end_column": 54982,
+        "start_byte": 54868,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.python.Function._getobj",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "def _getobj(self):\n        name = self.name\n        i = name.find(\"[\")  # parametrization\n        if i != -1:\n            name = name[:i]\n        return getattr(self.parent.obj, name)",
+        "start_line": 1491,
+        "start_column": 54988,
+        "end_line": 4,
+        "end_column": 55171,
+        "start_byte": 54988,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.python.Function._pyfuncitem",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "@property\n    def _pyfuncitem(self):\n        \"(compatonly) for code expecting pytest-2.2 style request objects\"\n        return self",
+        "start_line": 1498,
+        "start_column": 55177,
+        "end_line": 4,
+        "end_column": 55308,
+        "start_byte": 55177,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.python.Function.funcargnames",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "@property\n    def funcargnames(self):\n        \"\"\" alias attribute for ``fixturenames`` for pre-2.3 compatibility\"\"\"\n        warnings.warn(FUNCARGNAMES, stacklevel=2)\n        return self.fixturenames",
+        "start_line": 1503,
+        "start_column": 55314,
+        "end_line": 4,
+        "end_column": 55512,
+        "start_byte": 55314,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.python.Function.runtest",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "def runtest(self) -> None:\n        \"\"\" execute the underlying test function. \"\"\"\n        self.ihook.pytest_pyfunc_call(pyfuncitem=self)",
+        "start_line": 1509,
+        "start_column": 55518,
+        "end_line": 4,
+        "end_column": 55653,
+        "start_byte": 55518,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.python.Function.setup",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "def setup(self) -> None:\n        if isinstance(self.parent, Instance):\n            self.parent.newinstance()\n            self.obj = self._getobj()\n        self._request._fillfixtures()",
+        "start_line": 1513,
+        "start_column": 55659,
+        "end_line": 4,
+        "end_column": 55843,
+        "start_byte": 55659,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.python.Function._prunetraceback",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "def _prunetraceback(self, excinfo: ExceptionInfo) -> None:\n        if hasattr(self, \"_obj\") and not self.config.getoption(\"fulltrace\", False):\n            code = _pytest._code.Code(get_real_func(self.obj))\n            path, firstlineno = code.path, code.firstlineno\n            traceback = excinfo.traceback\n            ntraceback = traceback.cut(path=path, firstlineno=firstlineno)\n            if ntraceback == traceback:\n                ntraceback = ntraceback.cut(path=path)\n                if ntraceback == traceback:\n                    ntraceback = ntraceback.filter(filter_traceback)\n                    if not ntraceback:\n                        ntraceback = traceback\n\n            excinfo.traceback = ntraceback.filter()\n            # issue364: mark all but first and last frames to\n            # only show a single-line message for each frame\n            if self.config.getoption(\"tbstyle\", \"auto\") == \"auto\":\n                if len(excinfo.traceback) > 2:\n                    for entry in excinfo.traceback[1:-1]:\n                        entry.set_repr_style(\"short\")",
+        "start_line": 1519,
+        "start_column": 55849,
+        "end_line": 4,
+        "end_column": 56927,
+        "start_byte": 55849,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.python.FunctionDefinition",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "class FunctionDefinition(Function):\n    \"\"\"\n    internal hack until we get actual definition nodes instead of the\n    crappy metafunc hack\n    \"\"\"\n\n    def runtest(self) -> None:\n        raise RuntimeError(\"function definitions are not supposed to be used\")\n\n    setup = runtest",
+        "start_line": 1548,
+        "start_column": 57216,
+        "end_line": 0,
+        "end_column": 57494,
+        "start_byte": 57216,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.python.FunctionDefinition.runtest",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "def runtest(self) -> None:\n        raise RuntimeError(\"function definitions are not supposed to be used\")",
+        "start_line": 1554,
+        "start_column": 57368,
+        "end_line": 4,
+        "end_column": 57473,
+        "start_byte": 57368,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.python.FunctionDefinition.setup",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "setup = runtest",
+        "start_line": 1557,
+        "start_column": 57479,
+        "end_line": 4,
+        "end_column": 57494,
+        "start_byte": 57479,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.unittest.TestCaseFunction",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "ault=\"prepend\",\n        choices=[\"prepend\", \"append\"],\n        dest=\"importmode\",\n        help=\"prepend/append to sys.path when importing test modules, \"\n        \"default is to prepend.\",\n    )\n\n\ndef pytest_cmdline_main(config):\n    if config.option.showfixtures:\n        showfixtures(config)\n        return 0\n    if config.option.show_fixtures_per_test:\n        show_fixtures_per_test(config)\n        return 0\n\n\ndef pytest_generate_tests(metafunc: \"Metafunc\") -> None:\n    for marker in metafunc.definition.iter_markers(name=\"parametrize\"):\n        # TODO: Fix this type-ignore (overlapping kwargs).\n        metafunc.parametrize(*marker.args, **marker.kwargs, _param_mark=marker)  # type: ignore[misc] # noqa: F821\n\n\ndef pytest_configure(config):\n    config.addinivalue_line(\n        \"markers\",\n        \"parametrize(argnames, argvalues): call a test function multiple \"\n        \"times passing in different arguments in turn. argvalues generally \"\n        \"needs to be a list of values if argnames specifies only one name \"\n        \"or a list of tuples of values if argnames specifies multiple names. \"\n        \"Example: @parametrize('arg1', [1,2]) would lead to two calls of the \"\n        \"decorated test function, one with arg1=1 and another with arg1=2.\"\n        \"see https://docs.pytest.org/en/latest/parametrize.html for more info \"\n        \"and examples.\",\n    )\n    config.addinivalue_line(\n        \"markers\",\n        \"usefixtures(fixturename1, fixturename2, ...): mark tests as needing \"\n        \"all of the specified fixtures. see \"\n        \"https://docs.pytest.org/en/latest/fixture.html#usefixtures \",\n    )\n\n\ndef async_warn_and_skip(nodeid: str) -> None:\n    msg = \"async def functions are not natively supported and have been skipped.\\n\"\n    msg += (\n        \"You need to install a suitable plugin for your async framework, for example:\\n\"\n    )\n    msg += \"  - pytest-asyncio\\n\"\n    msg += \"  - pytest-trio\\n\"\n    msg += \"  - pytest-tornasync\\n\"\n    msg += \"  - pytest-twisted\"\n    warnings.warn(PytestUnhandledCoroutineWarning(msg.format(nodeid)))\n    skip(msg=\"async def function and no async plugin installed (see warnings)\")\n\n\n@hookimpl(trylast=True)\ndef pytest_pyfunc_call(pyfuncitem: \"Function\"):\n    testfunction = pyfuncitem.obj\n    if is_async_function(testfunction):\n        async_warn_and_skip(pyfuncitem.nodeid)\n    funcargs = pyfuncitem.funcargs\n    testargs = {arg: funcargs[arg] for arg in pyfuncitem._fixtureinfo.argnames}\n    result = testfunction(**testargs)\n    if hasattr(result, \"__await__\") or hasattr(result, \"__aiter__\"):\n        async_warn_and_skip(pyfuncitem.nodeid)\n    return True\n\n\ndef pytest_collect_file(path, parent):\n    ext = path.ext\n    if ext == \".py\":\n        if not parent.session.isinitpath(path):\n            if not path_matches_patterns(\n                path, parent.config.getini(\"python_files\") + [\"__init__.py\"]\n            ):\n                return\n        ihook = parent.session.gethookproxy(path)\n        return ihook.pytest_pycollect_makemodule(path=path, parent=parent)\n\n\ndef path_matches_patterns(path, patterns):\n    \"\"\"Returns True if the given py.path.local matches one of the patterns in the list of globs given\"\"\"\n    return any(path.fnmatch(pattern) for pattern in patterns)\n\n\ndef pytest_pycollect_makemodule(path, parent):\n    if path.basename == \"__init__.py\":\n        return Package.from_parent(parent, fspath=path)\n    return Module.from_parent(parent, fspath=path)\n\n\n@hookimpl(hookwrapper=True)\ndef pytest_pycollect_makeitem(collector, name, obj):\n    outcome = yield\n    res = outcome.get_result()\n    if res is not None:\n        return\n    # nothing was collected elsewhere, let's do it here\n    if safe_isclass(obj):\n        if collector.istestclass(obj, name):\n            outcome.force_result(Class.from_parent(collector, name=name, obj=obj))\n    elif collector.istestfunction(obj, name):\n        # mock seems to store unbound methods (issue473), normalize it\n        obj = getattr(obj, \"__func__\", obj)\n        # We need to try and unwrap the function if it's a functools.partial\n        # or a functools.wrapped.\n        # We mustn't if it's been wrapped with mock.patch (python 2 only)\n        if not (inspect.isfunction(obj) or inspect.isfunction(get_real_func(obj))):\n            filename, lineno = getfslineno(obj)\n            warnings.warn_explicit(\n                message=PytestCollectionWarning(\n                    \"cannot collect %r because it is not a function.\" % name\n                ),\n                category=None,\n                filename=str(filename),\n                lineno=lineno + 1,\n            )\n        elif getattr(obj, \"__test__\", True):\n            if is_generator(obj):\n                res = Function.from_parent(collector, name=name)\n                reason = \"yield tests were removed in pytest 4.0 - {name} will be ignored\".format(\n                    name=name\n                )\n                res.add_marker(MARK_GEN.xfail(run=False, reason=reason))\n                res.warn(PytestCollectionWarning(reason))\n ",
+        "start_line": 109,
+        "start_column": 3686,
+        "end_line": 0,
+        "end_column": 8712,
+        "start_byte": 3686,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.unittest.TestCaseFunction.nofuncargs",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "end\", \"append\"],\n",
+        "start_line": 110,
+        "start_column": 3724,
+        "end_line": 4,
+        "end_column": 3741,
+        "start_byte": 3724,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.unittest.TestCaseFunction._excinfo",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "   dest=\"import",
+        "start_line": 111,
+        "start_column": 3746,
+        "end_line": 4,
+        "end_column": 3761,
+        "start_byte": 3746,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.unittest.TestCaseFunction._testcase",
+        "file_path": "src/_pytest/python.py",
+        "file_content": ",\n        help=\"",
+        "start_line": 112,
+        "start_column": 3766,
+        "end_line": 4,
+        "end_column": 3782,
+        "start_byte": 3766,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.unittest.TestCaseFunction.setup",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "d/append to sys.path when importing test modules, \"\n        \"default is to prepend.\",\n    )\n\n\ndef pytest_cmdline_main(config):\n    if config.option.showfixtures:\n        showfixtures(config)\n        return 0\n    if config.option.show_fixtures_per_test:\n        show_fixtures_per_test(config)\n        return 0\n\n\ndef pytest_g",
+        "start_line": 114,
+        "start_column": 3788,
+        "end_line": 4,
+        "end_column": 4111,
+        "start_byte": 3788,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.unittest.TestCaseFunction.teardown",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "e_tests(metafunc: \"Metafunc\") -> None:\n    for marker in metafunc.definition.iter_markers(name=\"parametrize\"):\n        # TODO: Fix this type-ignore (overlapping kwargs).\n        metafunc.parametrize(*mar",
+        "start_line": 122,
+        "start_column": 4117,
+        "end_line": 4,
+        "end_column": 4320,
+        "start_byte": 4117,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.unittest.TestCaseFunction.startTest",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "gs, **marker.kwargs, _param_mark=marker)  #",
+        "start_line": 129,
+        "start_column": 4326,
+        "end_line": 4,
+        "end_column": 4369,
+        "start_byte": 4326,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.unittest.TestCaseFunction._addexcinfo",
+        "file_path": "src/_pytest/python.py",
+        "file_content": " ignore[misc] # noqa: F821\n\n\ndef pytest_configure(config):\n    config.addinivalue_line(\n        \"markers\",\n        \"parametrize(argnames, argvalues): call a test function multiple \"\n        \"times passing in different arguments in turn. argvalues generally \"\n        \"needs to be a list of values if argnames specifies only one name \"\n        \"or a list of tuples of values if argnames specifies multiple names. \"\n        \"Example: @parametrize('arg1', [1,2]) would lead to two calls of the \"\n        \"decorated test function, one with arg1=1 and another with arg1=2.\"\n        \"see https://docs.pytest.org/en/latest/parametrize.html for more info \"\n        \"and examples.\",\n    )\n    config.addinivalue_line(\n        \"markers\",\n        \"usefixtures(fixturename1, fixturename2, ...): mark tests as needing \"\n        \"all of the specified fixtures. see \"\n        \"https://docs.pytest.org/en/latest/fixture.html#usefixtures \",\n    )\n\n\ndef async_warn_and_skip(nodeid: str) -> None:\n    msg = \"async def functions are not natively supported and have been skipped.\\n\"\n    msg += (\n        \"You need to install a suitable plugin for your async framework, for example:\\n\"\n    )\n    msg += \"  - pytest-asyncio\\n\"\n    msg += \"  - pytest-trio\\n\"\n    msg += \"  - pytest-tornasync\\n\"\n    msg += \"  - pytest-twisted\"\n    warnings.warn(PytestUnhandledCoroutineWarning(msg.format(nodeid)))\n    skip",
+        "start_line": 132,
+        "start_column": 4375,
+        "end_line": 4,
+        "end_column": 5757,
+        "start_byte": 4375,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.unittest.TestCaseFunction.addError",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "async def function and no async plugin installed (see warnings)\")\n\n\n@hookimpl(trylast=True)\ndef pytest_pyfunc_call(pyfuncitem: \"Function\"):\n    testfunction = pyfuncitem.obj\n    if is_async_function(testfunction):\n        async_warn",
+        "start_line": 165,
+        "start_column": 5763,
+        "end_line": 4,
+        "end_column": 5995,
+        "start_byte": 5763,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.unittest.TestCaseFunction.addFailure",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "kip(pyfuncitem.nodeid)\n    funcargs = pyfuncitem.funcargs\n    testargs = {arg: f",
+        "start_line": 173,
+        "start_column": 6001,
+        "end_line": 4,
+        "end_column": 6081,
+        "start_byte": 6001,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.unittest.TestCaseFunction.addSkip",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "s[arg] for arg in pyfuncitem._fixtureinfo.argnames}\n    result = testfunction(**testargs)\n    if hasattr(result, \"__await__\") or hasattr(result, \"__aiter__\"):\n        async_warn_and_skip(pyfuncitem.node",
+        "start_line": 176,
+        "start_column": 6087,
+        "end_line": 4,
+        "end_column": 6289,
+        "start_byte": 6087,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.unittest.TestCaseFunction.addExpectedFailure",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "  return True\n\n\ndef pytest_collect_file(path, parent):\n    ext = path.ext\n    if ext == \".py\":\n        if not parent.session.isinitpath(path):\n            if not path_matches_patterns",
+        "start_line": 183,
+        "start_column": 6295,
+        "end_line": 4,
+        "end_column": 6478,
+        "start_byte": 6295,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.unittest.TestCaseFunction.addUnexpectedSuccess",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "            path, parent.config.getini(\"python_files\") + [\"__init__.py\"]\n            ):\n                ",
+        "start_line": 189,
+        "start_column": 6484,
+        "end_line": 4,
+        "end_column": 6588,
+        "start_byte": 6484,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.unittest.TestCaseFunction.addSuccess",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "\n        ihook = parent.session.gethookproxy",
+        "start_line": 192,
+        "start_column": 6594,
+        "end_line": 4,
+        "end_column": 6638,
+        "start_byte": 6594,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.unittest.TestCaseFunction.stopTest",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "\n        return ihook.pytest_pycollect_mak",
+        "start_line": 195,
+        "start_column": 6644,
+        "end_line": 4,
+        "end_column": 6686,
+        "start_byte": 6644,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.unittest.TestCaseFunction._expecting_failure",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "e(path=path, parent=parent)\n\n\ndef path_matches_patterns(path, patterns):\n    \"\"\"Returns True if the given py.path.local matches one of the patterns in the list of globs given\"\"\"\n    return any(path.fnmatch(pattern) for pattern in patterns)\n\n\ndef pytest_pycollect_makemodule(path, parent):\n    if path.basename == \"__init__.py\":\n        return Package.from_parent(parent, fspath=path)\n    return Module.from_parent(parent, fspath=path)\n\n\n@hookimpl(h",
+        "start_line": 198,
+        "start_column": 6692,
+        "end_line": 4,
+        "end_column": 7140,
+        "start_byte": 6692,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.unittest.TestCaseFunction.runtest",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "pper=True)\ndef pytest_pycollect_makeitem(collector, name, obj):\n    outcome = yield\n    res = outcome.get_result()\n    if res is not None:\n        return\n    # nothing was collected elsewhere, let's do it here\n    if safe_isclass(obj):\n        if collector.istestclass(obj, name):\n            outcome.force_result(Class.from_parent(collector, name=name, obj=obj))\n    elif collector.istestfunction(obj, name):\n        # mock seems to store unbound methods (issue473), normalize it\n        obj = getattr(obj, \"__func__\", obj)\n        # We need to try and unwrap the function if it's a functools.partial\n        # or a functools.wrapped.\n        # We mustn't if it's been wrapped with mock.patch (python 2 only)\n        if not (inspect.isfunction(obj) or inspect.isfunction(get_real_func(obj))):\n            filename, lineno = getfslineno(obj)\n            warnings.warn_explicit(\n                message=PytestCollectionWarning(\n                    \"cannot collect %r because it is not a function.\" % name\n                ),\n                category=None,\n                filename=str(filename),\n                lineno=lineno + 1,\n            )\n        elif getattr(obj, \"__test__\", True):\n            if is_generator(obj):\n                res = Function.from_parent(collector, name=name)\n        ",
+        "start_line": 207,
+        "start_column": 7146,
+        "end_line": 4,
+        "end_column": 8441,
+        "start_byte": 7146,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.unittest.TestCaseFunction._prunetraceback",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "  reason = \"yield tests were removed in pytest 4.0 - {name} will be ignored\".format(\n                    name=name\n                )\n                res.add_marker(MARK_GEN.xfail(run=False, reason=reason))\n                res.warn(PytestCollectionWarning(reason))\n ",
+        "start_line": 234,
+        "start_column": 8447,
+        "end_line": 4,
+        "end_column": 8712,
+        "start_byte": 8447,
+        "end_byte": 4
+      }
+    ],
+    "root_caused_symbols": [
+      {
+        "name": "_pytest._io._format_repr_exception",
+        "file_path": "src/_pytest/_io/saferepr.py",
+        "file_content": "def _format_repr_exception(exc: BaseException, obj: Any) -> str:\n    try:\n        exc_info = _try_repr_or_str(exc)\n    except (KeyboardInterrupt, SystemExit):\n        raise\n    except BaseException as exc:\n        exc_info = \"unpresentable exception ({})\".format(_try_repr_or_str(exc))\n    return \"<[{} raised in repr()] {} object at 0x{:x}>\".format(\n        exc_info, obj.__class__.__name__, id(obj)\n    )",
+        "start_line": 14,
+        "start_column": 259,
+        "end_line": 0,
+        "end_column": 665,
+        "start_byte": 259,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest._io.SafeRepr.repr",
+        "file_path": "src/_pytest/_io/saferepr.py",
+        "file_content": "def repr(self, x: Any) -> str:\n        try:\n            s = super().repr(x)\n        except (KeyboardInterrupt, SystemExit):\n            raise\n        except BaseException as exc:\n            s = _format_repr_exception(exc, x)\n        return _ellipsize(s, self.maxsize)",
+        "start_line": 44,
+        "start_column": 1193,
+        "end_line": 4,
+        "end_column": 1461,
+        "start_byte": 1193,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._io.SafeRepr.repr_instance",
+        "file_path": "src/_pytest/_io/saferepr.py",
+        "file_content": "def repr_instance(self, x: Any, level: int) -> str:\n        try:\n            s = repr(x)\n        except (KeyboardInterrupt, SystemExit):\n            raise\n        except BaseException as exc:\n            s = _format_repr_exception(exc, x)\n        return _ellipsize(s, self.maxsize)",
+        "start_line": 53,
+        "start_column": 1467,
+        "end_line": 4,
+        "end_column": 1748,
+        "start_byte": 1467,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._io.safeformat",
+        "file_path": "src/_pytest/_io/saferepr.py",
+        "file_content": "def safeformat(obj: Any) -> str:\n    \"\"\"return a pretty printed string for the given object.\n    Failing __repr__ functions of user instances will be represented\n    with a short exception info.\n    \"\"\"\n    try:\n        return pprint.pformat(obj)\n    except Exception as exc:\n        return _format_repr_exception(exc, obj)",
+        "start_line": 63,
+        "start_column": 1751,
+        "end_line": 0,
+        "end_column": 2074,
+        "start_byte": 1751,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest._io.saferepr",
+        "file_path": "src/_pytest/_io/saferepr.py",
+        "file_content": "def saferepr(obj: Any, maxsize: int = 240) -> str:\n    \"\"\"return a size-limited safe repr-string for the given object.\n    Failing __repr__ functions of user instances will be represented\n    with a short exception info and 'saferepr' generally takes\n    care to never raise exceptions itself.  This function is a wrapper\n    around the Repr/reprlib functionality of the standard 2.6 lib.\n    \"\"\"\n    return SafeRepr(maxsize).repr(obj)",
+        "start_line": 74,
+        "start_column": 2077,
+        "end_line": 0,
+        "end_column": 2512,
+        "start_byte": 2077,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.assertion._saferepr",
+        "file_path": "src/_pytest/_io/saferepr.py",
+        "file_content": "",
+        "start_line": 375,
+        "start_column": 13624,
+        "end_line": 0,
+        "end_column": 14124,
+        "start_byte": 13624,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest._code.ExceptionInfo.getrepr",
+        "file_path": "src/_pytest/_code/code.py",
+        "file_content": "def getrepr(\n        self,\n        showlocals: bool = False,\n        style: \"_TracebackStyle\" = \"long\",\n        abspath: bool = False,\n        tbfilter: bool = True,\n        funcargs: bool = False,\n        truncate_locals: bool = True,\n        chain: bool = True,\n    ) -> Union[\"ReprExceptionInfo\", \"ExceptionChainRepr\"]:\n        \"\"\"\n        Return str()able representation of this exception info.\n\n        :param bool showlocals:\n            Show locals per traceback entry.\n            Ignored if ``style==\"native\"``.\n\n        :param str style: long|short|no|native traceback style\n\n        :param bool abspath:\n            If paths should be changed to absolute or left unchanged.\n\n        :param bool tbfilter:\n            Hide entries that contain a local variable ``__tracebackhide__==True``.\n            Ignored if ``style==\"native\"``.\n\n        :param bool funcargs:\n            Show fixtures (\"funcargs\" for legacy purposes) per traceback entry.\n\n        :param bool truncate_locals:\n            With ``showlocals==True``, make sure locals can be safely represented as strings.\n\n        :param bool chain: if chained exceptions in Python 3 should be shown.\n\n        .. versionchanged:: 3.9\n\n            Added the ``chain`` parameter.\n        \"\"\"\n        if style == \"native\":\n            return ReprExceptionInfo(\n                ReprTracebackNative(\n                    traceback.format_exception(\n                        self.type, self.value, self.traceback[0]._rawentry\n                    )\n                ),\n                self._getreprcrash(),\n            )\n\n        fmt = FormattedExcinfo(\n            showlocals=showlocals,\n            style=style,\n            abspath=abspath,\n            tbfilter=tbfilter,\n            funcargs=funcargs,\n            truncate_locals=truncate_locals,\n            chain=chain,\n        )\n        return fmt.repr_excinfo(self)",
+        "start_line": 577,
+        "start_column": 19023,
+        "end_line": 4,
+        "end_column": 20900,
+        "start_byte": 19023,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.FormattedExcinfo.repr_excinfo",
+        "file_path": "src/_pytest/_code/code.py",
+        "file_content": "def repr_excinfo(self, excinfo: ExceptionInfo) -> \"ExceptionChainRepr\":\n        repr_chain = (\n            []\n        )  # type: List[Tuple[ReprTraceback, Optional[ReprFileLocation], Optional[str]]]\n        e = excinfo.value\n        excinfo_ = excinfo  # type: Optional[ExceptionInfo]\n        descr = None\n        seen = set()  # type: Set[int]\n        while e is not None and id(e) not in seen:\n            seen.add(id(e))\n            if excinfo_:\n                reprtraceback = self.repr_traceback(excinfo_)\n                reprcrash = excinfo_._getreprcrash()  # type: Optional[ReprFileLocation]\n            else:\n                # fallback to native repr if the exception doesn't have a traceback:\n                # ExceptionInfo objects require a full traceback to work\n                reprtraceback = ReprTracebackNative(\n                    traceback.format_exception(type(e), e, None)\n                )\n                reprcrash = None\n\n            repr_chain += [(reprtraceback, reprcrash, descr)]\n            if e.__cause__ is not None and self.chain:\n                e = e.__cause__\n                excinfo_ = (\n                    ExceptionInfo((type(e), e, e.__traceback__))\n                    if e.__traceback__\n                    else None\n                )\n                descr = \"The above exception was the direct cause of the following exception:\"\n            elif (\n                e.__context__ is not None and not e.__suppress_context__ and self.chain\n            ):\n                e = e.__context__\n                excinfo_ = (\n                    ExceptionInfo((type(e), e, e.__traceback__))\n                    if e.__traceback__\n                    else None\n                )\n                descr = \"During handling of the above exception, another exception occurred:\"\n            else:\n                e = None\n        repr_chain.reverse()\n        return ExceptionChainRepr(repr_chain)",
+        "start_line": 868,
+        "start_column": 30141,
+        "end_line": 4,
+        "end_column": 32060,
+        "start_byte": 30141,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._io.saferepr",
+        "file_path": "src/_pytest/_code/code.py",
+        "file_content": "     \"\"\"\n        if not self.raw.co_filename:\n            return \"\"\n        try:\n            p = py.path.local(self.raw.co_filename)\n            # maybe don't try this checking\n            if not p.check():\n                raise OSError(\"py.path check failed.\")\n            return p\n        except OSError:\n            # XXX maybe try harder like the weird logic\n            # in the standard lib [linecache.updatecache] does?\n        ",
+        "start_line": 74,
+        "start_column": 2077,
+        "end_line": 0,
+        "end_column": 2512,
+        "start_byte": 2077,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.assertion._saferepr",
+        "file_path": "src/_pytest/_code/code.py",
+        "file_content": "y.frame.f_locals)\n        return None\n\n\nco_equal = compile(\n    \"__recursioncache_locals_1 == __recursioncache_locals_2\", \"?\", \"eval\"\n)\n\n\n_E = TypeVar(\"_E\", bound=BaseException)\n\n\n@attr.s(repr=False)\nclass ExceptionInfo(Generic[_E]):\n    \"\"\" wraps sys.exc_info() objects and offers\n        help for navigating the traceback.\n    \"\"\"\n\n    _assert_start_repr = \"AssertionError('assert \"\n\n    _excinfo = attr.ib(type=Optional[Tuple[\"Type[_E]\", \"_E\", TracebackType]])\n    _striptext = attr.ib(type=str, d",
+        "start_line": 375,
+        "start_column": 13624,
+        "end_line": 0,
+        "end_column": 14124,
+        "start_byte": 13624,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.python.Function.repr_failure",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "def repr_failure(self, excinfo, outerr=None):\n        assert outerr is None, \"XXX outerr usage is deprecated\"\n        style = self.config.getoption(\"tbstyle\", \"auto\")\n        if style == \"auto\":\n            style = \"long\"\n        return self._repr_failure_py(excinfo, style=style)",
+        "start_line": 1540,
+        "start_column": 56933,
+        "end_line": 4,
+        "end_column": 57213,
+        "start_byte": 56933,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.reports.BaseReport",
+        "file_path": "src/_pytest/reports.py",
+        "file_content": "class BaseReport:\n    when = None  # type: Optional[str]\n    location = None  # type: Optional[Tuple[str, Optional[int], str]]\n    longrepr = None\n    sections = []  # type: List[Tuple[str, str]]\n    nodeid = None  # type: str\n\n    def __init__(self, **kw: Any) -> None:\n        self.__dict__.update(kw)\n\n    if TYPE_CHECKING:\n        # Can have arbitrary fields given to __init__().\n        def __getattr__(self, key: str) -> Any:\n            raise NotImplementedError()\n\n    def toterminal(self, out) -> None:\n        if hasattr(self, \"node\"):\n            out.line(getslaveinfoline(self.node))\n\n        longrepr = self.longrepr\n        if longrepr is None:\n            return\n\n        if hasattr(longrepr, \"toterminal\"):\n            longrepr.toterminal(out)\n        else:\n            try:\n                out.line(longrepr)\n            except UnicodeEncodeError:\n                out.line(\"<unprintable longrepr>\")\n\n    def get_sections(self, prefix):\n        for name, content in self.sections:\n            if name.startswith(prefix):\n                yield prefix, content\n\n    @property\n    def longreprtext(self):\n        \"\"\"\n        Read-only property that returns the full string representation\n        of ``longrepr``.\n\n        .. versionadded:: 3.0\n        \"\"\"\n        tw = TerminalWriter(stringio=True)\n        tw.hasmarkup = False\n        self.toterminal(tw)\n        exc = tw.stringio.getvalue()\n        return exc.strip()\n\n    @property\n    def caplog(self):\n        \"\"\"Return captured log lines, if log capturing is enabled\n\n        .. versionadded:: 3.5\n        \"\"\"\n        return \"\\n\".join(\n            content for (prefix, content) in self.get_sections(\"Captured log\")\n        )\n\n    @property\n    def capstdout(self):\n        \"\"\"Return captured text from stdout, if capturing is enabled\n\n        .. versionadded:: 3.0\n        \"\"\"\n        return \"\".join(\n            content for (prefix, content) in self.get_sections(\"Captured stdout\")\n        )\n\n    @property\n    def capstderr(self):\n        \"\"\"Return captured text from stderr, if capturing is enabled\n\n        .. versionadded:: 3.0\n        \"\"\"\n        return \"\".join(\n            content for (prefix, content) in self.get_sections(\"Captured stderr\")\n        )\n\n    passed = property(lambda x: x.outcome == \"passed\")\n    failed = property(lambda x: x.outcome == \"failed\")\n    skipped = property(lambda x: x.outcome == \"skipped\")\n\n    @property\n    def fspath(self) -> str:\n        return self.nodeid.split(\"::\")[0]\n\n    @property\n    def count_towards_summary(self):\n        \"\"\"\n        **Experimental**\n\n        ``True`` if this report should be counted towards the totals shown at the end of the\n        test session: \"1 passed, 1 failure, etc\".\n\n        .. note::\n\n            This function is considered **experimental**, so beware that it is subject to changes\n            even in patch releases.\n        \"\"\"\n        return True\n\n    @property\n    def head_line(self):\n        \"\"\"\n        **Experimental**\n\n        Returns the head line shown with longrepr output for this report, more commonly during\n        traceback representation during failures::\n\n            ________ Test.foo ________\n\n\n        In the example above, the head_line is \"Test.foo\".\n\n        .. note::\n\n            This function is considered **experimental**, so beware that it is subject to changes\n            even in patch releases.\n        \"\"\"\n        if self.location is not None:\n            fspath, lineno, domain = self.location\n            return domain\n\n    def _get_verbose_word(self, config):\n        _category, _short, verbose = config.hook.pytest_report_teststatus(\n            report=self, config=config\n        )\n        return verbose\n\n    def _to_json(self):\n        \"\"\"\n        This was originally the serialize_report() function from xdist (ca03269).\n\n        Returns the contents of this report as a dict of builtin entries, suitable for\n        serialization.\n\n        Experimental method.\n        \"\"\"\n        return _report_to_json(self)\n\n    @classmethod\n    def _from_json(cls, reportdict):\n        \"\"\"\n        This was originally the serialize_report() function from xdist (ca03269).\n\n        Factory method that returns either a TestReport or CollectReport, depending on the calling\n        class. It's the callers responsibility to know which class to pass here.\n\n        Experimental method.\n        \"\"\"\n        kwargs = _report_kwargs_from_json(reportdict)\n        return cls(**kwargs)",
+        "start_line": 40,
+        "start_column": 1168,
+        "end_line": 0,
+        "end_column": 5629,
+        "start_byte": 1168,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.reports.BaseReport.when",
+        "file_path": "src/_pytest/reports.py",
+        "file_content": "when = None",
+        "start_line": 41,
+        "start_column": 1190,
+        "end_line": 4,
+        "end_column": 1201,
+        "start_byte": 1190,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.reports.BaseReport.location",
+        "file_path": "src/_pytest/reports.py",
+        "file_content": "location = None",
+        "start_line": 42,
+        "start_column": 1229,
+        "end_line": 4,
+        "end_column": 1244,
+        "start_byte": 1229,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.reports.BaseReport.longrepr",
+        "file_path": "src/_pytest/reports.py",
+        "file_content": "longrepr = None",
+        "start_line": 43,
+        "start_column": 1299,
+        "end_line": 4,
+        "end_column": 1314,
+        "start_byte": 1299,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.reports.BaseReport.sections",
+        "file_path": "src/_pytest/reports.py",
+        "file_content": "sections = []",
+        "start_line": 44,
+        "start_column": 1319,
+        "end_line": 4,
+        "end_column": 1332,
+        "start_byte": 1319,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.reports.BaseReport.nodeid",
+        "file_path": "src/_pytest/reports.py",
+        "file_content": "nodeid = None",
+        "start_line": 45,
+        "start_column": 1368,
+        "end_line": 4,
+        "end_column": 1381,
+        "start_byte": 1368,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.reports.BaseReport.__init__",
+        "file_path": "src/_pytest/reports.py",
+        "file_content": "def __init__(self, **kw: Any) -> None:\n        self.__dict__.update(kw)",
+        "start_line": 47,
+        "start_column": 1400,
+        "end_line": 4,
+        "end_column": 1471,
+        "start_byte": 1400,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.reports.BaseReport.toterminal",
+        "file_path": "src/_pytest/reports.py",
+        "file_content": "def toterminal(self, out) -> None:\n        if hasattr(self, \"node\"):\n            out.line(getslaveinfoline(self.node))\n\n        longrepr = self.longrepr\n        if longrepr is None:\n            return\n\n        if hasattr(longrepr, \"toterminal\"):\n            longrepr.toterminal(out)\n        else:\n            try:\n                out.line(longrepr)\n            except UnicodeEncodeError:\n                out.line(\"<unprintable longrepr>\")",
+        "start_line": 55,
+        "start_column": 1645,
+        "end_line": 4,
+        "end_column": 2083,
+        "start_byte": 1645,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.reports.BaseReport.get_sections",
+        "file_path": "src/_pytest/reports.py",
+        "file_content": "def get_sections(self, prefix):\n        for name, content in self.sections:\n            if name.startswith(prefix):\n                yield prefix, content",
+        "start_line": 71,
+        "start_column": 2089,
+        "end_line": 4,
+        "end_column": 2242,
+        "start_byte": 2089,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.reports.BaseReport.longreprtext",
+        "file_path": "src/_pytest/reports.py",
+        "file_content": "@property\n    def longreprtext(self):\n        \"\"\"\n        Read-only property that returns the full string representation\n        of ``longrepr``.\n\n        .. versionadded:: 3.0\n        \"\"\"\n        tw = TerminalWriter(stringio=True)\n        tw.hasmarkup = False\n        self.toterminal(tw)\n        exc = tw.stringio.getvalue()\n        return exc.strip()",
+        "start_line": 76,
+        "start_column": 2248,
+        "end_line": 4,
+        "end_column": 2600,
+        "start_byte": 2248,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.reports.BaseReport.caplog",
+        "file_path": "src/_pytest/reports.py",
+        "file_content": "@property\n    def caplog(self):\n        \"\"\"Return captured log lines, if log capturing is enabled\n\n        .. versionadded:: 3.5\n        \"\"\"\n        return \"\\n\".join(\n            content for (prefix, content) in self.get_sections(\"Captured log\")\n        )",
+        "start_line": 90,
+        "start_column": 2606,
+        "end_line": 4,
+        "end_column": 2861,
+        "start_byte": 2606,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.reports.BaseReport.capstdout",
+        "file_path": "src/_pytest/reports.py",
+        "file_content": "@property\n    def capstdout(self):\n        \"\"\"Return captured text from stdout, if capturing is enabled\n\n        .. versionadded:: 3.0\n        \"\"\"\n        return \"\".join(\n            content for (prefix, content) in self.get_sections(\"Captured stdout\")\n        )",
+        "start_line": 100,
+        "start_column": 2867,
+        "end_line": 4,
+        "end_column": 3129,
+        "start_byte": 2867,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.reports.BaseReport.capstderr",
+        "file_path": "src/_pytest/reports.py",
+        "file_content": "@property\n    def capstderr(self):\n        \"\"\"Return captured text from stderr, if capturing is enabled\n\n        .. versionadded:: 3.0\n        \"\"\"\n        return \"\".join(\n            content for (prefix, content) in self.get_sections(\"Captured stderr\")\n        )",
+        "start_line": 110,
+        "start_column": 3135,
+        "end_line": 4,
+        "end_column": 3397,
+        "start_byte": 3135,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.reports.BaseReport.passed",
+        "file_path": "src/_pytest/reports.py",
+        "file_content": "passed = property(lambda x: x.outcome == \"passed\")",
+        "start_line": 120,
+        "start_column": 3403,
+        "end_line": 4,
+        "end_column": 3453,
+        "start_byte": 3403,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.reports.BaseReport.failed",
+        "file_path": "src/_pytest/reports.py",
+        "file_content": "failed = property(lambda x: x.outcome == \"failed\")",
+        "start_line": 121,
+        "start_column": 3458,
+        "end_line": 4,
+        "end_column": 3508,
+        "start_byte": 3458,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.reports.BaseReport.skipped",
+        "file_path": "src/_pytest/reports.py",
+        "file_content": "skipped = property(lambda x: x.outcome == \"skipped\")",
+        "start_line": 122,
+        "start_column": 3513,
+        "end_line": 4,
+        "end_column": 3565,
+        "start_byte": 3513,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.reports.BaseReport.fspath",
+        "file_path": "src/_pytest/reports.py",
+        "file_content": "@property\n    def fspath(self) -> str:\n        return self.nodeid.split(\"::\")[0]",
+        "start_line": 124,
+        "start_column": 3571,
+        "end_line": 4,
+        "end_column": 3651,
+        "start_byte": 3571,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.reports.BaseReport.count_towards_summary",
+        "file_path": "src/_pytest/reports.py",
+        "file_content": "@property\n    def count_towards_summary(self):\n        \"\"\"\n        **Experimental**\n\n        ``True`` if this report should be counted towards the totals shown at the end of the\n        test session: \"1 passed, 1 failure, etc\".\n\n        .. note::\n\n            This function is considered **experimental**, so beware that it is subject to changes\n            even in patch releases.\n        \"\"\"\n        return True",
+        "start_line": 128,
+        "start_column": 3657,
+        "end_line": 4,
+        "end_column": 4070,
+        "start_byte": 3657,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.reports.BaseReport.head_line",
+        "file_path": "src/_pytest/reports.py",
+        "file_content": "@property\n    def head_line(self):\n        \"\"\"\n        **Experimental**\n\n        Returns the head line shown with longrepr output for this report, more commonly during\n        traceback representation during failures::\n\n            ________ Test.foo ________\n\n\n        In the example above, the head_line is \"Test.foo\".\n\n        .. note::\n\n            This function is considered **experimental**, so beware that it is subject to changes\n            even in patch releases.\n        \"\"\"\n        if self.location is not None:\n            fspath, lineno, domain = self.location\n            return domain",
+        "start_line": 143,
+        "start_column": 4076,
+        "end_line": 4,
+        "end_column": 4676,
+        "start_byte": 4076,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.reports.BaseReport._get_verbose_word",
+        "file_path": "src/_pytest/reports.py",
+        "file_content": "def _get_verbose_word(self, config):\n        _category, _short, verbose = config.hook.pytest_report_teststatus(\n            report=self, config=config\n        )\n        return verbose",
+        "start_line": 165,
+        "start_column": 4682,
+        "end_line": 4,
+        "end_column": 4865,
+        "start_byte": 4682,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.reports.BaseReport._to_json",
+        "file_path": "src/_pytest/reports.py",
+        "file_content": "def _to_json(self):\n        \"\"\"\n        This was originally the serialize_report() function from xdist (ca03269).\n\n        Returns the contents of this report as a dict of builtin entries, suitable for\n        serialization.\n\n        Experimental method.\n        \"\"\"\n        return _report_to_json(self)",
+        "start_line": 171,
+        "start_column": 4871,
+        "end_line": 4,
+        "end_column": 5174,
+        "start_byte": 4871,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.reports.BaseReport._from_json",
+        "file_path": "src/_pytest/reports.py",
+        "file_content": "@classmethod\n    def _from_json(cls, reportdict):\n        \"\"\"\n        This was originally the serialize_report() function from xdist (ca03269).\n\n        Factory method that returns either a TestReport or CollectReport, depending on the calling\n        class. It's the callers responsibility to know which class to pass here.\n\n        Experimental method.\n        \"\"\"\n        kwargs = _report_kwargs_from_json(reportdict)\n        return cls(**kwargs)",
+        "start_line": 182,
+        "start_column": 5180,
+        "end_line": 4,
+        "end_column": 5629,
+        "start_byte": 5180,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.reports.TestReport",
+        "file_path": "src/_pytest/reports.py",
+        "file_content": "class TestReport(BaseReport):\n    \"\"\" Basic test report object (also used for setup and teardown calls if\n    they fail).\n    \"\"\"\n\n    __test__ = False\n\n    def __init__(\n        self,\n        nodeid,\n        location: Tuple[str, Optional[int], str],\n        keywords,\n        outcome,\n        longrepr,\n        when,\n        sections=(),\n        duration=0,\n        user_properties=None,\n        **extra\n    ) -> None:\n        #: normalized collection node id\n        self.nodeid = nodeid\n\n        #: a (filesystempath, lineno, domaininfo) tuple indicating the\n        #: actual location of a test item - it might be different from the\n        #: collected one e.g. if a method is inherited from a different module.\n        self.location = location  # type: Tuple[str, Optional[int], str]\n\n        #: a name -> value dictionary containing all keywords and\n        #: markers associated with a test invocation.\n        self.keywords = keywords\n\n        #: test outcome, always one of \"passed\", \"failed\", \"skipped\".\n        self.outcome = outcome\n\n        #: None or a failure representation.\n        self.longrepr = longrepr\n\n        #: one of 'setup', 'call', 'teardown' to indicate runtest phase.\n        self.when = when\n\n        #: user properties is a list of tuples (name, value) that holds user\n        #: defined properties of the test\n        self.user_properties = list(user_properties or [])\n\n        #: list of pairs ``(str, str)`` of extra information which needs to\n        #: marshallable. Used by pytest to add captured text\n        #: from ``stdout`` and ``stderr``, but may be used by other plugins\n        #: to add arbitrary information to reports.\n        self.sections = list(sections)\n\n        #: time it took to run just the test\n        self.duration = duration\n\n        self.__dict__.update(extra)\n\n    def __repr__(self):\n        return \"<{} {!r} when={!r} outcome={!r}>\".format(\n            self.__class__.__name__, self.nodeid, self.when, self.outcome\n        )\n\n    @classmethod\n    def from_item_and_call(cls, item, call) -> \"TestReport\":\n        \"\"\"\n        Factory method to create and fill a TestReport with standard item and call info.\n        \"\"\"\n        when = call.when\n        duration = call.duration\n        keywords = {x: 1 for x in item.keywords}\n        excinfo = call.excinfo\n        sections = []\n        if not call.excinfo:\n            outcome = \"passed\"\n            longrepr = None\n        else:\n            if not isinstance(excinfo, ExceptionInfo):\n                outcome = \"failed\"\n                longrepr = excinfo\n            elif excinfo.errisinstance(skip.Exception):\n                outcome = \"skipped\"\n                r = excinfo._getreprcrash()\n                longrepr = (str(r.path), r.lineno, r.message)\n            else:\n                outcome = \"failed\"\n                if call.when == \"call\":\n                    longrepr = item.repr_failure(excinfo)\n                else:  # exception in setup or teardown\n                    longrepr = item._repr_failure_py(\n                        excinfo, style=item.config.getoption(\"tbstyle\", \"auto\")\n                    )\n        for rwhen, key, content in item._report_sections:\n            sections.append((\"Captured {} {}\".format(key, rwhen), content))\n        return cls(\n            item.nodeid,\n            item.location,\n            keywords,\n            outcome,\n            longrepr,\n            when,\n            sections,\n            duration,\n            user_properties=item.user_properties,\n        )",
+        "start_line": 208,
+        "start_column": 6154,
+        "end_line": 0,
+        "end_column": 9677,
+        "start_byte": 6154,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.reports.TestReport.__test__",
+        "file_path": "src/_pytest/reports.py",
+        "file_content": "__test__ = False",
+        "start_line": 213,
+        "start_column": 6289,
+        "end_line": 4,
+        "end_column": 6305,
+        "start_byte": 6289,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.reports.TestReport.__init__",
+        "file_path": "src/_pytest/reports.py",
+        "file_content": "def __init__(\n        self,\n        nodeid,\n        location: Tuple[str, Optional[int], str],\n        keywords,\n        outcome,\n        longrepr,\n        when,\n        sections=(),\n        duration=0,\n        user_properties=None,\n        **extra\n    ) -> None:\n        #: normalized collection node id\n        self.nodeid = nodeid\n\n        #: a (filesystempath, lineno, domaininfo) tuple indicating the\n        #: actual location of a test item - it might be different from the\n        #: collected one e.g. if a method is inherited from a different module.\n        self.location = location  # type: Tuple[str, Optional[int], str]\n\n        #: a name -> value dictionary containing all keywords and\n        #: markers associated with a test invocation.\n        self.keywords = keywords\n\n        #: test outcome, always one of \"passed\", \"failed\", \"skipped\".\n        self.outcome = outcome\n\n        #: None or a failure representation.\n        self.longrepr = longrepr\n\n        #: one of 'setup', 'call', 'teardown' to indicate runtest phase.\n        self.when = when\n\n        #: user properties is a list of tuples (name, value) that holds user\n        #: defined properties of the test\n        self.user_properties = list(user_properties or [])\n\n        #: list of pairs ``(str, str)`` of extra information which needs to\n        #: marshallable. Used by pytest to add captured text\n        #: from ``stdout`` and ``stderr``, but may be used by other plugins\n        #: to add arbitrary information to reports.\n        self.sections = list(sections)\n\n        #: time it took to run just the test\n        self.duration = duration\n\n        self.__dict__.update(extra)",
+        "start_line": 215,
+        "start_column": 6311,
+        "end_line": 4,
+        "end_column": 7977,
+        "start_byte": 6311,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.reports.TestReport.__repr__",
+        "file_path": "src/_pytest/reports.py",
+        "file_content": "def __repr__(self):\n        return \"<{} {!r} when={!r} outcome={!r}>\".format(\n            self.__class__.__name__, self.nodeid, self.when, self.outcome\n        )",
+        "start_line": 264,
+        "start_column": 7983,
+        "end_line": 4,
+        "end_column": 8144,
+        "start_byte": 7983,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.reports.TestReport.from_item_and_call",
+        "file_path": "src/_pytest/reports.py",
+        "file_content": "@classmethod\n    def from_item_and_call(cls, item, call) -> \"TestReport\":\n        \"\"\"\n        Factory method to create and fill a TestReport with standard item and call info.\n        \"\"\"\n        when = call.when\n        duration = call.duration\n        keywords = {x: 1 for x in item.keywords}\n        excinfo = call.excinfo\n        sections = []\n        if not call.excinfo:\n            outcome = \"passed\"\n            longrepr = None\n        else:\n            if not isinstance(excinfo, ExceptionInfo):\n                outcome = \"failed\"\n                longrepr = excinfo\n            elif excinfo.errisinstance(skip.Exception):\n                outcome = \"skipped\"\n                r = excinfo._getreprcrash()\n                longrepr = (str(r.path), r.lineno, r.message)\n            else:\n                outcome = \"failed\"\n                if call.when == \"call\":\n                    longrepr = item.repr_failure(excinfo)\n                else:  # exception in setup or teardown\n                    longrepr = item._repr_failure_py(\n                        excinfo, style=item.config.getoption(\"tbstyle\", \"auto\")\n                    )\n        for rwhen, key, content in item._report_sections:\n            sections.append((\"Captured {} {}\".format(key, rwhen), content))\n        return cls(\n            item.nodeid,\n            item.location,\n            keywords,\n            outcome,\n            longrepr,\n            when,\n            sections,\n            duration,\n            user_properties=item.user_properties,\n        )",
+        "start_line": 269,
+        "start_column": 8150,
+        "end_line": 4,
+        "end_column": 9677,
+        "start_byte": 8150,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.reports.CollectReport",
+        "file_path": "src/_pytest/reports.py",
+        "file_content": "class CollectReport(BaseReport):\n    when = \"collect\"\n\n    def __init__(\n        self, nodeid: str, outcome, longrepr, result: List[Node], sections=(), **extra\n    ) -> None:\n        self.nodeid = nodeid\n        self.outcome = outcome\n        self.longrepr = longrepr\n        self.result = result or []\n        self.sections = list(sections)\n        self.__dict__.update(extra)\n\n    @property\n    def location(self):\n        return (self.fspath, None, self.fspath)\n\n    def __repr__(self):\n        return \"<CollectReport {!r} lenresult={} outcome={!r}>\".format(\n            self.nodeid, len(self.result), self.outcome\n        )",
+        "start_line": 313,
+        "start_column": 9680,
+        "end_line": 0,
+        "end_column": 10307,
+        "start_byte": 9680,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.reports.CollectReport.when",
+        "file_path": "src/_pytest/reports.py",
+        "file_content": "when = \"collect\"",
+        "start_line": 314,
+        "start_column": 9717,
+        "end_line": 4,
+        "end_column": 9733,
+        "start_byte": 9717,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.reports.CollectReport.__init__",
+        "file_path": "src/_pytest/reports.py",
+        "file_content": "def __init__(\n        self, nodeid: str, outcome, longrepr, result: List[Node], sections=(), **extra\n    ) -> None:\n        self.nodeid = nodeid\n        self.outcome = outcome\n        self.longrepr = longrepr\n        self.result = result or []\n        self.sections = list(sections)\n        self.__dict__.update(extra)",
+        "start_line": 316,
+        "start_column": 9739,
+        "end_line": 4,
+        "end_column": 10057,
+        "start_byte": 9739,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.reports.CollectReport.location",
+        "file_path": "src/_pytest/reports.py",
+        "file_content": "@property\n    def location(self):\n        return (self.fspath, None, self.fspath)",
+        "start_line": 326,
+        "start_column": 10063,
+        "end_line": 4,
+        "end_column": 10144,
+        "start_byte": 10063,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.reports.CollectReport.__repr__",
+        "file_path": "src/_pytest/reports.py",
+        "file_content": "def __repr__(self):\n        return \"<CollectReport {!r} lenresult={} outcome={!r}>\".format(\n            self.nodeid, len(self.result), self.outcome\n        )",
+        "start_line": 330,
+        "start_column": 10150,
+        "end_line": 4,
+        "end_column": 10307,
+        "start_byte": 10150,
+        "end_byte": 4
+      }
+    ]
+  },
+  "response": {
+    "scratch_pad": "1. The user describes an INTERNALERROR occurring in pytest when running a specific test. This issue seems to stem from a custom __repr__ method that raises an exception, which is subsequently causing pytest's internal error handling to fail.\n2. The issue was caused by an exception being raised in the __repr__ function defined in a test class used in pytest. This is significant because pytest uses repr() internally to generate error messages and debugging information. When there is an error in a __repr__ method, it might lead to such internal errors in testing frameworks.\n3. The expected result should be that even if __repr__ raises an exception, pytest should handle this gracefully without crashing.\n4. If not provided clearly by the user, the expectation is pytest manages such cases without running into internal errors.\n5. To fix the issue, the internal error handling of Pytest should be improved to manage exceptions raised by __repr__ methods more gracefully, possibly defaulting to a simpler or safer representation.\n\nLooking at the code provided, it seems that the methods involved in the string representation of exceptions in pytest are malfunctioning when __repr__ in user code raises an error. The _format_repr_exception and other related methods in the saferepr.py file of pytest are likely involved here. These methods attempt to catch exceptions for safe representation but might not be handling some edge cases properly.",
+    "symbols": [
+      {
+        "name": "_pytest._io._format_repr_exception",
+        "file_path": "src/_pytest/_io/saferepr.py",
+        "reason": "This function formats exceptions that occur during representation, and it seems to be directly relevant because it should catch any exception raised during a __repr__ call."
+      },
+      {
+        "name": "_pytest._io.SafeRepr.repr",
+        "file_path": "src/_pytest/_io/saferepr.py",
+        "reason": "This method overrides the default repr method to provide a safe string representation. It's related because it should handle exceptions in __repr__."
+      },
+      {
+        "name": "_pytest._io.SafeRepr.repr_instance",
+        "file_path": "src/_pytest/_io/saferepr.py",
+        "reason": "This is another method providing safe instance representation, catching exceptions from __repr__ specifically."
+      },
+      {
+        "name": "_pytest._io.safeformat",
+        "file_path": "src/_pytest/_io/saferepr.py",
+        "reason": "This function is aimed at safely formatting objects and utilizes _format_repr_exception, which is involved in scenarios causing this issue."
+      },
+      {
+        "name": "_pytest._io.saferepr",
+        "file_path": "src/_pytest/_io/saferepr.py",
+        "reason": "This wrapper around repr uses SafeRepr which manages exceptions from object representations, associated with exceptions during repr calls."
+      }
+    ],
+    "more_info": [],
+    "is_done": true,
+    "symbols_scratch_pad": [
+      "_pytest._io._format_repr_exception: This function handles exceptions raised in the __repr__ method, formats them and ensures that no further unhandled exceptions cause crashes. It seems crucial in solving the problem where an __repr__ causing an exception leads to an internal error in pytest.",
+      "_pytest._io.SafeRepr.repr: The repr function here overrides the default to add a try-except block around the representation call, mitigating issues caused if __repr__ throws an error.",
+      "_pytest._io.SafeRepr.repr_instance: Similar to the 'repr', this method deals specifically with instances and should safely cover cases where __repr__ could go wrong, likely involved in or affected by the issue in question.",
+      "_pytest._io.safeformat: This method aims to provide a 'pretty' print of objects, integrating _format_repr_exception to handle cases where __repr__ fails. Relevant for handling these exceptions gracefully.",
+      "_pytest._io.saferepr: Utilizes SafeRepr to return a safe string representation, catching exceptions from __repr__ methods."
+    ]
+  },
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are an autonomous AI assistant tasked with finding relevant code in an existing \ncodebase based on a reported issue. \nYour task is base on the symbol code to identify how many symbols need to be change to resolve the issue. \n#Input Structure:\n\n* <issue>: Contains the reported issue.\n* <symbol>: the code might to be relevant to the issue.\n\n# Your Task:\n\n1. Analyze User Instructions:\nCarefully read the reported issue within the <issue> tag.\nthink step by step and write out your thoughts in the scratch_pad field.\n1.1 What issue is the user describing?\n1.2 How was this issue caused?\n1.3 If the user described the expected result, what should it be fixed to?\n1.4 If the user did not provide an expected result, what should the expectation be?\n1.5 How should the issue be fixed to meet the expectation?\n\n2. Make the evaluate:\n2.1. Thoroughly analyze each lines in the <symbol> and <symbol> tags.\n2.2. Match the symbol/code/pattern with the key elements, functions, variables, or patterns identified in the reported issue.\n2.3. Evaluate the relevance of each symbol based on how well it aligns with the reported issue and current file context.\n2.4. make the decision how many symbols need to be change to resolve the issue.\n2.5. if you need more file content or symbol information, you can ask the user for more information.\n2.6. relative symbol means, He might be the root cause of the problem, or he could be a part of the process that reproduces the issue.\n\nThink step by step and write out your thoughts in the scratch_pad field.  \n"
+    },
+    {
+      "role": "user",
+      "content": "<issue><description>:INTERNALERROR when exception in __repr__\nMinimal code to reproduce the issue: \r\n```python\r\nclass SomeClass:\r\n    def __getattribute__(self, attr):\r\n        raise\r\n    def __repr__(self):\r\n        raise\r\ndef test():\r\n    SomeClass().attr\r\n```\r\nSession traceback:\r\n```\r\n============================= test session starts ==============================\r\nplatform darwin -- Python 3.8.1, pytest-5.4.1, py-1.8.1, pluggy-0.13.1 -- /usr/local/opt/python@3.8/bin/python3.8\r\ncachedir: .pytest_cache\r\nrootdir: ******\r\nplugins: asyncio-0.10.0, mock-3.0.0, cov-2.8.1\r\ncollecting ... collected 1 item\r\n\r\ntest_pytest.py::test \r\nINTERNALERROR> Traceback (most recent call last):\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/main.py\", line 191, in wrap_session\r\nINTERNALERROR>     session.exitstatus = doit(config, session) or 0\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/main.py\", line 247, in _main\r\nINTERNALERROR>     config.hook.pytest_runtestloop(session=session)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/hooks.py\", line 286, in __call__\r\nINTERNALERROR>     return self._hookexec(self, self.get_hookimpls(), kwargs)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/manager.py\", line 93, in _hookexec\r\nINTERNALERROR>     return self._inner_hookexec(hook, methods, kwargs)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/manager.py\", line 84, in <lambda>\r\nINTERNALERROR>     self._inner_hookexec = lambda hook, methods, kwargs: hook.multicall(\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/callers.py\", line 208, in _multicall\r\nINTERNALERROR>     return outcome.get_result()\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/callers.py\", line 80, in get_result\r\nINTERNALERROR>     raise ex[1].with_traceback(ex[2])\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/callers.py\", line 187, in _multicall\r\nINTERNALERROR>     res = hook_impl.function(*args)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/main.py\", line 272, in pytest_runtestloop\r\nINTERNALERROR>     item.config.hook.pytest_runtest_protocol(item=item, nextitem=nextitem)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/hooks.py\", line 286, in __call__\r\nINTERNALERROR>     return self._hookexec(self, self.get_hookimpls(), kwargs)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/manager.py\", line 93, in _hookexec\r\nINTERNALERROR>     return self._inner_hookexec(hook, methods, kwargs)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/manager.py\", line 84, in <lambda>\r\nINTERNALERROR>     self._inner_hookexec = lambda hook, methods, kwargs: hook.multicall(\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/callers.py\", line 208, in _multicall\r\nINTERNALERROR>     return outcome.get_result()\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/callers.py\", line 80, in get_result\r\nINTERNALERROR>     raise ex[1].with_traceback(ex[2])\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/callers.py\", line 187, in _multicall\r\nINTERNALERROR>     res = hook_impl.function(*args)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/runner.py\", line 85, in pytest_runtest_protocol\r\nINTERNALERROR>     runtestprotocol(item, nextitem=nextitem)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/runner.py\", line 100, in runtestprotocol\r\nINTERNALERROR>     reports.append(call_and_report(item, \"call\", log))\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/runner.py\", line 188, in call_and_report\r\nINTERNALERROR>     report = hook.pytest_runtest_makereport(item=item, call=call)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/hooks.py\", line 286, in __call__\r\nINTERNALERROR>     return self._hookexec(self, self.get_hookimpls(), kwargs)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/manager.py\", line 93, in _hookexec\r\nINTERNALERROR>     return self._inner_hookexec(hook, methods, kwargs)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/manager.py\", line 84, in <lambda>\r\nINTERNALERROR>     self._inner_hookexec = lambda hook, methods, kwargs: hook.multicall(\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/callers.py\", line 203, in _multicall\r\nINTERNALERROR>     gen.send(outcome)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/skipping.py\", line 129, in pytest_runtest_makereport\r\nINTERNALERROR>     rep = outcome.get_result()\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/callers.py\", line 80, in get_result\r\nINTERNALERROR>     raise ex[1].with_traceback(ex[2])\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/callers.py\", line 187, in _multicall\r\nINTERNALERROR>     res = hook_impl.function(*args)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/runner.py\", line 260, in pytest_runtest_makereport\r\nINTERNALERROR>     return TestReport.from_item_and_call(item, call)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/reports.py\", line 294, in from_item_and_call\r\nINTERNALERROR>     longrepr = item.repr_failure(excinfo)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/python.py\", line 1513, in repr_failure\r\nINTERNALERROR>     return self._repr_failure_py(excinfo, style=style)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/nodes.py\", line 355, in _repr_failure_py\r\nINTERNALERROR>     return excinfo.getrepr(\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_code/code.py\", line 634, in getrepr\r\nINTERNALERROR>     return fmt.repr_excinfo(self)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_code/code.py\", line 879, in repr_excinfo\r\nINTERNALERROR>     reprtraceback = self.repr_traceback(excinfo_)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_code/code.py\", line 823, in repr_traceback\r\nINTERNALERROR>     reprentry = self.repr_traceback_entry(entry, einfo)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_code/code.py\", line 784, in repr_traceback_entry\r\nINTERNALERROR>     reprargs = self.repr_args(entry) if not short else None\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_code/code.py\", line 693, in repr_args\r\nINTERNALERROR>     args.append((argname, saferepr(argvalue)))\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_io/saferepr.py\", line 82, in saferepr\r\nINTERNALERROR>     return SafeRepr(maxsize).repr(obj)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_io/saferepr.py\", line 51, in repr\r\nINTERNALERROR>     s = _format_repr_exception(exc, x)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_io/saferepr.py\", line 23, in _format_repr_exception\r\nINTERNALERROR>     exc_info, obj.__class__.__name__, id(obj)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_io/saferepr.py\", line 47, in repr\r\nINTERNALERROR>     s = super().repr(x)\r\nINTERNALERROR>   File \"/usr/local/Cellar/python@3.8/3.8.1/Frameworks/Python.framework/Versions/3.8/lib/python3.8/reprlib.py\", line 52, in repr\r\nINTERNALERROR>     return self.repr1(x, self.maxlevel)\r\nINTERNALERROR>   File \"/usr/local/Cellar/python@3.8/3.8.1/Frameworks/Python.framework/Versions/3.8/lib/python3.8/reprlib.py\", line 62, in repr1\r\nINTERNALERROR>     return self.repr_instance(x, level)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_io/saferepr.py\", line 60, in repr_instance\r\nINTERNALERROR>     s = _format_repr_exception(exc, x)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_io/saferepr.py\", line 23, in _format_repr_exception\r\nINTERNALERROR>     exc_info, obj.__class__.__name__, id(obj)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_io/saferepr.py\", line 56, in repr_instance\r\nINTERNALERROR>     s = repr(x)\r\nINTERNALERROR>   File \"/Users/stiflou/Documents/projets/apischema/tests/test_pytest.py\", line 6, in __repr__\r\nINTERNALERROR>     raise\r\nINTERNALERROR> RuntimeError: No active exception to reraise\r\n\r\n============================ no tests ran in 0.09s ============================\r\n```\n</description></issue>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._io._format_repr_exception</name><path>src/_pytest/_io/saferepr.py</path><content>def _format_repr_exception(exc: BaseException, obj: Any) -> str:\n    try:\n        exc_info = _try_repr_or_str(exc)\n    except (KeyboardInterrupt, SystemExit):\n        raise\n    except BaseException as exc:\n        exc_info = \"unpresentable exception ({})\".format(_try_repr_or_str(exc))\n    return \"<[{} raised in repr()] {} object at 0x{:x}>\".format(\n        exc_info, obj.__class__.__name__, id(obj)\n    )</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._io.SafeRepr.repr</name><path>src/_pytest/_io/saferepr.py</path><content>def repr(self, x: Any) -> str:\n        try:\n            s = super().repr(x)\n        except (KeyboardInterrupt, SystemExit):\n            raise\n        except BaseException as exc:\n            s = _format_repr_exception(exc, x)\n        return _ellipsize(s, self.maxsize)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._io.SafeRepr.repr_instance</name><path>src/_pytest/_io/saferepr.py</path><content>def repr_instance(self, x: Any, level: int) -> str:\n        try:\n            s = repr(x)\n        except (KeyboardInterrupt, SystemExit):\n            raise\n        except BaseException as exc:\n            s = _format_repr_exception(exc, x)\n        return _ellipsize(s, self.maxsize)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._io.safeformat</name><path>src/_pytest/_io/saferepr.py</path><content>def safeformat(obj: Any) -> str:\n    \"\"\"return a pretty printed string for the given object.\n    Failing __repr__ functions of user instances will be represented\n    with a short exception info.\n    \"\"\"\n    try:\n        return pprint.pformat(obj)\n    except Exception as exc:\n        return _format_repr_exception(exc, obj)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._io.saferepr</name><path>src/_pytest/_io/saferepr.py</path><content>def saferepr(obj: Any, maxsize: int = 240) -> str:\n    \"\"\"return a size-limited safe repr-string for the given object.\n    Failing __repr__ functions of user instances will be represented\n    with a short exception info and 'saferepr' generally takes\n    care to never raise exceptions itself.  This function is a wrapper\n    around the Repr/reprlib functionality of the standard 2.6 lib.\n    \"\"\"\n    return SafeRepr(maxsize).repr(obj)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.assertion._saferepr</name><path>src/_pytest/_io/saferepr.py</path><content></content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.ExceptionInfo.getrepr</name><path>src/_pytest/_code/code.py</path><content>def getrepr(\n        self,\n        showlocals: bool = False,\n        style: \"_TracebackStyle\" = \"long\",\n        abspath: bool = False,\n        tbfilter: bool = True,\n        funcargs: bool = False,\n        truncate_locals: bool = True,\n        chain: bool = True,\n    ) -> Union[\"ReprExceptionInfo\", \"ExceptionChainRepr\"]:\n        \"\"\"\n        Return str()able representation of this exception info.\n\n        :param bool showlocals:\n            Show locals per traceback entry.\n            Ignored if ``style==\"native\"``.\n\n        :param str style: long|short|no|native traceback style\n\n        :param bool abspath:\n            If paths should be changed to absolute or left unchanged.\n\n        :param bool tbfilter:\n            Hide entries that contain a local variable ``__tracebackhide__==True``.\n            Ignored if ``style==\"native\"``.\n\n        :param bool funcargs:\n            Show fixtures (\"funcargs\" for legacy purposes) per traceback entry.\n\n        :param bool truncate_locals:\n            With ``showlocals==True``, make sure locals can be safely represented as strings.\n\n        :param bool chain: if chained exceptions in Python 3 should be shown.\n\n        .. versionchanged:: 3.9\n\n            Added the ``chain`` parameter.\n        \"\"\"\n        if style == \"native\":\n            return ReprExceptionInfo(\n                ReprTracebackNative(\n                    traceback.format_exception(\n                        self.type, self.value, self.traceback[0]._rawentry\n                    )\n                ),\n                self._getreprcrash(),\n            )\n\n        fmt = FormattedExcinfo(\n            showlocals=showlocals,\n            style=style,\n            abspath=abspath,\n            tbfilter=tbfilter,\n            funcargs=funcargs,\n            truncate_locals=truncate_locals,\n            chain=chain,\n        )\n        return fmt.repr_excinfo(self)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.FormattedExcinfo.repr_excinfo</name><path>src/_pytest/_code/code.py</path><content>def repr_excinfo(self, excinfo: ExceptionInfo) -> \"ExceptionChainRepr\":\n        repr_chain = (\n            []\n        )  # type: List[Tuple[ReprTraceback, Optional[ReprFileLocation], Optional[str]]]\n        e = excinfo.value\n        excinfo_ = excinfo  # type: Optional[ExceptionInfo]\n        descr = None\n        seen = set()  # type: Set[int]\n        while e is not None and id(e) not in seen:\n            seen.add(id(e))\n            if excinfo_:\n                reprtraceback = self.repr_traceback(excinfo_)\n                reprcrash = excinfo_._getreprcrash()  # type: Optional[ReprFileLocation]\n            else:\n                # fallback to native repr if the exception doesn't have a traceback:\n                # ExceptionInfo objects require a full traceback to work\n                reprtraceback = ReprTracebackNative(\n                    traceback.format_exception(type(e), e, None)\n                )\n                reprcrash = None\n\n            repr_chain += [(reprtraceback, reprcrash, descr)]\n            if e.__cause__ is not None and self.chain:\n                e = e.__cause__\n                excinfo_ = (\n                    ExceptionInfo((type(e), e, e.__traceback__))\n                    if e.__traceback__\n                    else None\n                )\n                descr = \"The above exception was the direct cause of the following exception:\"\n            elif (\n                e.__context__ is not None and not e.__suppress_context__ and self.chain\n            ):\n                e = e.__context__\n                excinfo_ = (\n                    ExceptionInfo((type(e), e, e.__traceback__))\n                    if e.__traceback__\n                    else None\n                )\n                descr = \"During handling of the above exception, another exception occurred:\"\n            else:\n                e = None\n        repr_chain.reverse()\n        return ExceptionChainRepr(repr_chain)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._io.saferepr</name><path>src/_pytest/_code/code.py</path><content>     \"\"\"\n        if not self.raw.co_filename:\n            return \"\"\n        try:\n            p = py.path.local(self.raw.co_filename)\n            # maybe don't try this checking\n            if not p.check():\n                raise OSError(\"py.path check failed.\")\n            return p\n        except OSError:\n            # XXX maybe try harder like the weird logic\n            # in the standard lib [linecache.updatecache] does?\n        </content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.assertion._saferepr</name><path>src/_pytest/_code/code.py</path><content>y.frame.f_locals)\n        return None\n\n\nco_equal = compile(\n    \"__recursioncache_locals_1 == __recursioncache_locals_2\", \"?\", \"eval\"\n)\n\n\n_E = TypeVar(\"_E\", bound=BaseException)\n\n\n@attr.s(repr=False)\nclass ExceptionInfo(Generic[_E]):\n    \"\"\" wraps sys.exc_info() objects and offers\n        help for navigating the traceback.\n    \"\"\"\n\n    _assert_start_repr = \"AssertionError('assert \"\n\n    _excinfo = attr.ib(type=Optional[Tuple[\"Type[_E]\", \"_E\", TracebackType]])\n    _striptext = attr.ib(type=str, d</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python.Function.repr_failure</name><path>src/_pytest/python.py</path><content>def repr_failure(self, excinfo, outerr=None):\n        assert outerr is None, \"XXX outerr usage is deprecated\"\n        style = self.config.getoption(\"tbstyle\", \"auto\")\n        if style == \"auto\":\n            style = \"long\"\n        return self._repr_failure_py(excinfo, style=style)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.reports.BaseReport</name><path>src/_pytest/reports.py</path><content>class BaseReport:\n    when = None  # type: Optional[str]\n    location = None  # type: Optional[Tuple[str, Optional[int], str]]\n    longrepr = None\n    sections = []  # type: List[Tuple[str, str]]\n    nodeid = None  # type: str\n\n    def __init__(self, **kw: Any) -> None:\n        self.__dict__.update(kw)\n\n    if TYPE_CHECKING:\n        # Can have arbitrary fields given to __init__().\n        def __getattr__(self, key: str) -> Any:\n            raise NotImplementedError()\n\n    def toterminal(self, out) -> None:\n        if hasattr(self, \"node\"):\n            out.line(getslaveinfoline(self.node))\n\n        longrepr = self.longrepr\n        if longrepr is None:\n            return\n\n        if hasattr(longrepr, \"toterminal\"):\n            longrepr.toterminal(out)\n        else:\n            try:\n                out.line(longrepr)\n            except UnicodeEncodeError:\n                out.line(\"<unprintable longrepr>\")\n\n    def get_sections(self, prefix):\n        for name, content in self.sections:\n            if name.startswith(prefix):\n                yield prefix, content\n\n    @property\n    def longreprtext(self):\n        \"\"\"\n        Read-only property that returns the full string representation\n        of ``longrepr``.\n\n        .. versionadded:: 3.0\n        \"\"\"\n        tw = TerminalWriter(stringio=True)\n        tw.hasmarkup = False\n        self.toterminal(tw)\n        exc = tw.stringio.getvalue()\n        return exc.strip()\n\n    @property\n    def caplog(self):\n        \"\"\"Return captured log lines, if log capturing is enabled\n\n        .. versionadded:: 3.5\n        \"\"\"\n        return \"\\n\".join(\n            content for (prefix, content) in self.get_sections(\"Captured log\")\n        )\n\n    @property\n    def capstdout(self):\n        \"\"\"Return captured text from stdout, if capturing is enabled\n\n        .. versionadded:: 3.0\n        \"\"\"\n        return \"\".join(\n            content for (prefix, content) in self.get_sections(\"Captured stdout\")\n        )\n\n    @property\n    def capstderr(self):\n        \"\"\"Return captured text from stderr, if capturing is enabled\n\n        .. versionadded:: 3.0\n        \"\"\"\n        return \"\".join(\n            content for (prefix, content) in self.get_sections(\"Captured stderr\")\n        )\n\n    passed = property(lambda x: x.outcome == \"passed\")\n    failed = property(lambda x: x.outcome == \"failed\")\n    skipped = property(lambda x: x.outcome == \"skipped\")\n\n    @property\n    def fspath(self) -> str:\n        return self.nodeid.split(\"::\")[0]\n\n    @property\n    def count_towards_summary(self):\n        \"\"\"\n        **Experimental**\n\n        ``True`` if this report should be counted towards the totals shown at the end of the\n        test session: \"1 passed, 1 failure, etc\".\n\n        .. note::\n\n            This function is considered **experimental**, so beware that it is subject to changes\n            even in patch releases.\n        \"\"\"\n        return True\n\n    @property\n    def head_line(self):\n        \"\"\"\n        **Experimental**\n\n        Returns the head line shown with longrepr output for this report, more commonly during\n        traceback representation during failures::\n\n            ________ Test.foo ________\n\n\n        In the example above, the head_line is \"Test.foo\".\n\n        .. note::\n\n            This function is considered **experimental**, so beware that it is subject to changes\n            even in patch releases.\n        \"\"\"\n        if self.location is not None:\n            fspath, lineno, domain = self.location\n            return domain\n\n    def _get_verbose_word(self, config):\n        _category, _short, verbose = config.hook.pytest_report_teststatus(\n            report=self, config=config\n        )\n        return verbose\n\n    def _to_json(self):\n        \"\"\"\n        This was originally the serialize_report() function from xdist (ca03269).\n\n        Returns the contents of this report as a dict of builtin entries, suitable for\n        serialization.\n\n        Experimental method.\n        \"\"\"\n        return _report_to_json(self)\n\n    @classmethod\n    def _from_json(cls, reportdict):\n        \"\"\"\n        This was originally the serialize_report() function from xdist (ca03269).\n\n        Factory method that returns either a TestReport or CollectReport, depending on the calling\n        class. It's the callers responsibility to know which class to pass here.\n\n        Experimental method.\n        \"\"\"\n        kwargs = _report_kwargs_from_json(reportdict)\n        return cls(**kwargs)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.reports.BaseReport.when</name><path>src/_pytest/reports.py</path><content>when = None</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.reports.BaseReport.location</name><path>src/_pytest/reports.py</path><content>location = None</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.reports.BaseReport.longrepr</name><path>src/_pytest/reports.py</path><content>longrepr = None</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.reports.BaseReport.sections</name><path>src/_pytest/reports.py</path><content>sections = []</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.reports.BaseReport.nodeid</name><path>src/_pytest/reports.py</path><content>nodeid = None</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.reports.BaseReport.__init__</name><path>src/_pytest/reports.py</path><content>def __init__(self, **kw: Any) -> None:\n        self.__dict__.update(kw)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.reports.BaseReport.toterminal</name><path>src/_pytest/reports.py</path><content>def toterminal(self, out) -> None:\n        if hasattr(self, \"node\"):\n            out.line(getslaveinfoline(self.node))\n\n        longrepr = self.longrepr\n        if longrepr is None:\n            return\n\n        if hasattr(longrepr, \"toterminal\"):\n            longrepr.toterminal(out)\n        else:\n            try:\n                out.line(longrepr)\n            except UnicodeEncodeError:\n                out.line(\"<unprintable longrepr>\")</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.reports.BaseReport.get_sections</name><path>src/_pytest/reports.py</path><content>def get_sections(self, prefix):\n        for name, content in self.sections:\n            if name.startswith(prefix):\n                yield prefix, content</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.reports.BaseReport.longreprtext</name><path>src/_pytest/reports.py</path><content>@property\n    def longreprtext(self):\n        \"\"\"\n        Read-only property that returns the full string representation\n        of ``longrepr``.\n\n        .. versionadded:: 3.0\n        \"\"\"\n        tw = TerminalWriter(stringio=True)\n        tw.hasmarkup = False\n        self.toterminal(tw)\n        exc = tw.stringio.getvalue()\n        return exc.strip()</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.reports.BaseReport.caplog</name><path>src/_pytest/reports.py</path><content>@property\n    def caplog(self):\n        \"\"\"Return captured log lines, if log capturing is enabled\n\n        .. versionadded:: 3.5\n        \"\"\"\n        return \"\\n\".join(\n            content for (prefix, content) in self.get_sections(\"Captured log\")\n        )</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.reports.BaseReport.capstdout</name><path>src/_pytest/reports.py</path><content>@property\n    def capstdout(self):\n        \"\"\"Return captured text from stdout, if capturing is enabled\n\n        .. versionadded:: 3.0\n        \"\"\"\n        return \"\".join(\n            content for (prefix, content) in self.get_sections(\"Captured stdout\")\n        )</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.reports.BaseReport.capstderr</name><path>src/_pytest/reports.py</path><content>@property\n    def capstderr(self):\n        \"\"\"Return captured text from stderr, if capturing is enabled\n\n        .. versionadded:: 3.0\n        \"\"\"\n        return \"\".join(\n            content for (prefix, content) in self.get_sections(\"Captured stderr\")\n        )</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.reports.BaseReport.passed</name><path>src/_pytest/reports.py</path><content>passed = property(lambda x: x.outcome == \"passed\")</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.reports.BaseReport.failed</name><path>src/_pytest/reports.py</path><content>failed = property(lambda x: x.outcome == \"failed\")</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.reports.BaseReport.skipped</name><path>src/_pytest/reports.py</path><content>skipped = property(lambda x: x.outcome == \"skipped\")</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.reports.BaseReport.fspath</name><path>src/_pytest/reports.py</path><content>@property\n    def fspath(self) -> str:\n        return self.nodeid.split(\"::\")[0]</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.reports.BaseReport.count_towards_summary</name><path>src/_pytest/reports.py</path><content>@property\n    def count_towards_summary(self):\n        \"\"\"\n        **Experimental**\n\n        ``True`` if this report should be counted towards the totals shown at the end of the\n        test session: \"1 passed, 1 failure, etc\".\n\n        .. note::\n\n            This function is considered **experimental**, so beware that it is subject to changes\n            even in patch releases.\n        \"\"\"\n        return True</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.reports.BaseReport.head_line</name><path>src/_pytest/reports.py</path><content>@property\n    def head_line(self):\n        \"\"\"\n        **Experimental**\n\n        Returns the head line shown with longrepr output for this report, more commonly during\n        traceback representation during failures::\n\n            ________ Test.foo ________\n\n\n        In the example above, the head_line is \"Test.foo\".\n\n        .. note::\n\n            This function is considered **experimental**, so beware that it is subject to changes\n            even in patch releases.\n        \"\"\"\n        if self.location is not None:\n            fspath, lineno, domain = self.location\n            return domain</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.reports.BaseReport._get_verbose_word</name><path>src/_pytest/reports.py</path><content>def _get_verbose_word(self, config):\n        _category, _short, verbose = config.hook.pytest_report_teststatus(\n            report=self, config=config\n        )\n        return verbose</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.reports.BaseReport._to_json</name><path>src/_pytest/reports.py</path><content>def _to_json(self):\n        \"\"\"\n        This was originally the serialize_report() function from xdist (ca03269).\n\n        Returns the contents of this report as a dict of builtin entries, suitable for\n        serialization.\n\n        Experimental method.\n        \"\"\"\n        return _report_to_json(self)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.reports.BaseReport._from_json</name><path>src/_pytest/reports.py</path><content>@classmethod\n    def _from_json(cls, reportdict):\n        \"\"\"\n        This was originally the serialize_report() function from xdist (ca03269).\n\n        Factory method that returns either a TestReport or CollectReport, depending on the calling\n        class. It's the callers responsibility to know which class to pass here.\n\n        Experimental method.\n        \"\"\"\n        kwargs = _report_kwargs_from_json(reportdict)\n        return cls(**kwargs)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.reports.TestReport</name><path>src/_pytest/reports.py</path><content>class TestReport(BaseReport):\n    \"\"\" Basic test report object (also used for setup and teardown calls if\n    they fail).\n    \"\"\"\n\n    __test__ = False\n\n    def __init__(\n        self,\n        nodeid,\n        location: Tuple[str, Optional[int], str],\n        keywords,\n        outcome,\n        longrepr,\n        when,\n        sections=(),\n        duration=0,\n        user_properties=None,\n        **extra\n    ) -> None:\n        #: normalized collection node id\n        self.nodeid = nodeid\n\n        #: a (filesystempath, lineno, domaininfo) tuple indicating the\n        #: actual location of a test item - it might be different from the\n        #: collected one e.g. if a method is inherited from a different module.\n        self.location = location  # type: Tuple[str, Optional[int], str]\n\n        #: a name -> value dictionary containing all keywords and\n        #: markers associated with a test invocation.\n        self.keywords = keywords\n\n        #: test outcome, always one of \"passed\", \"failed\", \"skipped\".\n        self.outcome = outcome\n\n        #: None or a failure representation.\n        self.longrepr = longrepr\n\n        #: one of 'setup', 'call', 'teardown' to indicate runtest phase.\n        self.when = when\n\n        #: user properties is a list of tuples (name, value) that holds user\n        #: defined properties of the test\n        self.user_properties = list(user_properties or [])\n\n        #: list of pairs ``(str, str)`` of extra information which needs to\n        #: marshallable. Used by pytest to add captured text\n        #: from ``stdout`` and ``stderr``, but may be used by other plugins\n        #: to add arbitrary information to reports.\n        self.sections = list(sections)\n\n        #: time it took to run just the test\n        self.duration = duration\n\n        self.__dict__.update(extra)\n\n    def __repr__(self):\n        return \"<{} {!r} when={!r} outcome={!r}>\".format(\n            self.__class__.__name__, self.nodeid, self.when, self.outcome\n        )\n\n    @classmethod\n    def from_item_and_call(cls, item, call) -> \"TestReport\":\n        \"\"\"\n        Factory method to create and fill a TestReport with standard item and call info.\n        \"\"\"\n        when = call.when\n        duration = call.duration\n        keywords = {x: 1 for x in item.keywords}\n        excinfo = call.excinfo\n        sections = []\n        if not call.excinfo:\n            outcome = \"passed\"\n            longrepr = None\n        else:\n            if not isinstance(excinfo, ExceptionInfo):\n                outcome = \"failed\"\n                longrepr = excinfo\n            elif excinfo.errisinstance(skip.Exception):\n                outcome = \"skipped\"\n                r = excinfo._getreprcrash()\n                longrepr = (str(r.path), r.lineno, r.message)\n            else:\n                outcome = \"failed\"\n                if call.when == \"call\":\n                    longrepr = item.repr_failure(excinfo)\n                else:  # exception in setup or teardown\n                    longrepr = item._repr_failure_py(\n                        excinfo, style=item.config.getoption(\"tbstyle\", \"auto\")\n                    )\n        for rwhen, key, content in item._report_sections:\n            sections.append((\"Captured {} {}\".format(key, rwhen), content))\n        return cls(\n            item.nodeid,\n            item.location,\n            keywords,\n            outcome,\n            longrepr,\n            when,\n            sections,\n            duration,\n            user_properties=item.user_properties,\n        )</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.reports.TestReport.__test__</name><path>src/_pytest/reports.py</path><content>__test__ = False</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.reports.TestReport.__init__</name><path>src/_pytest/reports.py</path><content>def __init__(\n        self,\n        nodeid,\n        location: Tuple[str, Optional[int], str],\n        keywords,\n        outcome,\n        longrepr,\n        when,\n        sections=(),\n        duration=0,\n        user_properties=None,\n        **extra\n    ) -> None:\n        #: normalized collection node id\n        self.nodeid = nodeid\n\n        #: a (filesystempath, lineno, domaininfo) tuple indicating the\n        #: actual location of a test item - it might be different from the\n        #: collected one e.g. if a method is inherited from a different module.\n        self.location = location  # type: Tuple[str, Optional[int], str]\n\n        #: a name -> value dictionary containing all keywords and\n        #: markers associated with a test invocation.\n        self.keywords = keywords\n\n        #: test outcome, always one of \"passed\", \"failed\", \"skipped\".\n        self.outcome = outcome\n\n        #: None or a failure representation.\n        self.longrepr = longrepr\n\n        #: one of 'setup', 'call', 'teardown' to indicate runtest phase.\n        self.when = when\n\n        #: user properties is a list of tuples (name, value) that holds user\n        #: defined properties of the test\n        self.user_properties = list(user_properties or [])\n\n        #: list of pairs ``(str, str)`` of extra information which needs to\n        #: marshallable. Used by pytest to add captured text\n        #: from ``stdout`` and ``stderr``, but may be used by other plugins\n        #: to add arbitrary information to reports.\n        self.sections = list(sections)\n\n        #: time it took to run just the test\n        self.duration = duration\n\n        self.__dict__.update(extra)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.reports.TestReport.__repr__</name><path>src/_pytest/reports.py</path><content>def __repr__(self):\n        return \"<{} {!r} when={!r} outcome={!r}>\".format(\n            self.__class__.__name__, self.nodeid, self.when, self.outcome\n        )</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.reports.TestReport.from_item_and_call</name><path>src/_pytest/reports.py</path><content>@classmethod\n    def from_item_and_call(cls, item, call) -> \"TestReport\":\n        \"\"\"\n        Factory method to create and fill a TestReport with standard item and call info.\n        \"\"\"\n        when = call.when\n        duration = call.duration\n        keywords = {x: 1 for x in item.keywords}\n        excinfo = call.excinfo\n        sections = []\n        if not call.excinfo:\n            outcome = \"passed\"\n            longrepr = None\n        else:\n            if not isinstance(excinfo, ExceptionInfo):\n                outcome = \"failed\"\n                longrepr = excinfo\n            elif excinfo.errisinstance(skip.Exception):\n                outcome = \"skipped\"\n                r = excinfo._getreprcrash()\n                longrepr = (str(r.path), r.lineno, r.message)\n            else:\n                outcome = \"failed\"\n                if call.when == \"call\":\n                    longrepr = item.repr_failure(excinfo)\n                else:  # exception in setup or teardown\n                    longrepr = item._repr_failure_py(\n                        excinfo, style=item.config.getoption(\"tbstyle\", \"auto\")\n                    )\n        for rwhen, key, content in item._report_sections:\n            sections.append((\"Captured {} {}\".format(key, rwhen), content))\n        return cls(\n            item.nodeid,\n            item.location,\n            keywords,\n            outcome,\n            longrepr,\n            when,\n            sections,\n            duration,\n            user_properties=item.user_properties,\n        )</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.reports.CollectReport</name><path>src/_pytest/reports.py</path><content>class CollectReport(BaseReport):\n    when = \"collect\"\n\n    def __init__(\n        self, nodeid: str, outcome, longrepr, result: List[Node], sections=(), **extra\n    ) -> None:\n        self.nodeid = nodeid\n        self.outcome = outcome\n        self.longrepr = longrepr\n        self.result = result or []\n        self.sections = list(sections)\n        self.__dict__.update(extra)\n\n    @property\n    def location(self):\n        return (self.fspath, None, self.fspath)\n\n    def __repr__(self):\n        return \"<CollectReport {!r} lenresult={} outcome={!r}>\".format(\n            self.nodeid, len(self.result), self.outcome\n        )</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.reports.CollectReport.when</name><path>src/_pytest/reports.py</path><content>when = \"collect\"</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.reports.CollectReport.__init__</name><path>src/_pytest/reports.py</path><content>def __init__(\n        self, nodeid: str, outcome, longrepr, result: List[Node], sections=(), **extra\n    ) -> None:\n        self.nodeid = nodeid\n        self.outcome = outcome\n        self.longrepr = longrepr\n        self.result = result or []\n        self.sections = list(sections)\n        self.__dict__.update(extra)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.reports.CollectReport.location</name><path>src/_pytest/reports.py</path><content>@property\n    def location(self):\n        return (self.fspath, None, self.fspath)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.reports.CollectReport.__repr__</name><path>src/_pytest/reports.py</path><content>def __repr__(self):\n        return \"<CollectReport {!r} lenresult={} outcome={!r}>\".format(\n            self.nodeid, len(self.result), self.outcome\n        )</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.FormattedExcinfo.repr_traceback_entry</name><path>src/_pytest/_code/code.py</path><content>def repr_traceback_entry(\n        self, entry: TracebackEntry, excinfo: Optional[ExceptionInfo] = None\n    ) -> \"ReprEntry\":\n        import _pytest._code\n\n        source = self._getentrysource(entry)\n        if source is None:\n            source = _pytest._code.Source(\"???\")\n            line_index = 0\n        else:\n            line_index = entry.lineno - entry.getfirstlinesource()\n\n        lines = []  # type: List[str]\n        style = entry._repr_style if entry._repr_style is not None else self.style\n        if style in (\"short\", \"long\"):\n            short = style == \"short\"\n            reprargs = self.repr_args(entry) if not short else None\n            s = self.get_source(source, line_index, excinfo, short=short)\n            lines.extend(s)\n            if short:\n                message = \"in %s\" % (entry.name)\n            else:\n                message = excinfo and excinfo.typename or \"\"\n            path = self._makepath(entry.path)\n            reprfileloc = ReprFileLocation(path, entry.lineno + 1, message)\n            localsrepr = self.repr_locals(entry.locals)\n            return ReprEntry(lines, reprargs, localsrepr, reprfileloc, style)\n        if excinfo:\n            lines.extend(self.get_exconly(excinfo, indent=4))\n        return ReprEntry(lines, None, None, None, style)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.FormattedExcinfo.repr_traceback</name><path>src/_pytest/_code/code.py</path><content>def repr_traceback(self, excinfo: ExceptionInfo) -> \"ReprTraceback\":\n        traceback = excinfo.traceback\n        if self.tbfilter:\n            traceback = traceback.filter()\n\n        if excinfo.errisinstance(RecursionError):\n            traceback, extraline = self._truncate_recursive_traceback(traceback)\n        else:\n            extraline = None\n\n        last = traceback[-1]\n        entries = []\n        for index, entry in enumerate(traceback):\n            einfo = (last == entry) and excinfo or None\n            reprentry = self.repr_traceback_entry(entry, einfo)\n            entries.append(reprentry)\n        return ReprTraceback(entries, extraline, style=self.style)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.ReprExceptionInfo.reprtraceback</name><path>src/_pytest/_code/code.py</path><content>reprtraceback = attr.ib(type=\"ReprTraceback\")</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.ReprExceptionInfo.reprcrash</name><path>src/_pytest/_code/code.py</path><content>reprcrash = attr.ib(type=\"ReprFileLocation\")</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.fixtures.FixtureFunctionMarker</name><path>src/_pytest/python.py</path><content>\n            elif isinstance(id_value, (float, int, bool)):\n                new_ids.append(str(id_value))\n            else:\n                msg = \"In {}: ids must be list of string/float/int/bool, found: {} (type: {!r}) at index {}\"\n                fail(\n                    msg.format(func_name, saferepr(id_value), type(id_value), idx),\n                    pytrace=False,\n                )\n        return new_ids\n\n    def _resolve_arg_value_types(\n        self,\n        argnames: typing.Sequence[str],\n        indirect: Union[bool, typing.Sequence[str]],\n    ) -> Dict[str, str]:\n        \"\"\"Resolves if each parametrized argument must be considered a parameter to a fixture or a \"funcarg\"\n        to the function, based on the ``indirect`` parameter of the parametrized() call.\n\n        :param List[str] argnames: list of argument names passed to ``parametrize()``.\n        :param indirect: same ``indirect`` parameter of ``parametrize()``.\n        :rtype: Dict[str, str]\n            A dict mapping each arg name to either:\n            * \"params\" if the argname should be the parameter of a fixture of the same name.\n            * \"funcargs\" if the argname should be a parameter </content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.fixtures.FixtureFunctionMarker.scope</name><path>src/_pytest/python.py</path><content>ol)):\n           </content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.fixtures.FixtureFunctionMarker.params</name><path>src/_pytest/python.py</path><content>new_ids.append(str(id_value))\n            else:\n           </content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.fixtures.FixtureFunctionMarker.autouse</name><path>src/_pytest/python.py</path><content>msg = \"In {}: ids must be list o</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.fixtures.FixtureFunctionMarker.ids</name><path>src/_pytest/python.py</path><content>ail(\n                    msg.format(func_name, saferepr(id_v</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.fixtures.FixtureFunctionMarker.name</name><path>src/_pytest/python.py</path><content>, idx),\n                    </content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.fixtures.FixtureFunctionMarker.__call__</name><path>src/_pytest/python.py</path><content>e=False,\n                )\n        return new_ids\n\n    def _resolve_arg_value_types(\n        self,\n        argnames: typing.Sequence[str],\n        indirect: Union[bool, typing.Sequence[str]],\n    ) -> Dict[str, str]:\n        \"\"\"Resolves if each parametrized argument must be considered a parameter to a fixture or a \"funcarg\"\n        to the function, based on the ``indirect`` parameter of the parametrized() call.\n\n        :param List[str] argnames: list of argument names passed to ``parametrize()``.\n        :param indirect: same ``indirect`` parameter of ``parametrize()``.\n        :rtype: Dict[str, str]\n            A dict mapping each arg name to either:\n            * \"params\" if the argname should be the parameter of a fixture of the same name.\n            * \"funcargs\" if the argname should be a parameter </content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python.Function</name><path>src/_pytest/python.py</path><content>class Function(PyobjMixin, nodes.Item):\n    \"\"\" a Function Item is responsible for setting up and executing a\n    Python test function.\n    \"\"\"\n\n    # disable since functions handle it themselves\n    _ALLOW_MARKERS = False\n\n    def __init__(\n        self,\n        name,\n        parent,\n        args=None,\n        config=None,\n        callspec: Optional[CallSpec2] = None,\n        callobj=NOTSET,\n        keywords=None,\n        session=None,\n        fixtureinfo: Optional[FuncFixtureInfo] = None,\n        originalname=None,\n    ) -> None:\n        super().__init__(name, parent, config=config, session=session)\n        self._args = args\n        if callobj is not NOTSET:\n            self.obj = callobj\n\n        self.keywords.update(self.obj.__dict__)\n        self.own_markers.extend(get_unpacked_marks(self.obj))\n        if callspec:\n            self.callspec = callspec\n            # this is total hostile and a mess\n            # keywords are broken by design by now\n            # this will be redeemed later\n            for mark in callspec.marks:\n                # feel free to cry, this was broken for years before\n                # and keywords cant fix it per design\n                self.keywords[mark.name] = mark\n            self.own_markers.extend(normalize_mark_list(callspec.marks))\n        if keywords:\n            self.keywords.update(keywords)\n\n        # todo: this is a hell of a hack\n        # https://github.com/pytest-dev/pytest/issues/4569\n\n        self.keywords.update(\n            {\n                mark.name: True\n                for mark in self.iter_markers()\n                if mark.name not in self.keywords\n            }\n        )\n\n        if fixtureinfo is None:\n            fixtureinfo = self.session._fixturemanager.getfixtureinfo(\n                self, self.obj, self.cls, funcargs=True\n            )\n        self._fixtureinfo = fixtureinfo  # type: FuncFixtureInfo\n        self.fixturenames = fixtureinfo.names_closure\n        self._initrequest()\n\n        #: original function name, without any decorations (for example\n        #: parametrization adds a ``\"[...]\"`` suffix to function names).\n        #:\n        #: .. versionadded:: 3.0\n        self.originalname = originalname\n\n    @classmethod\n    def from_parent(cls, parent, **kw):  # todo: determine sound type limitations\n        \"\"\"\n        The public  constructor\n        \"\"\"\n        return super().from_parent(parent=parent, **kw)\n\n    def _initrequest(self):\n        self.funcargs = {}\n        self._request = fixtures.FixtureRequest(self)\n\n    @property\n    def function(self):\n        \"underlying python 'function' object\"\n        return getimfunc(self.obj)\n\n    def _getobj(self):\n        name = self.name\n        i = name.find(\"[\")  # parametrization\n        if i != -1:\n            name = name[:i]\n        return getattr(self.parent.obj, name)\n\n    @property\n    def _pyfuncitem(self):\n        \"(compatonly) for code expecting pytest-2.2 style request objects\"\n        return self\n\n    @property\n    def funcargnames(self):\n        \"\"\" alias attribute for ``fixturenames`` for pre-2.3 compatibility\"\"\"\n        warnings.warn(FUNCARGNAMES, stacklevel=2)\n        return self.fixturenames\n\n    def runtest(self) -> None:\n        \"\"\" execute the underlying test function. \"\"\"\n        self.ihook.pytest_pyfunc_call(pyfuncitem=self)\n\n    def setup(self) -> None:\n        if isinstance(self.parent, Instance):\n            self.parent.newinstance()\n            self.obj = self._getobj()\n        self._request._fillfixtures()\n\n    def _prunetraceback(self, excinfo: ExceptionInfo) -> None:\n        if hasattr(self, \"_obj\") and not self.config.getoption(\"fulltrace\", False):\n            code = _pytest._code.Code(get_real_func(self.obj))\n            path, firstlineno = code.path, code.firstlineno\n            traceback = excinfo.traceback\n            ntraceback = traceback.cut(path=path, firstlineno=firstlineno)\n            if ntraceback == traceback:\n                ntraceback = ntraceback.cut(path=path)\n                if ntraceback == traceback:\n                    ntraceback = ntraceback.filter(filter_traceback)\n                    if not ntraceback:\n                        ntraceback = traceback\n\n            excinfo.traceback = ntraceback.filter()\n            # issue364: mark all but first and last frames to\n            # only show a single-line message for each frame\n            if self.config.getoption(\"tbstyle\", \"auto\") == \"auto\":\n                if len(excinfo.traceback) > 2:\n                    for entry in excinfo.traceback[1:-1]:\n                        entry.set_repr_style(\"short\")\n\n    def repr_failure(self, excinfo, outerr=None):\n        assert outerr is None, \"XXX outerr usage is deprecated\"\n        style = self.config.getoption(\"tbstyle\", \"auto\")\n        if style == \"auto\":\n            style = \"long\"\n        return self._repr_failure_py(excinfo, style=style)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python.Function._ALLOW_MARKERS</name><path>src/_pytest/python.py</path><content>_ALLOW_MARKERS = False</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python.Function.__init__</name><path>src/_pytest/python.py</path><content>def __init__(\n        self,\n        name,\n        parent,\n        args=None,\n        config=None,\n        callspec: Optional[CallSpec2] = None,\n        callobj=NOTSET,\n        keywords=None,\n        session=None,\n        fixtureinfo: Optional[FuncFixtureInfo] = None,\n        originalname=None,\n    ) -> None:\n        super().__init__(name, parent, config=config, session=session)\n        self._args = args\n        if callobj is not NOTSET:\n            self.obj = callobj\n\n        self.keywords.update(self.obj.__dict__)\n        self.own_markers.extend(get_unpacked_marks(self.obj))\n        if callspec:\n            self.callspec = callspec\n            # this is total hostile and a mess\n            # keywords are broken by design by now\n            # this will be redeemed later\n            for mark in callspec.marks:\n                # feel free to cry, this was broken for years before\n                # and keywords cant fix it per design\n                self.keywords[mark.name] = mark\n            self.own_markers.extend(normalize_mark_list(callspec.marks))\n        if keywords:\n            self.keywords.update(keywords)\n\n        # todo: this is a hell of a hack\n        # https://github.com/pytest-dev/pytest/issues/4569\n\n        self.keywords.update(\n            {\n                mark.name: True\n                for mark in self.iter_markers()\n                if mark.name not in self.keywords\n            }\n        )\n\n        if fixtureinfo is None:\n            fixtureinfo = self.session._fixturemanager.getfixtureinfo(\n                self, self.obj, self.cls, funcargs=True\n            )\n        self._fixtureinfo = fixtureinfo  # type: FuncFixtureInfo\n        self.fixturenames = fixtureinfo.names_closure\n        self._initrequest()\n\n        #: original function name, without any decorations (for example\n        #: parametrization adds a ``\"[...]\"`` suffix to function names).\n        #:\n        #: .. versionadded:: 3.0\n        self.originalname = originalname</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python.Function.from_parent</name><path>src/_pytest/python.py</path><content>@classmethod\n    def from_parent(cls, parent, **kw):  # todo: determine sound type limitations\n        \"\"\"\n        The public  constructor\n        \"\"\"\n        return super().from_parent(parent=parent, **kw)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python.Function._initrequest</name><path>src/_pytest/python.py</path><content>def _initrequest(self):\n        self.funcargs = {}\n        self._request = fixtures.FixtureRequest(self)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python.Function.function</name><path>src/_pytest/python.py</path><content>@property\n    def function(self):\n        \"underlying python 'function' object\"\n        return getimfunc(self.obj)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python.Function._getobj</name><path>src/_pytest/python.py</path><content>def _getobj(self):\n        name = self.name\n        i = name.find(\"[\")  # parametrization\n        if i != -1:\n            name = name[:i]\n        return getattr(self.parent.obj, name)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python.Function._pyfuncitem</name><path>src/_pytest/python.py</path><content>@property\n    def _pyfuncitem(self):\n        \"(compatonly) for code expecting pytest-2.2 style request objects\"\n        return self</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python.Function.funcargnames</name><path>src/_pytest/python.py</path><content>@property\n    def funcargnames(self):\n        \"\"\" alias attribute for ``fixturenames`` for pre-2.3 compatibility\"\"\"\n        warnings.warn(FUNCARGNAMES, stacklevel=2)\n        return self.fixturenames</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python.Function.runtest</name><path>src/_pytest/python.py</path><content>def runtest(self) -> None:\n        \"\"\" execute the underlying test function. \"\"\"\n        self.ihook.pytest_pyfunc_call(pyfuncitem=self)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python.Function.setup</name><path>src/_pytest/python.py</path><content>def setup(self) -> None:\n        if isinstance(self.parent, Instance):\n            self.parent.newinstance()\n            self.obj = self._getobj()\n        self._request._fillfixtures()</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python.Function._prunetraceback</name><path>src/_pytest/python.py</path><content>def _prunetraceback(self, excinfo: ExceptionInfo) -> None:\n        if hasattr(self, \"_obj\") and not self.config.getoption(\"fulltrace\", False):\n            code = _pytest._code.Code(get_real_func(self.obj))\n            path, firstlineno = code.path, code.firstlineno\n            traceback = excinfo.traceback\n            ntraceback = traceback.cut(path=path, firstlineno=firstlineno)\n            if ntraceback == traceback:\n                ntraceback = ntraceback.cut(path=path)\n                if ntraceback == traceback:\n                    ntraceback = ntraceback.filter(filter_traceback)\n                    if not ntraceback:\n                        ntraceback = traceback\n\n            excinfo.traceback = ntraceback.filter()\n            # issue364: mark all but first and last frames to\n            # only show a single-line message for each frame\n            if self.config.getoption(\"tbstyle\", \"auto\") == \"auto\":\n                if len(excinfo.traceback) > 2:\n                    for entry in excinfo.traceback[1:-1]:\n                        entry.set_repr_style(\"short\")</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python.FunctionDefinition</name><path>src/_pytest/python.py</path><content>class FunctionDefinition(Function):\n    \"\"\"\n    internal hack until we get actual definition nodes instead of the\n    crappy metafunc hack\n    \"\"\"\n\n    def runtest(self) -> None:\n        raise RuntimeError(\"function definitions are not supposed to be used\")\n\n    setup = runtest</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python.FunctionDefinition.runtest</name><path>src/_pytest/python.py</path><content>def runtest(self) -> None:\n        raise RuntimeError(\"function definitions are not supposed to be used\")</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python.FunctionDefinition.setup</name><path>src/_pytest/python.py</path><content>setup = runtest</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.unittest.TestCaseFunction</name><path>src/_pytest/python.py</path><content>ault=\"prepend\",\n        choices=[\"prepend\", \"append\"],\n        dest=\"importmode\",\n        help=\"prepend/append to sys.path when importing test modules, \"\n        \"default is to prepend.\",\n    )\n\n\ndef pytest_cmdline_main(config):\n    if config.option.showfixtures:\n        showfixtures(config)\n        return 0\n    if config.option.show_fixtures_per_test:\n        show_fixtures_per_test(config)\n        return 0\n\n\ndef pytest_generate_tests(metafunc: \"Metafunc\") -> None:\n    for marker in metafunc.definition.iter_markers(name=\"parametrize\"):\n        # TODO: Fix this type-ignore (overlapping kwargs).\n        metafunc.parametrize(*marker.args, **marker.kwargs, _param_mark=marker)  # type: ignore[misc] # noqa: F821\n\n\ndef pytest_configure(config):\n    config.addinivalue_line(\n        \"markers\",\n        \"parametrize(argnames, argvalues): call a test function multiple \"\n        \"times passing in different arguments in turn. argvalues generally \"\n        \"needs to be a list of values if argnames specifies only one name \"\n        \"or a list of tuples of values if argnames specifies multiple names. \"\n        \"Example: @parametrize('arg1', [1,2]) would lead to two calls of the \"\n        \"decorated test function, one with arg1=1 and another with arg1=2.\"\n        \"see https://docs.pytest.org/en/latest/parametrize.html for more info \"\n        \"and examples.\",\n    )\n    config.addinivalue_line(\n        \"markers\",\n        \"usefixtures(fixturename1, fixturename2, ...): mark tests as needing \"\n        \"all of the specified fixtures. see \"\n        \"https://docs.pytest.org/en/latest/fixture.html#usefixtures \",\n    )\n\n\ndef async_warn_and_skip(nodeid: str) -> None:\n    msg = \"async def functions are not natively supported and have been skipped.\\n\"\n    msg += (\n        \"You need to install a suitable plugin for your async framework, for example:\\n\"\n    )\n    msg += \"  - pytest-asyncio\\n\"\n    msg += \"  - pytest-trio\\n\"\n    msg += \"  - pytest-tornasync\\n\"\n    msg += \"  - pytest-twisted\"\n    warnings.warn(PytestUnhandledCoroutineWarning(msg.format(nodeid)))\n    skip(msg=\"async def function and no async plugin installed (see warnings)\")\n\n\n@hookimpl(trylast=True)\ndef pytest_pyfunc_call(pyfuncitem: \"Function\"):\n    testfunction = pyfuncitem.obj\n    if is_async_function(testfunction):\n        async_warn_and_skip(pyfuncitem.nodeid)\n    funcargs = pyfuncitem.funcargs\n    testargs = {arg: funcargs[arg] for arg in pyfuncitem._fixtureinfo.argnames}\n    result = testfunction(**testargs)\n    if hasattr(result, \"__await__\") or hasattr(result, \"__aiter__\"):\n        async_warn_and_skip(pyfuncitem.nodeid)\n    return True\n\n\ndef pytest_collect_file(path, parent):\n    ext = path.ext\n    if ext == \".py\":\n        if not parent.session.isinitpath(path):\n            if not path_matches_patterns(\n                path, parent.config.getini(\"python_files\") + [\"__init__.py\"]\n            ):\n                return\n        ihook = parent.session.gethookproxy(path)\n        return ihook.pytest_pycollect_makemodule(path=path, parent=parent)\n\n\ndef path_matches_patterns(path, patterns):\n    \"\"\"Returns True if the given py.path.local matches one of the patterns in the list of globs given\"\"\"\n    return any(path.fnmatch(pattern) for pattern in patterns)\n\n\ndef pytest_pycollect_makemodule(path, parent):\n    if path.basename == \"__init__.py\":\n        return Package.from_parent(parent, fspath=path)\n    return Module.from_parent(parent, fspath=path)\n\n\n@hookimpl(hookwrapper=True)\ndef pytest_pycollect_makeitem(collector, name, obj):\n    outcome = yield\n    res = outcome.get_result()\n    if res is not None:\n        return\n    # nothing was collected elsewhere, let's do it here\n    if safe_isclass(obj):\n        if collector.istestclass(obj, name):\n            outcome.force_result(Class.from_parent(collector, name=name, obj=obj))\n    elif collector.istestfunction(obj, name):\n        # mock seems to store unbound methods (issue473), normalize it\n        obj = getattr(obj, \"__func__\", obj)\n        # We need to try and unwrap the function if it's a functools.partial\n        # or a functools.wrapped.\n        # We mustn't if it's been wrapped with mock.patch (python 2 only)\n        if not (inspect.isfunction(obj) or inspect.isfunction(get_real_func(obj))):\n            filename, lineno = getfslineno(obj)\n            warnings.warn_explicit(\n                message=PytestCollectionWarning(\n                    \"cannot collect %r because it is not a function.\" % name\n                ),\n                category=None,\n                filename=str(filename),\n                lineno=lineno + 1,\n            )\n        elif getattr(obj, \"__test__\", True):\n            if is_generator(obj):\n                res = Function.from_parent(collector, name=name)\n                reason = \"yield tests were removed in pytest 4.0 - {name} will be ignored\".format(\n                    name=name\n                )\n                res.add_marker(MARK_GEN.xfail(run=False, reason=reason))\n                res.warn(PytestCollectionWarning(reason))\n </content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.unittest.TestCaseFunction.nofuncargs</name><path>src/_pytest/python.py</path><content>end\", \"append\"],\n</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.unittest.TestCaseFunction._excinfo</name><path>src/_pytest/python.py</path><content>   dest=\"import</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.unittest.TestCaseFunction._testcase</name><path>src/_pytest/python.py</path><content>,\n        help=\"</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.unittest.TestCaseFunction.setup</name><path>src/_pytest/python.py</path><content>d/append to sys.path when importing test modules, \"\n        \"default is to prepend.\",\n    )\n\n\ndef pytest_cmdline_main(config):\n    if config.option.showfixtures:\n        showfixtures(config)\n        return 0\n    if config.option.show_fixtures_per_test:\n        show_fixtures_per_test(config)\n        return 0\n\n\ndef pytest_g</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.unittest.TestCaseFunction.teardown</name><path>src/_pytest/python.py</path><content>e_tests(metafunc: \"Metafunc\") -> None:\n    for marker in metafunc.definition.iter_markers(name=\"parametrize\"):\n        # TODO: Fix this type-ignore (overlapping kwargs).\n        metafunc.parametrize(*mar</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.unittest.TestCaseFunction.startTest</name><path>src/_pytest/python.py</path><content>gs, **marker.kwargs, _param_mark=marker)  #</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.unittest.TestCaseFunction._addexcinfo</name><path>src/_pytest/python.py</path><content> ignore[misc] # noqa: F821\n\n\ndef pytest_configure(config):\n    config.addinivalue_line(\n        \"markers\",\n        \"parametrize(argnames, argvalues): call a test function multiple \"\n        \"times passing in different arguments in turn. argvalues generally \"\n        \"needs to be a list of values if argnames specifies only one name \"\n        \"or a list of tuples of values if argnames specifies multiple names. \"\n        \"Example: @parametrize('arg1', [1,2]) would lead to two calls of the \"\n        \"decorated test function, one with arg1=1 and another with arg1=2.\"\n        \"see https://docs.pytest.org/en/latest/parametrize.html for more info \"\n        \"and examples.\",\n    )\n    config.addinivalue_line(\n        \"markers\",\n        \"usefixtures(fixturename1, fixturename2, ...): mark tests as needing \"\n        \"all of the specified fixtures. see \"\n        \"https://docs.pytest.org/en/latest/fixture.html#usefixtures \",\n    )\n\n\ndef async_warn_and_skip(nodeid: str) -> None:\n    msg = \"async def functions are not natively supported and have been skipped.\\n\"\n    msg += (\n        \"You need to install a suitable plugin for your async framework, for example:\\n\"\n    )\n    msg += \"  - pytest-asyncio\\n\"\n    msg += \"  - pytest-trio\\n\"\n    msg += \"  - pytest-tornasync\\n\"\n    msg += \"  - pytest-twisted\"\n    warnings.warn(PytestUnhandledCoroutineWarning(msg.format(nodeid)))\n    skip</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.unittest.TestCaseFunction.addError</name><path>src/_pytest/python.py</path><content>async def function and no async plugin installed (see warnings)\")\n\n\n@hookimpl(trylast=True)\ndef pytest_pyfunc_call(pyfuncitem: \"Function\"):\n    testfunction = pyfuncitem.obj\n    if is_async_function(testfunction):\n        async_warn</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.unittest.TestCaseFunction.addFailure</name><path>src/_pytest/python.py</path><content>kip(pyfuncitem.nodeid)\n    funcargs = pyfuncitem.funcargs\n    testargs = {arg: f</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.unittest.TestCaseFunction.addSkip</name><path>src/_pytest/python.py</path><content>s[arg] for arg in pyfuncitem._fixtureinfo.argnames}\n    result = testfunction(**testargs)\n    if hasattr(result, \"__await__\") or hasattr(result, \"__aiter__\"):\n        async_warn_and_skip(pyfuncitem.node</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.unittest.TestCaseFunction.addExpectedFailure</name><path>src/_pytest/python.py</path><content>  return True\n\n\ndef pytest_collect_file(path, parent):\n    ext = path.ext\n    if ext == \".py\":\n        if not parent.session.isinitpath(path):\n            if not path_matches_patterns</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.unittest.TestCaseFunction.addUnexpectedSuccess</name><path>src/_pytest/python.py</path><content>            path, parent.config.getini(\"python_files\") + [\"__init__.py\"]\n            ):\n                </content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.unittest.TestCaseFunction.addSuccess</name><path>src/_pytest/python.py</path><content>\n        ihook = parent.session.gethookproxy</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.unittest.TestCaseFunction.stopTest</name><path>src/_pytest/python.py</path><content>\n        return ihook.pytest_pycollect_mak</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.unittest.TestCaseFunction._expecting_failure</name><path>src/_pytest/python.py</path><content>e(path=path, parent=parent)\n\n\ndef path_matches_patterns(path, patterns):\n    \"\"\"Returns True if the given py.path.local matches one of the patterns in the list of globs given\"\"\"\n    return any(path.fnmatch(pattern) for pattern in patterns)\n\n\ndef pytest_pycollect_makemodule(path, parent):\n    if path.basename == \"__init__.py\":\n        return Package.from_parent(parent, fspath=path)\n    return Module.from_parent(parent, fspath=path)\n\n\n@hookimpl(h</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.unittest.TestCaseFunction.runtest</name><path>src/_pytest/python.py</path><content>pper=True)\ndef pytest_pycollect_makeitem(collector, name, obj):\n    outcome = yield\n    res = outcome.get_result()\n    if res is not None:\n        return\n    # nothing was collected elsewhere, let's do it here\n    if safe_isclass(obj):\n        if collector.istestclass(obj, name):\n            outcome.force_result(Class.from_parent(collector, name=name, obj=obj))\n    elif collector.istestfunction(obj, name):\n        # mock seems to store unbound methods (issue473), normalize it\n        obj = getattr(obj, \"__func__\", obj)\n        # We need to try and unwrap the function if it's a functools.partial\n        # or a functools.wrapped.\n        # We mustn't if it's been wrapped with mock.patch (python 2 only)\n        if not (inspect.isfunction(obj) or inspect.isfunction(get_real_func(obj))):\n            filename, lineno = getfslineno(obj)\n            warnings.warn_explicit(\n                message=PytestCollectionWarning(\n                    \"cannot collect %r because it is not a function.\" % name\n                ),\n                category=None,\n                filename=str(filename),\n                lineno=lineno + 1,\n            )\n        elif getattr(obj, \"__test__\", True):\n            if is_generator(obj):\n                res = Function.from_parent(collector, name=name)\n        </content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.unittest.TestCaseFunction._prunetraceback</name><path>src/_pytest/python.py</path><content>  reason = \"yield tests were removed in pytest 4.0 - {name} will be ignored\".format(\n                    name=name\n                )\n                res.add_marker(MARK_GEN.xfail(run=False, reason=reason))\n                res.warn(PytestCollectionWarning(reason))\n </content></symbol>"
+    }
+  ],
+  "completion": {
+    "id": "chatcmpl-9y3NkO5WUZ3RXjFSLrPqtZqGOlIHY",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\"scratch_pad\":\"1. The user describes an INTERNALERROR occurring in pytest when running a specific test. This issue seems to stem from a custom __repr__ method that raises an exception, which is subsequently causing pytest's internal error handling to fail.\\n2. The issue was caused by an exception being raised in the __repr__ function defined in a test class used in pytest. This is significant because pytest uses repr() internally to generate error messages and debugging information. When there is an error in a __repr__ method, it might lead to such internal errors in testing frameworks.\\n3. The expected result should be that even if __repr__ raises an exception, pytest should handle this gracefully without crashing.\\n4. If not provided clearly by the user, the expectation is pytest manages such cases without running into internal errors.\\n5. To fix the issue, the internal error handling of Pytest should be improved to manage exceptions raised by __repr__ methods more gracefully, possibly defaulting to a simpler or safer representation.\\n\\nLooking at the code provided, it seems that the methods involved in the string representation of exceptions in pytest are malfunctioning when __repr__ in user code raises an error. The _format_repr_exception and other related methods in the saferepr.py file of pytest are likely involved here. These methods attempt to catch exceptions for safe representation but might not be handling some edge cases properly.\",\"symbols\":[{\"name\":\"_pytest._io._format_repr_exception\",\"file_path\":\"src/_pytest/_io/saferepr.py\",\"reason\":\"This function formats exceptions that occur during representation, and it seems to be directly relevant because it should catch any exception raised during a __repr__ call.\"},{\"name\":\"_pytest._io.SafeRepr.repr\",\"file_path\":\"src/_pytest/_io/saferepr.py\",\"reason\":\"This method overrides the default repr method to provide a safe string representation. It's related because it should handle exceptions in __repr__.\"},{\"name\":\"_pytest._io.SafeRepr.repr_instance\",\"file_path\":\"src/_pytest/_io/saferepr.py\",\"reason\":\"This is another method providing safe instance representation, catching exceptions from __repr__ specifically.\"},{\"name\":\"_pytest._io.safeformat\",\"file_path\":\"src/_pytest/_io/saferepr.py\",\"reason\":\"This function is aimed at safely formatting objects and utilizes _format_repr_exception, which is involved in scenarios causing this issue.\"},{\"name\":\"_pytest._io.saferepr\",\"file_path\":\"src/_pytest/_io/saferepr.py\",\"reason\":\"This wrapper around repr uses SafeRepr which manages exceptions from object representations, associated with exceptions during repr calls.\"}],\"more_info\":[],\"is_done\":true,\"symbols_scratch_pad\":[\"_pytest._io._format_repr_exception: This function handles exceptions raised in the __repr__ method, formats them and ensures that no further unhandled exceptions cause crashes. It seems crucial in solving the problem where an __repr__ causing an exception leads to an internal error in pytest.\",\"_pytest._io.SafeRepr.repr: The repr function here overrides the default to add a try-except block around the representation call, mitigating issues caused if __repr__ throws an error.\",\"_pytest._io.SafeRepr.repr_instance: Similar to the 'repr', this method deals specifically with instances and should safely cover cases where __repr__ could go wrong, likely involved in or affected by the issue in question.\",\"_pytest._io.safeformat: This method aims to provide a 'pretty' print of objects, integrating _format_repr_exception to handle cases where __repr__ fails. Relevant for handling these exceptions gracefully.\",\"_pytest._io.saferepr: Utilizes SafeRepr to return a safe string representation, catching exceptions from __repr__ methods.\"]}",
+          "refusal": null,
+          "role": "assistant",
+          "function_call": null,
+          "tool_calls": [],
+          "parsed": {
+            "scratch_pad": "1. The user describes an INTERNALERROR occurring in pytest when running a specific test. This issue seems to stem from a custom __repr__ method that raises an exception, which is subsequently causing pytest's internal error handling to fail.\n2. The issue was caused by an exception being raised in the __repr__ function defined in a test class used in pytest. This is significant because pytest uses repr() internally to generate error messages and debugging information. When there is an error in a __repr__ method, it might lead to such internal errors in testing frameworks.\n3. The expected result should be that even if __repr__ raises an exception, pytest should handle this gracefully without crashing.\n4. If not provided clearly by the user, the expectation is pytest manages such cases without running into internal errors.\n5. To fix the issue, the internal error handling of Pytest should be improved to manage exceptions raised by __repr__ methods more gracefully, possibly defaulting to a simpler or safer representation.\n\nLooking at the code provided, it seems that the methods involved in the string representation of exceptions in pytest are malfunctioning when __repr__ in user code raises an error. The _format_repr_exception and other related methods in the saferepr.py file of pytest are likely involved here. These methods attempt to catch exceptions for safe representation but might not be handling some edge cases properly.",
+            "symbols": [
+              {
+                "name": "_pytest._io._format_repr_exception",
+                "file_path": "src/_pytest/_io/saferepr.py",
+                "reason": "This function formats exceptions that occur during representation, and it seems to be directly relevant because it should catch any exception raised during a __repr__ call."
+              },
+              {
+                "name": "_pytest._io.SafeRepr.repr",
+                "file_path": "src/_pytest/_io/saferepr.py",
+                "reason": "This method overrides the default repr method to provide a safe string representation. It's related because it should handle exceptions in __repr__."
+              },
+              {
+                "name": "_pytest._io.SafeRepr.repr_instance",
+                "file_path": "src/_pytest/_io/saferepr.py",
+                "reason": "This is another method providing safe instance representation, catching exceptions from __repr__ specifically."
+              },
+              {
+                "name": "_pytest._io.safeformat",
+                "file_path": "src/_pytest/_io/saferepr.py",
+                "reason": "This function is aimed at safely formatting objects and utilizes _format_repr_exception, which is involved in scenarios causing this issue."
+              },
+              {
+                "name": "_pytest._io.saferepr",
+                "file_path": "src/_pytest/_io/saferepr.py",
+                "reason": "This wrapper around repr uses SafeRepr which manages exceptions from object representations, associated with exceptions during repr calls."
+              }
+            ],
+            "more_info": [],
+            "is_done": true,
+            "symbols_scratch_pad": [
+              "_pytest._io._format_repr_exception: This function handles exceptions raised in the __repr__ method, formats them and ensures that no further unhandled exceptions cause crashes. It seems crucial in solving the problem where an __repr__ causing an exception leads to an internal error in pytest.",
+              "_pytest._io.SafeRepr.repr: The repr function here overrides the default to add a try-except block around the representation call, mitigating issues caused if __repr__ throws an error.",
+              "_pytest._io.SafeRepr.repr_instance: Similar to the 'repr', this method deals specifically with instances and should safely cover cases where __repr__ could go wrong, likely involved in or affected by the issue in question.",
+              "_pytest._io.safeformat: This method aims to provide a 'pretty' print of objects, integrating _format_repr_exception to handle cases where __repr__ fails. Relevant for handling these exceptions gracefully.",
+              "_pytest._io.saferepr: Utilizes SafeRepr to return a safe string representation, catching exceptions from __repr__ methods."
+            ]
+          }
+        }
+      }
+    ],
+    "created": 1724099708,
+    "model": "gpt-4o-2024-08-06",
+    "object": "chat.completion",
+    "service_tier": null,
+    "system_fingerprint": "fp_2a322c9ffc",
+    "usage": {
+      "completion_tokens": 779,
+      "prompt_tokens": 16647,
+      "total_tokens": 17426
+    }
+  }
+}

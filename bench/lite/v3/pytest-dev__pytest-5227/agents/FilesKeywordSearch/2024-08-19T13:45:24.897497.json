@@ -1,0 +1,59 @@
+{
+  "name": "FilesKeywordSearch",
+  "model": "gpt-4o-2024-08-06",
+  "metadata": {},
+  "issue": "<description>:Improve default logging format\nCurrently it is:\r\n\r\n> DEFAULT_LOG_FORMAT = \"%(filename)-25s %(lineno)4d %(levelname)-8s %(message)s\"\r\n\r\nI think `name` (module name) would be very useful here, instead of just the base filename.\r\n\r\n(It might also be good to have the relative path there (maybe at the end), but it is usually still very long (but e.g. `$VIRTUAL_ENV` could be substituted therein))\r\n\r\nCurrently it would look like this:\r\n```\r\nutils.py                   114 DEBUG    (0.000) SELECT \"app_url\".\"id\", \"app_url\".\"created\", \"app_url\".\"url\" FROM \"app_url\" WHERE \"app_url\".\"id\" = 2; args=(2,)\r\nmultipart.py               604 DEBUG    Calling on_field_start with no data\r\n```\r\n\r\n\r\nUsing `DEFAULT_LOG_FORMAT = \"%(levelname)-8s %(name)s:%(filename)s:%(lineno)d %(message)s\"` instead:\r\n\r\n```\r\nDEBUG    django.db.backends:utils.py:114 (0.000) SELECT \"app_url\".\"id\", \"app_url\".\"created\", \"app_url\".\"url\" FROM \"app_url\" WHERE \"app_url\".\"id\" = 2; args=(2,)\r\nDEBUG    multipart.multipart:multipart.py:604 Calling on_field_start with no data\r\n```\n</description>",
+  "request": {
+    "tokens": [
+      "DEFAULT_LOG_FORMAT",
+      "log_outcome",
+      "LoggingPlugin",
+      "formatter",
+      "LogCaptureHandler",
+      "logging",
+      "debugging",
+      "LogCaptureFixture"
+    ]
+  },
+  "response": {
+    "results": {
+      "logging": [
+        "src/_pytest/config/__init__.py",
+        "src/_pytest/logging.py",
+        "src/_pytest/hookspec.py",
+        "src/_pytest/junitxml.py",
+        "src/_pytest/compat.py"
+      ],
+      "debugging": [
+        "src/_pytest/_argcomplete.py",
+        "src/_pytest/config/__init__.py",
+        "src/_pytest/hookspec.py",
+        "src/_pytest/main.py",
+        "src/_pytest/runner.py",
+        "src/_pytest/assertion/__init__.py",
+        "src/pytest.py",
+        "src/_pytest/assertion/util.py",
+        "src/_pytest/debugging.py",
+        "src/_pytest/unittest.py"
+      ],
+      "DEFAULT_LOG_FORMAT": [
+        "src/_pytest/logging.py"
+      ],
+      "formatter": [
+        "src/_pytest/logging.py"
+      ],
+      "LogCaptureHandler": [
+        "src/_pytest/logging.py"
+      ],
+      "LogCaptureFixture": [
+        "src/_pytest/logging.py"
+      ],
+      "LoggingPlugin": [
+        "src/_pytest/logging.py"
+      ],
+      "log_outcome": [
+        "src/_pytest/resultlog.py"
+      ]
+    }
+  }
+}

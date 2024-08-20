@@ -1,0 +1,71 @@
+
+diff --git a/src/_pytest/pathlib.py b/src/_pytest/pathlib.py
+index f0bdb1481..64c7fec6f 100644
+--- a/src/_pytest/pathlib.py
++++ b/src/_pytest/pathlib.py
+@@ -558,7 +558,7 @@ def visit(
+     entries = sorted(os.scandir(path), key=lambda entry: entry.name)
+     yield from entries
+     for entry in entries:
+-        if entry.is_dir(follow_symlinks=False) and recurse(entry):
++        if entry.is_dir(follow_symlinks=True) and recurse(entry):
+             yield from visit(entry.path, recurse)
+ 
+ 
+diff --git a/temp_test_dir/real_dir/test_example.py b/temp_test_dir/real_dir/test_example.py
+new file mode 100644
+index 000000000..8e2e1b696
+--- /dev/null
++++ b/temp_test_dir/real_dir/test_example.py
+@@ -0,0 +1,3 @@
++
++def test_example():
++    assert True
+diff --git a/temp_test_dir/symlink_dir b/temp_test_dir/symlink_dir
+new file mode 120000
+index 000000000..c67b5a5bf
+--- /dev/null
++++ b/temp_test_dir/symlink_dir
+@@ -0,0 +1 @@
++temp_test_dir/real_dir
+\ No newline at end of file
+diff --git a/test_symlinks.py b/test_symlinks.py
+new file mode 100644
+index 000000000..5ad22740c
+--- /dev/null
++++ b/test_symlinks.py
+@@ -0,0 +1,34 @@
++import os
++import pytest
++import shutil  # Added import for shutil
++from pathlib import Path
++
++test_dir = Path("temp_test_dir")
++if test_dir.exists():
++    shutil.rmtree(test_dir)
++test_dir.mkdir()
++
++# Create a directory that will be symlinked
++real_dir = test_dir / "real_dir"
++real_dir.mkdir(exist_ok=True)
++
++# Create a test file in the real directory
++test_file = real_dir / "test_example.py"
++test_file.write_text('''
++def test_example():
++    assert True
++''')
++
++# Create a symlink to the real directory
++symlink_dir = test_dir / "symlink_dir"
++symlink_dir.symlink_to(real_dir, target_is_directory=True)
++
++# Function to be used with pytest's test discovery
++def test_symlinked_dirs_collected():
++    collected_tests = pytest.main([str(test_dir), "--collect-only"])
++    assert "test_example.py::test_example" in collected_tests
++    print("Symlinked directories are being collected correctly.")
++
++# Clean up after the test
++def teardown_module(module):
++    shutil.rmtree(test_dir)

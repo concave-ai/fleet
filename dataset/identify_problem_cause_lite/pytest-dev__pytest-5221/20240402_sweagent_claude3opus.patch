@@ -1,0 +1,33 @@
+
+diff --git a/conftest.py b/conftest.py
+new file mode 100644
+index 000000000..85d6305a2
+--- /dev/null
++++ b/conftest.py
+@@ -0,0 +1,5 @@
++import pytest
++
++@pytest.fixture(scope="module")
++def example_fixture():
++    return 42
+diff --git a/src/_pytest/python.py b/src/_pytest/python.py
+index 377357846..38c6c1929 100644
+--- a/src/_pytest/python.py
++++ b/src/_pytest/python.py
+@@ -1263,7 +1263,7 @@ def _show_fixtures_per_test(config, session):
+             funcargspec = "{} -- {}".format(argname, bestrel)
+         else:
+             funcargspec = argname
+-        tw.line(funcargspec, green=True)
++        tw.line(funcargspec + " [scope: {}]".format(fixture_def.scope), green=True)
+         fixture_doc = fixture_def.func.__doc__
+         if fixture_doc:
+             write_docstring(tw, fixture_doc)
+diff --git a/test_example.py b/test_example.py
+new file mode 100644
+index 000000000..678f6ae98
+--- /dev/null
++++ b/test_example.py
+@@ -0,0 +1,2 @@
++def test_example(example_fixture):
++    assert example_fixture == 42

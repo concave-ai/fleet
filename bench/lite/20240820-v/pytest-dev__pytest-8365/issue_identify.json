@@ -1,0 +1,176 @@
+{
+    "file_paths": [
+        "src/_pytest/tmpdir.py"
+    ],
+    "symbols": [
+        "_pytest.tmpdir.get_user",
+        "_pytest.tmpdir.TempPathFactory.getbasetemp"
+    ],
+    "code_spans": {
+        "_pytest.tmpdir.TempPathFactory": {
+            "name": "_pytest.tmpdir.TempPathFactory",
+            "file_path": "src/pytest/__init__.py",
+            "file_content": "ytest.fixtures import _fillfuncargs\nfrom _pytest.fixtures import fixture\nfrom _pytest.fixtures import FixtureLookupError\nfrom _pytest.fixtures import FixtureRequest\nfrom _pytest.fixtures import yield_fixture\nfrom _pytest.freeze_support import freeze_includes\nfrom _pytest.logging import LogCaptureFixture\nfrom _pytest.main import Session\nfrom _pytest.mark import Mark\nfrom _pytest.mark import MARK_GEN as mark\nfrom _pytest.mark import MarkDecorator\nfrom _pytest.mark import MarkGenerator\nfrom _pytest.mark import param\nfrom _pytest.monkeypatch import MonkeyPatch\nfrom _pytest.nodes import Collector\nfrom _pytest.nodes import File\nfrom _pytest.nodes import Item\nfrom _pytest.outcomes import exit\nfrom _pytest.outcomes import fail\nfrom _pytest.outcomes import importorskip\nfrom _pytest.outcomes import skip\nfrom _pytest.outcomes import xfail\nfrom _pytest.pytester import Pytester\nfrom _pytest.pytester import Testdir\nfrom _pytest.python import Class\nfrom _pytest.python import Function\nfrom _pytest.python import Instance\nfrom _pytest.python import Metafunc\nfrom _pytest.python import Module\nfrom _pytest.python import Package\nfrom _pytest.python_api import approx\nfrom _pytest.python_api import raises\nfrom _pytest.recwarn import deprecated_call\nfrom _pytest.recwarn import WarningsRecorder\nfrom _pytest.recwarn import warns\nfrom _pytest.runner import CallInfo\nfrom _pytest.tmpdir import TempdirFactory\nfrom _pytest.tmpdir import TempPathFactory\nfrom _pytest.warning_types import PytestAssertRewriteWarning\nfrom _pytest.warning_types import PytestCacheWarning\nfrom _pytest.warning_types import PytestCollectionWarning\nfrom _pytest.warning_types import PytestConfigWarning\nfrom _pytest.warning_types import PytestDeprecationWarning\nfrom _pytest.warning_types import PytestExperimentalApiWarning\nfrom _pytest.warning_types import PytestUnhandledCoroutineWarning\nfrom _pytest.warning_types import PytestUnhandledThreadExceptionWarning\nfrom _pytest.warning_types import PytestUnknownMarkWarning\nfrom _pytest.warning_types import PytestUnraisableExceptionWarning\nfrom _pytest.warning_types import PytestWarning\n\nset_trace = __pytestPDB.set_trace\n\n__all__ = [\n    \"__version__\",\n    \"_fillfuncargs\",\n    \"approx\",\n    \"Cache\",\n    \"CallInfo\",\n    \"CaptureFixture\",\n    \"Class\",\n    \"cmdline\",\n    \"collect\",\n    \"Collector\",\n    \"console_main\",\n    \"deprecated_call\",\n    \"exit\",\n    \"ExitCode\",\n    \"fail\",\n    \"File\",\n    \"fixture\",\n    \"FixtureLookupError\",\n    \"FixtureRequest\",\n    \"freeze_includes\",\n    \"Function\",\n    \"hookimpl\",\n    \"hookspec\",\n    \"importorskip\",\n    \"Instance\",\n    \"Item\",\n    \"LogCaptureFixture\",\n    \"main\",\n    \"mark\",\n    \"Mark\",\n    \"MarkDecorator\",\n    \"MarkGenerator\",\n    \"Metafunc\",\n    \"Module\",\n    \"MonkeyPatch\",\n    \"Package\",\n    \"param\",\n    \"PytestAssertRewriteWarning\",\n    \"PytestCacheWarning\",\n    \"PytestCollectionWarning\",\n    \"PytestConfigWarning\",\n    \"PytestDeprecationWarning\",\n    \"PytestExperimentalApiWarning\",\n    \"Pytester\",\n    \"PytestUnhandledCoroutineWarning\",\n    \"PytestUnhandledThreadExceptionWarning\",\n    \"PytestUnknownMarkWarning\",\n    \"PytestUnraisableExceptionWarning\",\n    \"PytestWarning\",\n    \"raises\",\n    \"register_assert_rewrite\",\n    \"Session\",\n    \"set_trace\",\n    \"skip\",\n    \"TempPathFactory\",\n    \"Testdir\",\n    \"TempdirFactory\",\n    \"UsageError\",\n    \"WarningsRecorder\",\n    \"warns\",\n    \"xfail\",\n    \"yield_fixture\",\n]\n",
+            "start_line": 22,
+            "start_column": 585,
+            "end_line": 0,
+            "end_column": 4297,
+            "start_byte": 585,
+            "end_byte": 0
+        },
+        "_pytest.tmpdir.TempPathFactory._given_basetemp": {
+            "name": "_pytest.tmpdir.TempPathFactory._given_basetemp",
+            "file_path": "src/pytest/__init__.py",
+            "file_content": "est.freeze_support import freeze_includes\nfrom",
+            "start_line": 30,
+            "start_column": 802,
+            "end_line": 4,
+            "end_column": 848,
+            "start_byte": 802,
+            "end_byte": 4
+        },
+        "_pytest.tmpdir.TempPathFactory._trace": {
+            "name": "_pytest.tmpdir.TempPathFactory._trace",
+            "file_path": "src/pytest/__init__.py",
+            "file_content": "est.logging import",
+            "start_line": 31,
+            "start_column": 853,
+            "end_line": 4,
+            "end_column": 871,
+            "start_byte": 853,
+            "end_byte": 4
+        },
+        "_pytest.tmpdir.TempPathFactory._basetemp": {
+            "name": "_pytest.tmpdir.TempPathFactory._basetemp",
+            "file_path": "src/pytest/__init__.py",
+            "file_content": "aptureFixture\nfrom _pytest.main import S",
+            "start_line": 32,
+            "start_column": 876,
+            "end_line": 4,
+            "end_column": 916,
+            "start_byte": 876,
+            "end_byte": 4
+        },
+        "_pytest.tmpdir.TempPathFactory.__init__": {
+            "name": "_pytest.tmpdir.TempPathFactory.__init__",
+            "file_path": "src/pytest/__init__.py",
+            "file_content": "\nfrom _pytest.mark import Mark\nfrom _pytest.mark import MARK_GEN as mark\nfrom _pytest.mark import MarkDecorator\nfrom _pytest.mark import MarkGenerator\nfrom _pytest.mark import param\nfrom _pytest.monkeypatch import MonkeyPatch\nfrom _pytest.nodes import Collector\nfrom _pytest.nodes import File\nfrom _pytest.nodes import Item\nfrom _pytest.outcomes import exit\nfrom _pytest.outcomes import fail\nfrom _pytest.outcomes import importorskip\nfrom _pytest.outcomes import skip\nfrom _pytest.outcomes import xfail\nfrom _pytest.pytester import Pytester\nfrom _pytest.pytester import Testdir\nfrom _pytest.python import Class\nfrom _pytest.python import Function\nfrom _pytest.python import Instance\nfrom _pytest.p",
+            "start_line": 34,
+            "start_column": 922,
+            "end_line": 4,
+            "end_column": 1619,
+            "start_byte": 922,
+            "end_byte": 4
+        },
+        "_pytest.tmpdir.TempPathFactory.from_config": {
+            "name": "_pytest.tmpdir.TempPathFactory.from_config",
+            "file_path": "src/pytest/__init__.py",
+            "file_content": "import Metafunc\nfrom _pytest.python import Module\nfrom _pytest.python import Package\nfrom _pytest.python_api import approx\nfrom _pytest.python_api import raises\nfrom _pytest.recwarn import deprecated_call\nfrom _pytest.recwarn import WarningsRecorder\nfrom _pytest.recwarn import warns\nfrom _pytest.runner import CallInfo\nfrom _pytest.tmpdir import TempdirFactory\nfrom _pytest.tmpdir import TempPathFactory\nfrom _pytest.warning_type",
+            "start_line": 53,
+            "start_column": 1625,
+            "end_line": 4,
+            "end_column": 2055,
+            "start_byte": 1625,
+            "end_byte": 4
+        },
+        "_pytest.tmpdir.TempPathFactory._ensure_relative_to_basetemp": {
+            "name": "_pytest.tmpdir.TempPathFactory._ensure_relative_to_basetemp",
+            "file_path": "src/pytest/__init__.py",
+            "file_content": "rt PytestAssertRewriteWarning\nfrom _pytest.warning_types import PytestCacheWarning\nfrom _pytest.warning_types import PytestCollectionWarning\nfrom _pytest.warning_types import PytestConfigWarning\nfrom _pytest.warning_types import PytestDeprecationWarning\nfrom _pytest.warning_types import PytestEx",
+            "start_line": 71,
+            "start_column": 2061,
+            "end_line": 4,
+            "end_column": 2357,
+            "start_byte": 2061,
+            "end_byte": 4
+        },
+        "_pytest.tmpdir.TempPathFactory.mktemp": {
+            "name": "_pytest.tmpdir.TempPathFactory.mktemp",
+            "file_path": "src/pytest/__init__.py",
+            "file_content": "ntalApiWarning\nfrom _pytest.warning_types import PytestUnhandledCoroutineWarning\nfrom _pytest.warning_types import PytestUnhandledThreadExceptionWarning\nfrom _pytest.warning_types import PytestUnknownMarkWarning\nfrom _pytest.warning_types import PytestUnraisableExceptionWarning\nfrom _pytest.warning_types import PytestWarning\n\nset_trace = __pytestPDB.set_trace\n\n__all__ = [\n    \"__version__\",\n    \"_fillfuncargs\",\n    \"approx\",\n    \"Cache\",\n    \"CallInfo\",\n    \"CaptureFixture\",\n    \"Class\",\n    \"cmdline\",\n    \"collect\",\n    \"Collector\",\n    \"console_main\",\n    \"deprecated_call\",\n    \"exit\",\n    \"ExitCode\",\n    \"fail\",\n    \"File\",\n    \"fixture\",\n    \"FixtureLookupError\",\n    \"FixtureRequest\",\n    \"freeze_includes\",\n    \"Function\",\n    \"hookimpl\",\n    \"hookspec\",\n    \"importorskip\",\n    \"Instance\",\n    \"Item\",\n    \"LogCaptureFixture\",\n    \"main\",\n    \"mark\",\n    \"Mark\",\n    \"MarkDecorator\",\n    \"MarkGenerator\",\n",
+            "start_line": 77,
+            "start_column": 2363,
+            "end_line": 4,
+            "end_column": 3283,
+            "start_byte": 2363,
+            "end_byte": 4
+        },
+        "_pytest.tmpdir.TempPathFactory.getbasetemp": {
+            "name": "_pytest.tmpdir.TempPathFactory.getbasetemp",
+            "file_path": "src/_pytest/tmpdir.py",
+            "file_content": "def getbasetemp(self) -> Path:\n        \"\"\"Return base temporary directory.\"\"\"\n        if self._basetemp is not None:\n            return self._basetemp\n\n        if self._given_basetemp is not None:\n            basetemp = self._given_basetemp\n            ensure_reset_dir(basetemp)\n            basetemp = basetemp.resolve()\n        else:\n            from_env = os.environ.get(\"PYTEST_DEBUG_TEMPROOT\")\n            temproot = Path(from_env or tempfile.gettempdir()).resolve()\n            user = get_user() or \"unknown\"\n            # use a sub-directory in the temproot to speed-up\n            # make_numbered_dir() call\n            rootdir = temproot.joinpath(f\"pytest-of-{user}\")\n            rootdir.mkdir(exist_ok=True)\n            basetemp = make_numbered_dir_with_cleanup(\n                prefix=\"pytest-\", root=rootdir, keep=3, lock_timeout=LOCK_TIMEOUT\n            )\n        assert basetemp is not None, basetemp\n        self._basetemp = t = basetemp\n        self._trace(\"new basetemp\", t)\n        return t",
+            "start_line": 101,
+            "start_column": 3289,
+            "end_line": 4,
+            "end_column": 4297,
+            "start_byte": 3289,
+            "end_byte": 4
+        },
+        "_pytest.tmpdir.TempdirFactory": {
+            "name": "_pytest.tmpdir.TempdirFactory",
+            "file_path": "src/pytest/__init__.py",
+            "file_content": "",
+            "start_line": 127,
+            "start_column": 4300,
+            "end_line": 0,
+            "end_column": 5168,
+            "start_byte": 4300,
+            "end_byte": 0
+        },
+        "_pytest.tmpdir.TempdirFactory._tmppath_factory": {
+            "name": "_pytest.tmpdir.TempdirFactory._tmppath_factory",
+            "file_path": "src/pytest/__init__.py",
+            "file_content": "",
+            "start_line": 133,
+            "start_column": 4471,
+            "end_line": 4,
+            "end_column": 4519,
+            "start_byte": 4471,
+            "end_byte": 4
+        },
+        "_pytest.tmpdir.TempdirFactory.__init__": {
+            "name": "_pytest.tmpdir.TempdirFactory.__init__",
+            "file_path": "src/pytest/__init__.py",
+            "file_content": "",
+            "start_line": 135,
+            "start_column": 4525,
+            "end_line": 4,
+            "end_column": 4710,
+            "start_byte": 4525,
+            "end_byte": 4
+        },
+        "_pytest.tmpdir.TempdirFactory.mktemp": {
+            "name": "_pytest.tmpdir.TempdirFactory.mktemp",
+            "file_path": "src/pytest/__init__.py",
+            "file_content": "",
+            "start_line": 141,
+            "start_column": 4716,
+            "end_line": 4,
+            "end_column": 4971,
+            "start_byte": 4716,
+            "end_byte": 4
+        },
+        "_pytest.tmpdir.TempdirFactory.getbasetemp": {
+            "name": "_pytest.tmpdir.TempdirFactory.getbasetemp",
+            "file_path": "src/pytest/__init__.py",
+            "file_content": "",
+            "start_line": 145,
+            "start_column": 4977,
+            "end_line": 4,
+            "end_column": 5168,
+            "start_byte": 4977,
+            "end_byte": 4
+        },
+        "_pytest.tmpdir.get_user": {
+            "name": "_pytest.tmpdir.get_user",
+            "file_path": "src/_pytest/tmpdir.py",
+            "file_content": "def get_user() -> Optional[str]:\n    \"\"\"Return the current user name, or None if getuser() does not work\n    in the current environment (see #1010).\"\"\"\n    import getpass\n\n    try:\n        return getpass.getuser()\n    except (ImportError, KeyError):\n        return None",
+            "start_line": 150,
+            "start_column": 5171,
+            "end_line": 0,
+            "end_column": 5440,
+            "start_byte": 5171,
+            "end_byte": 0
+        }
+    }
+}

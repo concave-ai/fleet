@@ -1,0 +1,944 @@
+{
+  "name": "SymbolSummary",
+  "model": "gpt-4o-2024-08-06",
+  "metadata": {},
+  "issue": "<description>:INTERNALERROR when exception in __repr__\nMinimal code to reproduce the issue: \r\n```python\r\nclass SomeClass:\r\n    def __getattribute__(self, attr):\r\n        raise\r\n    def __repr__(self):\r\n        raise\r\ndef test():\r\n    SomeClass().attr\r\n```\r\nSession traceback:\r\n```\r\n============================= test session starts ==============================\r\nplatform darwin -- Python 3.8.1, pytest-5.4.1, py-1.8.1, pluggy-0.13.1 -- /usr/local/opt/python@3.8/bin/python3.8\r\ncachedir: .pytest_cache\r\nrootdir: ******\r\nplugins: asyncio-0.10.0, mock-3.0.0, cov-2.8.1\r\ncollecting ... collected 1 item\r\n\r\ntest_pytest.py::test \r\nINTERNALERROR> Traceback (most recent call last):\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/main.py\", line 191, in wrap_session\r\nINTERNALERROR>     session.exitstatus = doit(config, session) or 0\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/main.py\", line 247, in _main\r\nINTERNALERROR>     config.hook.pytest_runtestloop(session=session)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/hooks.py\", line 286, in __call__\r\nINTERNALERROR>     return self._hookexec(self, self.get_hookimpls(), kwargs)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/manager.py\", line 93, in _hookexec\r\nINTERNALERROR>     return self._inner_hookexec(hook, methods, kwargs)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/manager.py\", line 84, in <lambda>\r\nINTERNALERROR>     self._inner_hookexec = lambda hook, methods, kwargs: hook.multicall(\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/callers.py\", line 208, in _multicall\r\nINTERNALERROR>     return outcome.get_result()\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/callers.py\", line 80, in get_result\r\nINTERNALERROR>     raise ex[1].with_traceback(ex[2])\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/callers.py\", line 187, in _multicall\r\nINTERNALERROR>     res = hook_impl.function(*args)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/main.py\", line 272, in pytest_runtestloop\r\nINTERNALERROR>     item.config.hook.pytest_runtest_protocol(item=item, nextitem=nextitem)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/hooks.py\", line 286, in __call__\r\nINTERNALERROR>     return self._hookexec(self, self.get_hookimpls(), kwargs)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/manager.py\", line 93, in _hookexec\r\nINTERNALERROR>     return self._inner_hookexec(hook, methods, kwargs)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/manager.py\", line 84, in <lambda>\r\nINTERNALERROR>     self._inner_hookexec = lambda hook, methods, kwargs: hook.multicall(\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/callers.py\", line 208, in _multicall\r\nINTERNALERROR>     return outcome.get_result()\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/callers.py\", line 80, in get_result\r\nINTERNALERROR>     raise ex[1].with_traceback(ex[2])\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/callers.py\", line 187, in _multicall\r\nINTERNALERROR>     res = hook_impl.function(*args)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/runner.py\", line 85, in pytest_runtest_protocol\r\nINTERNALERROR>     runtestprotocol(item, nextitem=nextitem)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/runner.py\", line 100, in runtestprotocol\r\nINTERNALERROR>     reports.append(call_and_report(item, \"call\", log))\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/runner.py\", line 188, in call_and_report\r\nINTERNALERROR>     report = hook.pytest_runtest_makereport(item=item, call=call)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/hooks.py\", line 286, in __call__\r\nINTERNALERROR>     return self._hookexec(self, self.get_hookimpls(), kwargs)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/manager.py\", line 93, in _hookexec\r\nINTERNALERROR>     return self._inner_hookexec(hook, methods, kwargs)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/manager.py\", line 84, in <lambda>\r\nINTERNALERROR>     self._inner_hookexec = lambda hook, methods, kwargs: hook.multicall(\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/callers.py\", line 203, in _multicall\r\nINTERNALERROR>     gen.send(outcome)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/skipping.py\", line 129, in pytest_runtest_makereport\r\nINTERNALERROR>     rep = outcome.get_result()\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/callers.py\", line 80, in get_result\r\nINTERNALERROR>     raise ex[1].with_traceback(ex[2])\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/callers.py\", line 187, in _multicall\r\nINTERNALERROR>     res = hook_impl.function(*args)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/runner.py\", line 260, in pytest_runtest_makereport\r\nINTERNALERROR>     return TestReport.from_item_and_call(item, call)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/reports.py\", line 294, in from_item_and_call\r\nINTERNALERROR>     longrepr = item.repr_failure(excinfo)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/python.py\", line 1513, in repr_failure\r\nINTERNALERROR>     return self._repr_failure_py(excinfo, style=style)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/nodes.py\", line 355, in _repr_failure_py\r\nINTERNALERROR>     return excinfo.getrepr(\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_code/code.py\", line 634, in getrepr\r\nINTERNALERROR>     return fmt.repr_excinfo(self)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_code/code.py\", line 879, in repr_excinfo\r\nINTERNALERROR>     reprtraceback = self.repr_traceback(excinfo_)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_code/code.py\", line 823, in repr_traceback\r\nINTERNALERROR>     reprentry = self.repr_traceback_entry(entry, einfo)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_code/code.py\", line 784, in repr_traceback_entry\r\nINTERNALERROR>     reprargs = self.repr_args(entry) if not short else None\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_code/code.py\", line 693, in repr_args\r\nINTERNALERROR>     args.append((argname, saferepr(argvalue)))\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_io/saferepr.py\", line 82, in saferepr\r\nINTERNALERROR>     return SafeRepr(maxsize).repr(obj)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_io/saferepr.py\", line 51, in repr\r\nINTERNALERROR>     s = _format_repr_exception(exc, x)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_io/saferepr.py\", line 23, in _format_repr_exception\r\nINTERNALERROR>     exc_info, obj.__class__.__name__, id(obj)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_io/saferepr.py\", line 47, in repr\r\nINTERNALERROR>     s = super().repr(x)\r\nINTERNALERROR>   File \"/usr/local/Cellar/python@3.8/3.8.1/Frameworks/Python.framework/Versions/3.8/lib/python3.8/reprlib.py\", line 52, in repr\r\nINTERNALERROR>     return self.repr1(x, self.maxlevel)\r\nINTERNALERROR>   File \"/usr/local/Cellar/python@3.8/3.8.1/Frameworks/Python.framework/Versions/3.8/lib/python3.8/reprlib.py\", line 62, in repr1\r\nINTERNALERROR>     return self.repr_instance(x, level)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_io/saferepr.py\", line 60, in repr_instance\r\nINTERNALERROR>     s = _format_repr_exception(exc, x)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_io/saferepr.py\", line 23, in _format_repr_exception\r\nINTERNALERROR>     exc_info, obj.__class__.__name__, id(obj)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_io/saferepr.py\", line 56, in repr_instance\r\nINTERNALERROR>     s = repr(x)\r\nINTERNALERROR>   File \"/Users/stiflou/Documents/projets/apischema/tests/test_pytest.py\", line 6, in __repr__\r\nINTERNALERROR>     raise\r\nINTERNALERROR> RuntimeError: No active exception to reraise\r\n\r\n============================ no tests ran in 0.09s ============================\r\n```\n</description>",
+  "request": {
+    "symbols": {
+      "related_symbols": [
+        {
+          "name": "_pytest.main.wrap_session",
+          "file_path": "src/_pytest/main.py",
+          "file_content": "def wrap_session(\n    config: Config, doit: Callable[[Config, \"Session\"], Optional[Union[int, ExitCode]]]\n) -> Union[int, ExitCode]:\n    \"\"\"Skeleton command line program\"\"\"\n    session = Session.from_config(config)\n    session.exitstatus = ExitCode.OK\n    initstate = 0\n    try:\n        try:\n            config._do_configure()\n            initstate = 1\n            config.hook.pytest_sessionstart(session=session)\n            initstate = 2\n            session.exitstatus = doit(config, session) or 0\n        except UsageError:\n            session.exitstatus = ExitCode.USAGE_ERROR\n            raise\n        except Failed:\n            session.exitstatus = ExitCode.TESTS_FAILED\n        except (KeyboardInterrupt, exit.Exception):\n            excinfo = _pytest._code.ExceptionInfo.from_current()\n            exitstatus = ExitCode.INTERRUPTED  # type: Union[int, ExitCode]\n            if isinstance(excinfo.value, exit.Exception):\n                if excinfo.value.returncode is not None:\n                    exitstatus = excinfo.value.returncode\n                if initstate < 2:\n                    sys.stderr.write(\n                        \"{}: {}\\n\".format(excinfo.typename, excinfo.value.msg)\n                    )\n            config.hook.pytest_keyboard_interrupt(excinfo=excinfo)\n            session.exitstatus = exitstatus\n        except:  # noqa\n            session.exitstatus = ExitCode.INTERNAL_ERROR\n            excinfo = _pytest._code.ExceptionInfo.from_current()\n            try:\n                config.notify_exception(excinfo, config.option)\n            except exit.Exception as exc:\n                if exc.returncode is not None:\n                    session.exitstatus = exc.returncode\n                sys.stderr.write(\"{}: {}\\n\".format(type(exc).__name__, exc))\n            else:\n                if excinfo.errisinstance(SystemExit):\n                    sys.stderr.write(\"mainloop: caught unexpected SystemExit!\\n\")\n\n    finally:\n        # Explicitly break reference cycle.\n        excinfo = None  # type: ignore\n        session.startdir.chdir()\n        if initstate >= 2:\n            try:\n                config.hook.pytest_sessionfinish(\n                    session=session, exitstatus=session.exitstatus\n                )\n            except exit.Exception as exc:\n                if exc.returncode is not None:\n                    session.exitstatus = exc.returncode\n                sys.stderr.write(\"{}: {}\\n\".format(type(exc).__name__, exc))\n        config._ensure_unconfigure()\n    return session.exitstatus",
+          "start_line": 177,
+          "start_column": 5040,
+          "end_line": 0,
+          "end_column": 7567,
+          "start_byte": 5040,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.main.Session",
+          "file_path": "src/_pytest/main.py",
+          "file_content": "class Session(nodes.FSCollector):\n    Interrupted = Interrupted\n    Failed = Failed\n    # Set on the session by runner.pytest_sessionstart.\n    _setupstate = None  # type: SetupState\n    # Set on the session by fixtures.pytest_sessionstart.\n    _fixturemanager = None  # type: FixtureManager\n    exitstatus = None  # type: Union[int, ExitCode]\n\n    def __init__(self, config: Config) -> None:\n        nodes.FSCollector.__init__(\n            self, config.rootdir, parent=None, config=config, session=self, nodeid=\"\"\n        )\n        self.testsfailed = 0\n        self.testscollected = 0\n        self.shouldstop = False\n        self.shouldfail = False\n        self.trace = config.trace.root.get(\"collection\")\n        self.startdir = config.invocation_dir\n        self._initialpaths = frozenset()  # type: FrozenSet[py.path.local]\n\n        # Keep track of any collected nodes in here, so we don't duplicate fixtures\n        self._collection_node_cache1 = (\n            {}\n        )  # type: Dict[py.path.local, Sequence[nodes.Collector]]\n        self._collection_node_cache2 = (\n            {}\n        )  # type: Dict[Tuple[Type[nodes.Collector], py.path.local], nodes.Collector]\n        self._collection_node_cache3 = (\n            {}\n        )  # type: Dict[Tuple[Type[nodes.Collector], str], CollectReport]\n\n        # Dirnames of pkgs with dunder-init files.\n        self._collection_pkg_roots = {}  # type: Dict[py.path.local, Package]\n\n        self._bestrelpathcache = _bestrelpath_cache(\n            config.rootdir\n        )  # type: Dict[py.path.local, str]\n\n        self.config.pluginmanager.register(self, name=\"session\")\n\n    @classmethod\n    def from_config(cls, config):\n        return cls._create(config)\n\n    def __repr__(self):\n        return \"<%s %s exitstatus=%r testsfailed=%d testscollected=%d>\" % (\n            self.__class__.__name__,\n            self.name,\n            getattr(self, \"exitstatus\", \"<UNSET>\"),\n            self.testsfailed,\n            self.testscollected,\n        )\n\n    def _node_location_to_relpath(self, node_path: py.path.local) -> str:\n        # bestrelpath is a quite slow function\n        return self._bestrelpathcache[node_path]\n\n    @hookimpl(tryfirst=True)\n    def pytest_collectstart(self):\n        if self.shouldfail:\n            raise self.Failed(self.shouldfail)\n        if self.shouldstop:\n            raise self.Interrupted(self.shouldstop)\n\n    @hookimpl(tryfirst=True)\n    def pytest_runtest_logreport(self, report):\n        if report.failed and not hasattr(report, \"wasxfail\"):\n            self.testsfailed += 1\n            maxfail = self.config.getvalue(\"maxfail\")\n            if maxfail and self.testsfailed >= maxfail:\n                self.shouldfail = \"stopping after %d failures\" % (self.testsfailed)\n\n    pytest_collectreport = pytest_runtest_logreport\n\n    def isinitpath(self, path):\n        return path in self._initialpaths\n\n    def gethookproxy(self, fspath: py.path.local):\n        return super()._gethookproxy(fspath)\n\n    def perform_collect(self, args=None, genitems=True):\n        hook = self.config.hook\n        try:\n            items = self._perform_collect(args, genitems)\n            self.config.pluginmanager.check_pending()\n            hook.pytest_collection_modifyitems(\n                session=self, config=self.config, items=items\n            )\n        finally:\n            hook.pytest_collection_finish(session=self)\n        self.testscollected = len(items)\n        return items\n\n    def _perform_collect(self, args, genitems):\n        if args is None:\n            args = self.config.args\n        self.trace(\"perform_collect\", self, args)\n        self.trace.root.indent += 1\n        self._notfound = []\n        initialpaths = []  # type: List[py.path.local]\n        self._initial_parts = []  # type: List[Tuple[py.path.local, List[str]]]\n        self.items = items = []\n        for arg in args:\n            fspath, parts = self._parsearg(arg)\n            self._initial_parts.append((fspath, parts))\n            initialpaths.append(fspath)\n        self._initialpaths = frozenset(initialpaths)\n        rep = collect_one_node(self)\n        self.ihook.pytest_collectreport(report=rep)\n        self.trace.root.indent -= 1\n        if self._notfound:\n            errors = []\n            for arg, exc in self._notfound:\n                line = \"(no name {!r} in any of {!r})\".format(arg, exc.args[0])\n                errors.append(\"not found: {}\\n{}\".format(arg, line))\n            raise UsageError(*errors)\n        if not genitems:\n            return rep.result\n        else:\n            if rep.passed:\n                for node in rep.result:\n                    self.items.extend(self.genitems(node))\n            return items\n\n    def collect(self):\n        for fspath, parts in self._initial_parts:\n            self.trace(\"processing argument\", (fspath, parts))\n            self.trace.root.indent += 1\n            try:\n                yield from self._collect(fspath, parts)\n            except NoMatch as exc:\n                report_arg = \"::\".join((str(fspath), *parts))\n                # we are inside a make_report hook so\n                # we cannot directly pass through the exception\n                self._notfound.append((report_arg, exc))\n\n            self.trace.root.indent -= 1\n        self._collection_node_cache1.clear()\n        self._collection_node_cache2.clear()\n        self._collection_node_cache3.clear()\n        self._collection_pkg_roots.clear()\n\n    def _collect(self, argpath, names):\n        from _pytest.python import Package\n\n        # Start with a Session root, and delve to argpath item (dir or file)\n        # and stack all Packages found on the way.\n        # No point in finding packages when collecting doctests\n        if not self.config.getoption(\"doctestmodules\", False):\n            pm = self.config.pluginmanager\n            for parent in reversed(argpath.parts()):\n                if pm._confcutdir and pm._confcutdir.relto(parent):\n                    break\n\n                if parent.isdir():\n                    pkginit = parent.join(\"__init__.py\")\n                    if pkginit.isfile():\n                        if pkginit not in self._collection_node_cache1:\n                            col = self._collectfile(pkginit, handle_dupes=False)\n                            if col:\n                                if isinstance(col[0], Package):\n                                    self._collection_pkg_roots[parent] = col[0]\n                                # always store a list in the cache, matchnodes expects it\n                                self._collection_node_cache1[col[0].fspath] = [col[0]]\n\n        # If it's a directory argument, recurse and look for any Subpackages.\n        # Let the Package collector deal with subnodes, don't collect here.\n        if argpath.check(dir=1):\n            assert not names, \"invalid arg {!r}\".format((argpath, names))\n\n            seen_dirs = set()\n            for path in argpath.visit(\n                fil=self._visit_filter, rec=self._recurse, bf=True, sort=True\n            ):\n                dirpath = path.dirpath()\n                if dirpath not in seen_dirs:\n                    # Collect packages first.\n                    seen_dirs.add(dirpath)\n                    pkginit = dirpath.join(\"__init__.py\")\n                    if pkginit.exists():\n                        for x in self._collectfile(pkginit):\n                            yield x\n                            if isinstance(x, Package):\n                                self._collection_pkg_roots[dirpath] = x\n                if dirpath in self._collection_pkg_roots:\n                    # Do not collect packages here.\n                    continue\n\n                for x in self._collectfile(path):\n                    key = (type(x), x.fspath)\n                    if key in self._collection_node_cache2:\n                        yield self._collection_node_cache2[key]\n                    else:\n                        self._collection_node_cache2[key] = x\n                        yield x\n        else:\n            assert argpath.check(file=1)\n\n            if argpath in self._collection_node_cache1:\n                col = self._collection_node_cache1[argpath]\n            else:\n                collect_root = self._collection_pkg_roots.get(argpath.dirname, self)\n                col = collect_root._collectfile(argpath, handle_dupes=False)\n                if col:\n                    self._collection_node_cache1[argpath] = col\n            m = self.matchnodes(col, names)\n            # If __init__.py was the only file requested, then the matched node will be\n            # the corresponding Package, and the first yielded item will be the __init__\n            # Module itself, so just use that. If this special case isn't taken, then all\n            # the files in the package will be yielded.\n            if argpath.basename == \"__init__.py\":\n                try:\n                    yield next(m[0].collect())\n                except StopIteration:\n                    # The package collects nothing with only an __init__.py\n                    # file in it, which gets ignored by the default\n                    # \"python_files\" option.\n                    pass\n                return\n            yield from m\n\n    @staticmethod\n    def _visit_filter(f):\n        return f.check(file=1)\n\n    def _tryconvertpyarg(self, x):\n        \"\"\"Convert a dotted module name to path.\"\"\"\n        try:\n            spec = importlib.util.find_spec(x)\n        # AttributeError: looks like package module, but actually filename\n        # ImportError: module does not exist\n        # ValueError: not a module name\n        except (AttributeError, ImportError, ValueError):\n            return x\n        if spec is None or spec.origin in {None, \"namespace\"}:\n            return x\n        elif spec.submodule_search_locations:\n            return os.path.dirname(spec.origin)\n        else:\n            return spec.origin\n\n    def _parsearg(self, arg):\n        \"\"\" return (fspath, names) tuple after checking the file exists. \"\"\"\n        strpath, *parts = str(arg).split(\"::\")\n        if self.config.option.pyargs:\n            strpath = self._tryconvertpyarg(strpath)\n        relpath = strpath.replace(\"/\", os.sep)\n        fspath = self.config.invocation_dir.join(relpath, abs=True)\n        if not fspath.check():\n            if self.config.option.pyargs:\n                raise UsageError(\n                    \"file or package not found: \" + arg + \" (missing __init__.py?)\"\n                )\n            raise UsageError(\"file not found: \" + arg)\n        fspath = fspath.realpath()\n        return (fspath, parts)\n\n    def matchnodes(self, matching, names):\n        self.trace(\"matchnodes\", matching, names)\n        self.trace.root.indent += 1\n        nodes = self._matchnodes(matching, names)\n        num = len(nodes)\n        self.trace(\"matchnodes finished -> \", num, \"nodes\")\n        self.trace.root.indent -= 1\n        if num == 0:\n            raise NoMatch(matching, names[:1])\n        return nodes\n\n    def _matchnodes(self, matching, names):\n        if not matching or not names:\n            return matching\n        name = names[0]\n        assert name\n        nextnames = names[1:]\n        resultnodes = []\n        for node in matching:\n            if isinstance(node, nodes.Item):\n                if not names:\n                    resultnodes.append(node)\n                continue\n            assert isinstance(node, nodes.Collector)\n            key = (type(node), node.nodeid)\n            if key in self._collection_node_cache3:\n                rep = self._collection_node_cache3[key]\n            else:\n                rep = collect_one_node(node)\n                self._collection_node_cache3[key] = rep\n            if rep.passed:\n                has_matched = False\n                for x in rep.result:\n                    # TODO: remove parametrized workaround once collection structure contains parametrization\n                    if x.name == name or x.name.split(\"[\")[0] == name:\n                        resultnodes.extend(self.matchnodes([x], nextnames))\n                        has_matched = True\n                # XXX accept IDs that don't have \"()\" for class instances\n                if not has_matched and len(rep.result) == 1 and x.name == \"()\":\n                    nextnames.insert(0, name)\n                    resultnodes.extend(self.matchnodes([x], nextnames))\n            else:\n                # report collection failures here to avoid failing to run some test\n                # specified in the command line because the module could not be\n                # imported (#134)\n                node.ihook.pytest_collectreport(report=rep)\n        return resultnodes\n\n    def genitems(self, node):\n        self.trace(\"genitems\", node)\n        if isinstance(node, nodes.Item):\n            node.ihook.pytest_itemcollected(item=node)\n            yield node\n        else:\n            assert isinstance(node, nodes.Collector)\n            rep = collect_one_node(node)\n            if rep.passed:\n                for subnode in rep.result:\n                    yield from self.genitems(subnode)\n            node.ihook.pytest_collectreport(report=rep)",
+          "start_line": 367,
+          "start_column": 11404,
+          "end_line": 0,
+          "end_column": 24571,
+          "start_byte": 11404,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.main.Session.Interrupted",
+          "file_path": "src/_pytest/main.py",
+          "file_content": "Interrupted = Interrupted",
+          "start_line": 368,
+          "start_column": 11442,
+          "end_line": 4,
+          "end_column": 11467,
+          "start_byte": 11442,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.main.Session.Failed",
+          "file_path": "src/_pytest/main.py",
+          "file_content": "Failed = Failed",
+          "start_line": 369,
+          "start_column": 11472,
+          "end_line": 4,
+          "end_column": 11487,
+          "start_byte": 11472,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.main.Session._setupstate",
+          "file_path": "src/_pytest/main.py",
+          "file_content": "_setupstate = None",
+          "start_line": 371,
+          "start_column": 11548,
+          "end_line": 4,
+          "end_column": 11566,
+          "start_byte": 11548,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.main.Session._fixturemanager",
+          "file_path": "src/_pytest/main.py",
+          "file_content": "_fixturemanager = None",
+          "start_line": 373,
+          "start_column": 11649,
+          "end_line": 4,
+          "end_column": 11671,
+          "start_byte": 11649,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.main.Session.exitstatus",
+          "file_path": "src/_pytest/main.py",
+          "file_content": "exitstatus = None",
+          "start_line": 374,
+          "start_column": 11700,
+          "end_line": 4,
+          "end_column": 11717,
+          "start_byte": 11700,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.main.Session.__init__",
+          "file_path": "src/_pytest/main.py",
+          "file_content": "def __init__(self, config: Config) -> None:\n        nodes.FSCollector.__init__(\n            self, config.rootdir, parent=None, config=config, session=self, nodeid=\"\"\n        )\n        self.testsfailed = 0\n        self.testscollected = 0\n        self.shouldstop = False\n        self.shouldfail = False\n        self.trace = config.trace.root.get(\"collection\")\n        self.startdir = config.invocation_dir\n        self._initialpaths = frozenset()  # type: FrozenSet[py.path.local]\n\n        # Keep track of any collected nodes in here, so we don't duplicate fixtures\n        self._collection_node_cache1 = (\n            {}\n        )  # type: Dict[py.path.local, Sequence[nodes.Collector]]\n        self._collection_node_cache2 = (\n            {}\n        )  # type: Dict[Tuple[Type[nodes.Collector], py.path.local], nodes.Collector]\n        self._collection_node_cache3 = (\n            {}\n        )  # type: Dict[Tuple[Type[nodes.Collector], str], CollectReport]\n\n        # Dirnames of pkgs with dunder-init files.\n        self._collection_pkg_roots = {}  # type: Dict[py.path.local, Package]\n\n        self._bestrelpathcache = _bestrelpath_cache(\n            config.rootdir\n        )  # type: Dict[py.path.local, str]\n\n        self.config.pluginmanager.register(self, name=\"session\")",
+          "start_line": 376,
+          "start_column": 11753,
+          "end_line": 4,
+          "end_column": 13031,
+          "start_byte": 11753,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.main.Session.from_config",
+          "file_path": "src/_pytest/main.py",
+          "file_content": "@classmethod\n    def from_config(cls, config):\n        return cls._create(config)",
+          "start_line": 408,
+          "start_column": 13037,
+          "end_line": 4,
+          "end_column": 13118,
+          "start_byte": 13037,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.main.Session.__repr__",
+          "file_path": "src/_pytest/main.py",
+          "file_content": "def __repr__(self):\n        return \"<%s %s exitstatus=%r testsfailed=%d testscollected=%d>\" % (\n            self.__class__.__name__,\n            self.name,\n            getattr(self, \"exitstatus\", \"<UNSET>\"),\n            self.testsfailed,\n            self.testscollected,\n        )",
+          "start_line": 412,
+          "start_column": 13124,
+          "end_line": 4,
+          "end_column": 13404,
+          "start_byte": 13124,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.main.Session._node_location_to_relpath",
+          "file_path": "src/_pytest/main.py",
+          "file_content": "def _node_location_to_relpath(self, node_path: py.path.local) -> str:\n        # bestrelpath is a quite slow function\n        return self._bestrelpathcache[node_path]",
+          "start_line": 421,
+          "start_column": 13410,
+          "end_line": 4,
+          "end_column": 13575,
+          "start_byte": 13410,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.main.Session.pytest_collectstart",
+          "file_path": "src/_pytest/main.py",
+          "file_content": "@hookimpl(tryfirst=True)\n    def pytest_collectstart(self):\n        if self.shouldfail:\n            raise self.Failed(self.shouldfail)\n        if self.shouldstop:\n            raise self.Interrupted(self.shouldstop)",
+          "start_line": 425,
+          "start_column": 13581,
+          "end_line": 4,
+          "end_column": 13795,
+          "start_byte": 13581,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.main.Session.pytest_runtest_logreport",
+          "file_path": "src/_pytest/main.py",
+          "file_content": "@hookimpl(tryfirst=True)\n    def pytest_runtest_logreport(self, report):\n        if report.failed and not hasattr(report, \"wasxfail\"):\n            self.testsfailed += 1\n            maxfail = self.config.getvalue(\"maxfail\")\n            if maxfail and self.testsfailed >= maxfail:\n                self.shouldfail = \"stopping after %d failures\" % (self.testsfailed)",
+          "start_line": 432,
+          "start_column": 13801,
+          "end_line": 4,
+          "end_column": 14163,
+          "start_byte": 13801,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.main.Session.pytest_collectreport",
+          "file_path": "src/_pytest/main.py",
+          "file_content": "pytest_collectreport = pytest_runtest_logreport",
+          "start_line": 440,
+          "start_column": 14169,
+          "end_line": 4,
+          "end_column": 14216,
+          "start_byte": 14169,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.main.Session.isinitpath",
+          "file_path": "src/_pytest/main.py",
+          "file_content": "def isinitpath(self, path):\n        return path in self._initialpaths",
+          "start_line": 442,
+          "start_column": 14222,
+          "end_line": 4,
+          "end_column": 14291,
+          "start_byte": 14222,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.main.Session.gethookproxy",
+          "file_path": "src/_pytest/main.py",
+          "file_content": "def gethookproxy(self, fspath: py.path.local):\n        return super()._gethookproxy(fspath)",
+          "start_line": 445,
+          "start_column": 14297,
+          "end_line": 4,
+          "end_column": 14388,
+          "start_byte": 14297,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.main.Session.perform_collect",
+          "file_path": "src/_pytest/main.py",
+          "file_content": "def perform_collect(self, args=None, genitems=True):\n        hook = self.config.hook\n        try:\n            items = self._perform_collect(args, genitems)\n            self.config.pluginmanager.check_pending()\n            hook.pytest_collection_modifyitems(\n                session=self, config=self.config, items=items\n            )\n        finally:\n            hook.pytest_collection_finish(session=self)\n        self.testscollected = len(items)\n        return items",
+          "start_line": 448,
+          "start_column": 14394,
+          "end_line": 4,
+          "end_column": 14862,
+          "start_byte": 14394,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.main.Session._perform_collect",
+          "file_path": "src/_pytest/main.py",
+          "file_content": "def _perform_collect(self, args, genitems):\n        if args is None:\n            args = self.config.args\n        self.trace(\"perform_collect\", self, args)\n        self.trace.root.indent += 1\n        self._notfound = []\n        initialpaths = []  # type: List[py.path.local]\n        self._initial_parts = []  # type: List[Tuple[py.path.local, List[str]]]\n        self.items = items = []\n        for arg in args:\n            fspath, parts = self._parsearg(arg)\n            self._initial_parts.append((fspath, parts))\n            initialpaths.append(fspath)\n        self._initialpaths = frozenset(initialpaths)\n        rep = collect_one_node(self)\n        self.ihook.pytest_collectreport(report=rep)\n        self.trace.root.indent -= 1\n        if self._notfound:\n            errors = []\n            for arg, exc in self._notfound:\n                line = \"(no name {!r} in any of {!r})\".format(arg, exc.args[0])\n                errors.append(\"not found: {}\\n{}\".format(arg, line))\n            raise UsageError(*errors)\n        if not genitems:\n            return rep.result\n        else:\n            if rep.passed:\n                for node in rep.result:\n                    self.items.extend(self.genitems(node))\n            return items",
+          "start_line": 461,
+          "start_column": 14868,
+          "end_line": 4,
+          "end_column": 16102,
+          "start_byte": 14868,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.main.Session.collect",
+          "file_path": "src/_pytest/main.py",
+          "file_content": "def collect(self):\n        for fspath, parts in self._initial_parts:\n            self.trace(\"processing argument\", (fspath, parts))\n            self.trace.root.indent += 1\n            try:\n                yield from self._collect(fspath, parts)\n            except NoMatch as exc:\n                report_arg = \"::\".join((str(fspath), *parts))\n                # we are inside a make_report hook so\n                # we cannot directly pass through the exception\n                self._notfound.append((report_arg, exc))\n\n            self.trace.root.indent -= 1\n        self._collection_node_cache1.clear()\n        self._collection_node_cache2.clear()\n        self._collection_node_cache3.clear()\n        self._collection_pkg_roots.clear()",
+          "start_line": 492,
+          "start_column": 16108,
+          "end_line": 4,
+          "end_column": 16843,
+          "start_byte": 16108,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.main.Session._collect",
+          "file_path": "src/_pytest/main.py",
+          "file_content": "def _collect(self, argpath, names):\n        from _pytest.python import Package\n\n        # Start with a Session root, and delve to argpath item (dir or file)\n        # and stack all Packages found on the way.\n        # No point in finding packages when collecting doctests\n        if not self.config.getoption(\"doctestmodules\", False):\n            pm = self.config.pluginmanager\n            for parent in reversed(argpath.parts()):\n                if pm._confcutdir and pm._confcutdir.relto(parent):\n                    break\n\n                if parent.isdir():\n                    pkginit = parent.join(\"__init__.py\")\n                    if pkginit.isfile():\n                        if pkginit not in self._collection_node_cache1:\n                            col = self._collectfile(pkginit, handle_dupes=False)\n                            if col:\n                                if isinstance(col[0], Package):\n                                    self._collection_pkg_roots[parent] = col[0]\n                                # always store a list in the cache, matchnodes expects it\n                                self._collection_node_cache1[col[0].fspath] = [col[0]]\n\n        # If it's a directory argument, recurse and look for any Subpackages.\n        # Let the Package collector deal with subnodes, don't collect here.\n        if argpath.check(dir=1):\n            assert not names, \"invalid arg {!r}\".format((argpath, names))\n\n            seen_dirs = set()\n            for path in argpath.visit(\n                fil=self._visit_filter, rec=self._recurse, bf=True, sort=True\n            ):\n                dirpath = path.dirpath()\n                if dirpath not in seen_dirs:\n                    # Collect packages first.\n                    seen_dirs.add(dirpath)\n                    pkginit = dirpath.join(\"__init__.py\")\n                    if pkginit.exists():\n                        for x in self._collectfile(pkginit):\n                            yield x\n                            if isinstance(x, Package):\n                                self._collection_pkg_roots[dirpath] = x\n                if dirpath in self._collection_pkg_roots:\n                    # Do not collect packages here.\n                    continue\n\n                for x in self._collectfile(path):\n                    key = (type(x), x.fspath)\n                    if key in self._collection_node_cache2:\n                        yield self._collection_node_cache2[key]\n                    else:\n                        self._collection_node_cache2[key] = x\n                        yield x\n        else:\n            assert argpath.check(file=1)\n\n            if argpath in self._collection_node_cache1:\n                col = self._collection_node_cache1[argpath]\n            else:\n                collect_root = self._collection_pkg_roots.get(argpath.dirname, self)\n                col = collect_root._collectfile(argpath, handle_dupes=False)\n                if col:\n                    self._collection_node_cache1[argpath] = col\n            m = self.matchnodes(col, names)\n            # If __init__.py was the only file requested, then the matched node will be\n            # the corresponding Package, and the first yielded item will be the __init__\n            # Module itself, so just use that. If this special case isn't taken, then all\n            # the files in the package will be yielded.\n            if argpath.basename == \"__init__.py\":\n                try:\n                    yield next(m[0].collect())\n                except StopIteration:\n                    # The package collects nothing with only an __init__.py\n                    # file in it, which gets ignored by the default\n                    # \"python_files\" option.\n                    pass\n                return\n            yield from m",
+          "start_line": 510,
+          "start_column": 16849,
+          "end_line": 4,
+          "end_column": 20645,
+          "start_byte": 16849,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.main.Session._visit_filter",
+          "file_path": "src/_pytest/main.py",
+          "file_content": "@staticmethod\n    def _visit_filter(f):\n        return f.check(file=1)",
+          "start_line": 589,
+          "start_column": 20651,
+          "end_line": 4,
+          "end_column": 20721,
+          "start_byte": 20651,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.main.Session._tryconvertpyarg",
+          "file_path": "src/_pytest/main.py",
+          "file_content": "def _tryconvertpyarg(self, x):\n        \"\"\"Convert a dotted module name to path.\"\"\"\n        try:\n            spec = importlib.util.find_spec(x)\n        # AttributeError: looks like package module, but actually filename\n        # ImportError: module does not exist\n        # ValueError: not a module name\n        except (AttributeError, ImportError, ValueError):\n            return x\n        if spec is None or spec.origin in {None, \"namespace\"}:\n            return x\n        elif spec.submodule_search_locations:\n            return os.path.dirname(spec.origin)\n        else:\n            return spec.origin",
+          "start_line": 593,
+          "start_column": 20727,
+          "end_line": 4,
+          "end_column": 21331,
+          "start_byte": 20727,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.main.Session._parsearg",
+          "file_path": "src/_pytest/main.py",
+          "file_content": "def _parsearg(self, arg):\n        \"\"\" return (fspath, names) tuple after checking the file exists. \"\"\"\n        strpath, *parts = str(arg).split(\"::\")\n        if self.config.option.pyargs:\n            strpath = self._tryconvertpyarg(strpath)\n        relpath = strpath.replace(\"/\", os.sep)\n        fspath = self.config.invocation_dir.join(relpath, abs=True)\n        if not fspath.check():\n            if self.config.option.pyargs:\n                raise UsageError(\n                    \"file or package not found: \" + arg + \" (missing __init__.py?)\"\n                )\n            raise UsageError(\"file not found: \" + arg)\n        fspath = fspath.realpath()\n        return (fspath, parts)",
+          "start_line": 609,
+          "start_column": 21337,
+          "end_line": 4,
+          "end_column": 22022,
+          "start_byte": 21337,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.main.Session.matchnodes",
+          "file_path": "src/_pytest/main.py",
+          "file_content": "def matchnodes(self, matching, names):\n        self.trace(\"matchnodes\", matching, names)\n        self.trace.root.indent += 1\n        nodes = self._matchnodes(matching, names)\n        num = len(nodes)\n        self.trace(\"matchnodes finished -> \", num, \"nodes\")\n        self.trace.root.indent -= 1\n        if num == 0:\n            raise NoMatch(matching, names[:1])\n        return nodes",
+          "start_line": 625,
+          "start_column": 22028,
+          "end_line": 4,
+          "end_column": 22412,
+          "start_byte": 22028,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.main.Session._matchnodes",
+          "file_path": "src/_pytest/main.py",
+          "file_content": "def _matchnodes(self, matching, names):\n        if not matching or not names:\n            return matching\n        name = names[0]\n        assert name\n        nextnames = names[1:]\n        resultnodes = []\n        for node in matching:\n            if isinstance(node, nodes.Item):\n                if not names:\n                    resultnodes.append(node)\n                continue\n            assert isinstance(node, nodes.Collector)\n            key = (type(node), node.nodeid)\n            if key in self._collection_node_cache3:\n                rep = self._collection_node_cache3[key]\n            else:\n                rep = collect_one_node(node)\n                self._collection_node_cache3[key] = rep\n            if rep.passed:\n                has_matched = False\n                for x in rep.result:\n                    # TODO: remove parametrized workaround once collection structure contains parametrization\n                    if x.name == name or x.name.split(\"[\")[0] == name:\n                        resultnodes.extend(self.matchnodes([x], nextnames))\n                        has_matched = True\n                # XXX accept IDs that don't have \"()\" for class instances\n                if not has_matched and len(rep.result) == 1 and x.name == \"()\":\n                    nextnames.insert(0, name)\n                    resultnodes.extend(self.matchnodes([x], nextnames))\n            else:\n                # report collection failures here to avoid failing to run some test\n                # specified in the command line because the module could not be\n                # imported (#134)\n                node.ihook.pytest_collectreport(report=rep)\n        return resultnodes",
+          "start_line": 636,
+          "start_column": 22418,
+          "end_line": 4,
+          "end_column": 24096,
+          "start_byte": 22418,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.main.Session.genitems",
+          "file_path": "src/_pytest/main.py",
+          "file_content": "def genitems(self, node):\n        self.trace(\"genitems\", node)\n        if isinstance(node, nodes.Item):\n            node.ihook.pytest_itemcollected(item=node)\n            yield node\n        else:\n            assert isinstance(node, nodes.Collector)\n            rep = collect_one_node(node)\n            if rep.passed:\n                for subnode in rep.result:\n                    yield from self.genitems(subnode)\n            node.ihook.pytest_collectreport(report=rep)",
+          "start_line": 673,
+          "start_column": 24102,
+          "end_line": 4,
+          "end_column": 24571,
+          "start_byte": 24102,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.pytester.Testdir.Session",
+          "file_path": "src/_pytest/main.py",
+          "file_content": "",
+          "start_line": 772,
+          "start_column": 25095,
+          "end_line": 4,
+          "end_column": 25112,
+          "start_byte": 25095,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest._code.TracebackEntry.__repr__",
+          "file_path": "src/_pytest/_code/code.py",
+          "file_content": "def __repr__(self) -> str:\n        return \"<TracebackEntry %s:%d>\" % (self.frame.code.path, self.lineno + 1)",
+          "start_line": 206,
+          "start_column": 6201,
+          "end_line": 4,
+          "end_column": 6309,
+          "start_byte": 6201,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest._code.ExceptionInfo.getrepr",
+          "file_path": "src/_pytest/_code/code.py",
+          "file_content": "def getrepr(\n        self,\n        showlocals: bool = False,\n        style: \"_TracebackStyle\" = \"long\",\n        abspath: bool = False,\n        tbfilter: bool = True,\n        funcargs: bool = False,\n        truncate_locals: bool = True,\n        chain: bool = True,\n    ) -> Union[\"ReprExceptionInfo\", \"ExceptionChainRepr\"]:\n        \"\"\"\n        Return str()able representation of this exception info.\n\n        :param bool showlocals:\n            Show locals per traceback entry.\n            Ignored if ``style==\"native\"``.\n\n        :param str style: long|short|no|native traceback style\n\n        :param bool abspath:\n            If paths should be changed to absolute or left unchanged.\n\n        :param bool tbfilter:\n            Hide entries that contain a local variable ``__tracebackhide__==True``.\n            Ignored if ``style==\"native\"``.\n\n        :param bool funcargs:\n            Show fixtures (\"funcargs\" for legacy purposes) per traceback entry.\n\n        :param bool truncate_locals:\n            With ``showlocals==True``, make sure locals can be safely represented as strings.\n\n        :param bool chain: if chained exceptions in Python 3 should be shown.\n\n        .. versionchanged:: 3.9\n\n            Added the ``chain`` parameter.\n        \"\"\"\n        if style == \"native\":\n            return ReprExceptionInfo(\n                ReprTracebackNative(\n                    traceback.format_exception(\n                        self.type, self.value, self.traceback[0]._rawentry\n                    )\n                ),\n                self._getreprcrash(),\n            )\n\n        fmt = FormattedExcinfo(\n            showlocals=showlocals,\n            style=style,\n            abspath=abspath,\n            tbfilter=tbfilter,\n            funcargs=funcargs,\n            truncate_locals=truncate_locals,\n            chain=chain,\n        )\n        return fmt.repr_excinfo(self)",
+          "start_line": 577,
+          "start_column": 19023,
+          "end_line": 4,
+          "end_column": 20900,
+          "start_byte": 19023,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest._code.FormattedExcinfo.repr_excinfo",
+          "file_path": "src/_pytest/_code/code.py",
+          "file_content": "def repr_excinfo(self, excinfo: ExceptionInfo) -> \"ExceptionChainRepr\":\n        repr_chain = (\n            []\n        )  # type: List[Tuple[ReprTraceback, Optional[ReprFileLocation], Optional[str]]]\n        e = excinfo.value\n        excinfo_ = excinfo  # type: Optional[ExceptionInfo]\n        descr = None\n        seen = set()  # type: Set[int]\n        while e is not None and id(e) not in seen:\n            seen.add(id(e))\n            if excinfo_:\n                reprtraceback = self.repr_traceback(excinfo_)\n                reprcrash = excinfo_._getreprcrash()  # type: Optional[ReprFileLocation]\n            else:\n                # fallback to native repr if the exception doesn't have a traceback:\n                # ExceptionInfo objects require a full traceback to work\n                reprtraceback = ReprTracebackNative(\n                    traceback.format_exception(type(e), e, None)\n                )\n                reprcrash = None\n\n            repr_chain += [(reprtraceback, reprcrash, descr)]\n            if e.__cause__ is not None and self.chain:\n                e = e.__cause__\n                excinfo_ = (\n                    ExceptionInfo((type(e), e, e.__traceback__))\n                    if e.__traceback__\n                    else None\n                )\n                descr = \"The above exception was the direct cause of the following exception:\"\n            elif (\n                e.__context__ is not None and not e.__suppress_context__ and self.chain\n            ):\n                e = e.__context__\n                excinfo_ = (\n                    ExceptionInfo((type(e), e, e.__traceback__))\n                    if e.__traceback__\n                    else None\n                )\n                descr = \"During handling of the above exception, another exception occurred:\"\n            else:\n                e = None\n        repr_chain.reverse()\n        return ExceptionChainRepr(repr_chain)",
+          "start_line": 868,
+          "start_column": 30141,
+          "end_line": 4,
+          "end_column": 32060,
+          "start_byte": 30141,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest._io.safeformat",
+          "file_path": "src/_pytest/_code/code.py",
+          "file_content": "https://github.com/python/mypy/issues/4266.\n    __hash__ = None  # type: ignore\n\n    def __ne__(self, other):\n        return not self == other\n\n    @property\n    def path(self) -> Union[py.path.local, str]:\n        \"\"\" return a path object pointing to source code (or a str in case\n        of OSError / non-existing file).\n",
+          "start_line": 63,
+          "start_column": 1751,
+          "end_line": 0,
+          "end_column": 2074,
+          "start_byte": 1751,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest._io.saferepr",
+          "file_path": "src/_pytest/_code/code.py",
+          "file_content": "     \"\"\"\n        if not self.raw.co_filename:\n            return \"\"\n        try:\n            p = py.path.local(self.raw.co_filename)\n            # maybe don't try this checking\n            if not p.check():\n                raise OSError(\"py.path check failed.\")\n            return p\n        except OSError:\n            # XXX maybe try harder like the weird logic\n            # in the standard lib [linecache.updatecache] does?\n        ",
+          "start_line": 74,
+          "start_column": 2077,
+          "end_line": 0,
+          "end_column": 2512,
+          "start_byte": 2077,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.assertion._saferepr",
+          "file_path": "src/_pytest/_code/code.py",
+          "file_content": "y.frame.f_locals)\n        return None\n\n\nco_equal = compile(\n    \"__recursioncache_locals_1 == __recursioncache_locals_2\", \"?\", \"eval\"\n)\n\n\n_E = TypeVar(\"_E\", bound=BaseException)\n\n\n@attr.s(repr=False)\nclass ExceptionInfo(Generic[_E]):\n    \"\"\" wraps sys.exc_info() objects and offers\n        help for navigating the traceback.\n    \"\"\"\n\n    _assert_start_repr = \"AssertionError('assert \"\n\n    _excinfo = attr.ib(type=Optional[Tuple[\"Type[_E]\", \"_E\", TracebackType]])\n    _striptext = attr.ib(type=str, d",
+          "start_line": 375,
+          "start_column": 13624,
+          "end_line": 0,
+          "end_column": 14124,
+          "start_byte": 13624,
+          "end_byte": 0
+        }
+      ],
+      "root_caused_symbols": [
+        {
+          "name": "_pytest._io._try_repr_or_str",
+          "file_path": "src/_pytest/_io/saferepr.py",
+          "file_content": "def _try_repr_or_str(obj):\n    try:\n        return repr(obj)\n    except (KeyboardInterrupt, SystemExit):\n        raise\n    except BaseException:\n        return '{}(\"{}\")'.format(type(obj).__name__, obj)",
+          "start_line": 5,
+          "start_column": 54,
+          "end_line": 0,
+          "end_column": 256,
+          "start_byte": 54,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest._io._format_repr_exception",
+          "file_path": "src/_pytest/_io/saferepr.py",
+          "file_content": "def _format_repr_exception(exc: BaseException, obj: Any) -> str:\n    try:\n        exc_info = _try_repr_or_str(exc)\n    except (KeyboardInterrupt, SystemExit):\n        raise\n    except BaseException as exc:\n        exc_info = \"unpresentable exception ({})\".format(_try_repr_or_str(exc))\n    return \"<[{} raised in repr()] {} object at 0x{:x}>\".format(\n        exc_info, obj.__class__.__name__, id(obj)\n    )",
+          "start_line": 14,
+          "start_column": 259,
+          "end_line": 0,
+          "end_column": 665,
+          "start_byte": 259,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest._io.SafeRepr",
+          "file_path": "src/_pytest/_io/saferepr.py",
+          "file_content": "class SafeRepr(reprlib.Repr):\n    \"\"\"subclass of repr.Repr that limits the resulting size of repr()\n    and includes information on exceptions raised during the call.\n    \"\"\"\n\n    def __init__(self, maxsize: int) -> None:\n        super().__init__()\n        self.maxstring = maxsize\n        self.maxsize = maxsize\n\n    def repr(self, x: Any) -> str:\n        try:\n            s = super().repr(x)\n        except (KeyboardInterrupt, SystemExit):\n            raise\n        except BaseException as exc:\n            s = _format_repr_exception(exc, x)\n        return _ellipsize(s, self.maxsize)\n\n    def repr_instance(self, x: Any, level: int) -> str:\n        try:\n            s = repr(x)\n        except (KeyboardInterrupt, SystemExit):\n            raise\n        except BaseException as exc:\n            s = _format_repr_exception(exc, x)\n        return _ellipsize(s, self.maxsize)",
+          "start_line": 34,
+          "start_column": 875,
+          "end_line": 0,
+          "end_column": 1748,
+          "start_byte": 875,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest._io.SafeRepr.__init__",
+          "file_path": "src/_pytest/_io/saferepr.py",
+          "file_content": "def __init__(self, maxsize: int) -> None:\n        super().__init__()\n        self.maxstring = maxsize\n        self.maxsize = maxsize",
+          "start_line": 39,
+          "start_column": 1055,
+          "end_line": 4,
+          "end_column": 1187,
+          "start_byte": 1055,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest._io.SafeRepr.repr",
+          "file_path": "src/_pytest/_io/saferepr.py",
+          "file_content": "def repr(self, x: Any) -> str:\n        try:\n            s = super().repr(x)\n        except (KeyboardInterrupt, SystemExit):\n            raise\n        except BaseException as exc:\n            s = _format_repr_exception(exc, x)\n        return _ellipsize(s, self.maxsize)",
+          "start_line": 44,
+          "start_column": 1193,
+          "end_line": 4,
+          "end_column": 1461,
+          "start_byte": 1193,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest._io.SafeRepr.repr_instance",
+          "file_path": "src/_pytest/_io/saferepr.py",
+          "file_content": "def repr_instance(self, x: Any, level: int) -> str:\n        try:\n            s = repr(x)\n        except (KeyboardInterrupt, SystemExit):\n            raise\n        except BaseException as exc:\n            s = _format_repr_exception(exc, x)\n        return _ellipsize(s, self.maxsize)",
+          "start_line": 53,
+          "start_column": 1467,
+          "end_line": 4,
+          "end_column": 1748,
+          "start_byte": 1467,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest._io.saferepr",
+          "file_path": "src/_pytest/_io/saferepr.py",
+          "file_content": "def saferepr(obj: Any, maxsize: int = 240) -> str:\n    \"\"\"return a size-limited safe repr-string for the given object.\n    Failing __repr__ functions of user instances will be represented\n    with a short exception info and 'saferepr' generally takes\n    care to never raise exceptions itself.  This function is a wrapper\n    around the Repr/reprlib functionality of the standard 2.6 lib.\n    \"\"\"\n    return SafeRepr(maxsize).repr(obj)",
+          "start_line": 74,
+          "start_column": 2077,
+          "end_line": 0,
+          "end_column": 2512,
+          "start_byte": 2077,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.assertion._saferepr",
+          "file_path": "src/_pytest/_io/saferepr.py",
+          "file_content": "",
+          "start_line": 375,
+          "start_column": 13624,
+          "end_line": 0,
+          "end_column": 14124,
+          "start_byte": 13624,
+          "end_byte": 0
+        }
+      ]
+    },
+    "symbols_evaluate": {
+      "scratch_pad": "1.1 What issue is the user describing?\n- The issue is that an INTERNALERROR occurs when an exception is raised in the __repr__ method of a class during pytest execution.\n\n1.2 How was this issue caused?\n- When pytest tries to represent an object using __repr__, and the __repr__ method of the object raises an exception, it leads to an unhandled exception causing INTERNALERROR.\n\n1.3 If the user described the expected result, what should it be fixed to?\n- The expected result should be that the exception in the __repr__ method should be handled gracefully by pytest without causing INTERNALERROR.\n\n1.4 If the user did not provide an expected result, what should the expectation be?\n- Pytest should handle exceptions raised in __repr__ methods gracefully without causing an INTERNALERROR. A proper error message should be presented to the user indicating that __repr__ failed, instead of a cascade of internal errors.\n\n1.5 How should the issue be fixed to meet the expectation?\n- Modify the saferepr function in _pytest/_io/saferepr.py to ensure that exceptions, including ones without active exceptions to re-raise, are safely represented without causing an INTERNALERROR in pytest.\n\n2.1. Analyze lines in the <symbol>.\n2.2. Match the symbol with essential patterns in the issue.\n2.3. Evaluate each symbol's relevance in the context of the issue.\n2.4. Determine how many symbols need to be changed to solve the issue.\n\n- Analyzing the saferepr module where exceptions in __repr__ might be caught and transformed into a string representation:\n  - Symbols _try_repr_or_str, _format_repr_exception, and SafeRepr are likely part of the saferepr transformation logic.\n  - Symbols breaking the logic could lead to not catching exceptions cleanly during the saferepr transformation, potentially triggering INTERNALERROR when __repr__ fails.\n\n2.5. If more file content or symbol information is needed, request from the user. However, review provided symbols first.",
+      "symbols": [
+        {
+          "name": "_pytest._io.SafeRepr.repr_instance",
+          "file_path": "src/_pytest/_io/saferepr.py",
+          "reason": "The repr_instance method utilizes repr, and the given exception handling only formats existing exceptions but does not handle cases where there are no active exceptions to re-raise. Since repr_instance is specifically provided in the traceback processing, it might be involved in repr handling during pytest tracing. It uses _format_repr_exception for formatting exceptions, which could contribute to errors if the original issue is pinpointed in the contents of _format_repr_exception or how exceptions are logged."
+        },
+        {
+          "name": "_pytest._io.SafeRepr.repr",
+          "file_path": "src/_pytest/_io/saferepr.py",
+          "reason": "The repr method is responsible for calling repr on objects and handling exceptions by using _format_repr_exception. It appears directly responsible for converting the object into a safe string representation for pytest internals and might need modification to handle non-standard exception flows."
+        },
+        {
+          "name": "_pytest._io.saferepr",
+          "file_path": "src/_pytest/_io/saferepr.py",
+          "reason": "This function likely needs to ensure it catches and formats exceptions raised in __repr__ functions without causing an internal error in pytest. It creates a SafeRepr instance and may be central to handling exceptions safely."
+        },
+        {
+          "name": "_pytest._io._format_repr_exception",
+          "file_path": "src/_pytest/_io/saferepr.py",
+          "reason": "This function deals with formatting exceptions when they occur in _try_repr_or_str. It formats exceptions raised during saferepr operations and may need to incorporate logic to handle cases where there is no active exception to re-raise, aligning with the issue described."
+        }
+      ],
+      "more_info": [],
+      "is_done": false,
+      "symbols_scratch_pad": [
+        "Symbol _pytest._io._try_repr_or_str doesn't directly engage in repr handling; it catches exceptions during repr conversion, returning a formatted string, likely necessary for debug logging or failure contexts in pytest. Though it formats exceptions when caught, it does not engage with flows causing internal errors. Skipped.",
+        "Symbol _pytest._io._format_repr_exception is a key function that formats exceptions involving objects during saferepr operations. The issue might emerge here if base exceptions aren't handled, or if it's not properly dealing with exceptions where repr operations fail without active exceptions to re-raise.",
+        "Symbol _pytest._io.SafeRepr encapsulates repr mechanisms using repr_instance and repr. It manages how objects are safely converted to strings while handling exceptions. Its operation directly impacts whether errors during __repr__ of user-defined objects cause safe failures or uncaught exceptions, suggesting modification areas if current mechanisms allow brief exceptions to cascade into INTERNALERROR.",
+        "Symbol _pytest._io.SafeRepr.__init__ described method initializing SafeRepr's configuration. No obvious connection to the issue as it's a constructor method and doesn't manage object representation or exception handling interpreted by __repr__.",
+        "Symbol _pytest._io.SafeRepr.repr surrounds the saferepr transformation. Depending on the SafeRepr mechanism using _format_repr_exception for managing exceptions in repr(), it could miss covering cases where exception handling should support operations like SystemExit or non-standard fails absence. This suggests repr alone might handle these exceptions differently leading to INTERNALERROR when executed conjunctively with __repr__ internally raising exceptions without active ones to catch.",
+        "Symbol _pytest._io.SafeRepr.repr_instance processes safe_repr_plugin logic during object representation and exception incidents. More introspection needed, as intricacies in handling exceptions-related errors have yet to ensure safeguards in SecondaryExceptionInfo usage scenarios, especially given involved with the plugins and possibly implied hooking into saferepr processes.",
+        "Symbol _pytest._io.saferepr operating as external point invoking SafeRepr. Its efficacy predicates on repr_instance and repr's functional encapsulation within SafeRepr capturing initialization-safe values and effectively managing carried over exceptions to convey fails safely; potential alteration to extend handling especially for active exceptions in repr results analysis suggested.",
+        "Symbol _pytest.assertion._saferepr is an empty symbol lacking context, likely an oversight or placeholder within assertion frameworks. No evaluation can be constructed due to absent content or functionality information. Subsequently not relevant."
+      ]
+    }
+  },
+  "response": {
+    "file_paths": [
+      "src/_pytest/_io/saferepr.py"
+    ],
+    "symbols": [
+      "_pytest._io.SafeRepr.repr_instance",
+      "_pytest._io.SafeRepr.repr",
+      "_pytest._io.saferepr",
+      "_pytest._io._format_repr_exception"
+    ],
+    "code_spans": {
+      "_pytest.main.wrap_session": {
+        "name": "_pytest.main.wrap_session",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "def wrap_session(\n    config: Config, doit: Callable[[Config, \"Session\"], Optional[Union[int, ExitCode]]]\n) -> Union[int, ExitCode]:\n    \"\"\"Skeleton command line program\"\"\"\n    session = Session.from_config(config)\n    session.exitstatus = ExitCode.OK\n    initstate = 0\n    try:\n        try:\n            config._do_configure()\n            initstate = 1\n            config.hook.pytest_sessionstart(session=session)\n            initstate = 2\n            session.exitstatus = doit(config, session) or 0\n        except UsageError:\n            session.exitstatus = ExitCode.USAGE_ERROR\n            raise\n        except Failed:\n            session.exitstatus = ExitCode.TESTS_FAILED\n        except (KeyboardInterrupt, exit.Exception):\n            excinfo = _pytest._code.ExceptionInfo.from_current()\n            exitstatus = ExitCode.INTERRUPTED  # type: Union[int, ExitCode]\n            if isinstance(excinfo.value, exit.Exception):\n                if excinfo.value.returncode is not None:\n                    exitstatus = excinfo.value.returncode\n                if initstate < 2:\n                    sys.stderr.write(\n                        \"{}: {}\\n\".format(excinfo.typename, excinfo.value.msg)\n                    )\n            config.hook.pytest_keyboard_interrupt(excinfo=excinfo)\n            session.exitstatus = exitstatus\n        except:  # noqa\n            session.exitstatus = ExitCode.INTERNAL_ERROR\n            excinfo = _pytest._code.ExceptionInfo.from_current()\n            try:\n                config.notify_exception(excinfo, config.option)\n            except exit.Exception as exc:\n                if exc.returncode is not None:\n                    session.exitstatus = exc.returncode\n                sys.stderr.write(\"{}: {}\\n\".format(type(exc).__name__, exc))\n            else:\n                if excinfo.errisinstance(SystemExit):\n                    sys.stderr.write(\"mainloop: caught unexpected SystemExit!\\n\")\n\n    finally:\n        # Explicitly break reference cycle.\n        excinfo = None  # type: ignore\n        session.startdir.chdir()\n        if initstate >= 2:\n            try:\n                config.hook.pytest_sessionfinish(\n                    session=session, exitstatus=session.exitstatus\n                )\n            except exit.Exception as exc:\n                if exc.returncode is not None:\n                    session.exitstatus = exc.returncode\n                sys.stderr.write(\"{}: {}\\n\".format(type(exc).__name__, exc))\n        config._ensure_unconfigure()\n    return session.exitstatus",
+        "start_line": 177,
+        "start_column": 5040,
+        "end_line": 0,
+        "end_column": 7567,
+        "start_byte": 5040,
+        "end_byte": 0
+      },
+      "_pytest.main.Session": {
+        "name": "_pytest.main.Session",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "class Session(nodes.FSCollector):\n    Interrupted = Interrupted\n    Failed = Failed\n    # Set on the session by runner.pytest_sessionstart.\n    _setupstate = None  # type: SetupState\n    # Set on the session by fixtures.pytest_sessionstart.\n    _fixturemanager = None  # type: FixtureManager\n    exitstatus = None  # type: Union[int, ExitCode]\n\n    def __init__(self, config: Config) -> None:\n        nodes.FSCollector.__init__(\n            self, config.rootdir, parent=None, config=config, session=self, nodeid=\"\"\n        )\n        self.testsfailed = 0\n        self.testscollected = 0\n        self.shouldstop = False\n        self.shouldfail = False\n        self.trace = config.trace.root.get(\"collection\")\n        self.startdir = config.invocation_dir\n        self._initialpaths = frozenset()  # type: FrozenSet[py.path.local]\n\n        # Keep track of any collected nodes in here, so we don't duplicate fixtures\n        self._collection_node_cache1 = (\n            {}\n        )  # type: Dict[py.path.local, Sequence[nodes.Collector]]\n        self._collection_node_cache2 = (\n            {}\n        )  # type: Dict[Tuple[Type[nodes.Collector], py.path.local], nodes.Collector]\n        self._collection_node_cache3 = (\n            {}\n        )  # type: Dict[Tuple[Type[nodes.Collector], str], CollectReport]\n\n        # Dirnames of pkgs with dunder-init files.\n        self._collection_pkg_roots = {}  # type: Dict[py.path.local, Package]\n\n        self._bestrelpathcache = _bestrelpath_cache(\n            config.rootdir\n        )  # type: Dict[py.path.local, str]\n\n        self.config.pluginmanager.register(self, name=\"session\")\n\n    @classmethod\n    def from_config(cls, config):\n        return cls._create(config)\n\n    def __repr__(self):\n        return \"<%s %s exitstatus=%r testsfailed=%d testscollected=%d>\" % (\n            self.__class__.__name__,\n            self.name,\n            getattr(self, \"exitstatus\", \"<UNSET>\"),\n            self.testsfailed,\n            self.testscollected,\n        )\n\n    def _node_location_to_relpath(self, node_path: py.path.local) -> str:\n        # bestrelpath is a quite slow function\n        return self._bestrelpathcache[node_path]\n\n    @hookimpl(tryfirst=True)\n    def pytest_collectstart(self):\n        if self.shouldfail:\n            raise self.Failed(self.shouldfail)\n        if self.shouldstop:\n            raise self.Interrupted(self.shouldstop)\n\n    @hookimpl(tryfirst=True)\n    def pytest_runtest_logreport(self, report):\n        if report.failed and not hasattr(report, \"wasxfail\"):\n            self.testsfailed += 1\n            maxfail = self.config.getvalue(\"maxfail\")\n            if maxfail and self.testsfailed >= maxfail:\n                self.shouldfail = \"stopping after %d failures\" % (self.testsfailed)\n\n    pytest_collectreport = pytest_runtest_logreport\n\n    def isinitpath(self, path):\n        return path in self._initialpaths\n\n    def gethookproxy(self, fspath: py.path.local):\n        return super()._gethookproxy(fspath)\n\n    def perform_collect(self, args=None, genitems=True):\n        hook = self.config.hook\n        try:\n            items = self._perform_collect(args, genitems)\n            self.config.pluginmanager.check_pending()\n            hook.pytest_collection_modifyitems(\n                session=self, config=self.config, items=items\n            )\n        finally:\n            hook.pytest_collection_finish(session=self)\n        self.testscollected = len(items)\n        return items\n\n    def _perform_collect(self, args, genitems):\n        if args is None:\n            args = self.config.args\n        self.trace(\"perform_collect\", self, args)\n        self.trace.root.indent += 1\n        self._notfound = []\n        initialpaths = []  # type: List[py.path.local]\n        self._initial_parts = []  # type: List[Tuple[py.path.local, List[str]]]\n        self.items = items = []\n        for arg in args:\n            fspath, parts = self._parsearg(arg)\n            self._initial_parts.append((fspath, parts))\n            initialpaths.append(fspath)\n        self._initialpaths = frozenset(initialpaths)\n        rep = collect_one_node(self)\n        self.ihook.pytest_collectreport(report=rep)\n        self.trace.root.indent -= 1\n        if self._notfound:\n            errors = []\n            for arg, exc in self._notfound:\n                line = \"(no name {!r} in any of {!r})\".format(arg, exc.args[0])\n                errors.append(\"not found: {}\\n{}\".format(arg, line))\n            raise UsageError(*errors)\n        if not genitems:\n            return rep.result\n        else:\n            if rep.passed:\n                for node in rep.result:\n                    self.items.extend(self.genitems(node))\n            return items\n\n    def collect(self):\n        for fspath, parts in self._initial_parts:\n            self.trace(\"processing argument\", (fspath, parts))\n            self.trace.root.indent += 1\n            try:\n                yield from self._collect(fspath, parts)\n            except NoMatch as exc:\n                report_arg = \"::\".join((str(fspath), *parts))\n                # we are inside a make_report hook so\n                # we cannot directly pass through the exception\n                self._notfound.append((report_arg, exc))\n\n            self.trace.root.indent -= 1\n        self._collection_node_cache1.clear()\n        self._collection_node_cache2.clear()\n        self._collection_node_cache3.clear()\n        self._collection_pkg_roots.clear()\n\n    def _collect(self, argpath, names):\n        from _pytest.python import Package\n\n        # Start with a Session root, and delve to argpath item (dir or file)\n        # and stack all Packages found on the way.\n        # No point in finding packages when collecting doctests\n        if not self.config.getoption(\"doctestmodules\", False):\n            pm = self.config.pluginmanager\n            for parent in reversed(argpath.parts()):\n                if pm._confcutdir and pm._confcutdir.relto(parent):\n                    break\n\n                if parent.isdir():\n                    pkginit = parent.join(\"__init__.py\")\n                    if pkginit.isfile():\n                        if pkginit not in self._collection_node_cache1:\n                            col = self._collectfile(pkginit, handle_dupes=False)\n                            if col:\n                                if isinstance(col[0], Package):\n                                    self._collection_pkg_roots[parent] = col[0]\n                                # always store a list in the cache, matchnodes expects it\n                                self._collection_node_cache1[col[0].fspath] = [col[0]]\n\n        # If it's a directory argument, recurse and look for any Subpackages.\n        # Let the Package collector deal with subnodes, don't collect here.\n        if argpath.check(dir=1):\n            assert not names, \"invalid arg {!r}\".format((argpath, names))\n\n            seen_dirs = set()\n            for path in argpath.visit(\n                fil=self._visit_filter, rec=self._recurse, bf=True, sort=True\n            ):\n                dirpath = path.dirpath()\n                if dirpath not in seen_dirs:\n                    # Collect packages first.\n                    seen_dirs.add(dirpath)\n                    pkginit = dirpath.join(\"__init__.py\")\n                    if pkginit.exists():\n                        for x in self._collectfile(pkginit):\n                            yield x\n                            if isinstance(x, Package):\n                                self._collection_pkg_roots[dirpath] = x\n                if dirpath in self._collection_pkg_roots:\n                    # Do not collect packages here.\n                    continue\n\n                for x in self._collectfile(path):\n                    key = (type(x), x.fspath)\n                    if key in self._collection_node_cache2:\n                        yield self._collection_node_cache2[key]\n                    else:\n                        self._collection_node_cache2[key] = x\n                        yield x\n        else:\n            assert argpath.check(file=1)\n\n            if argpath in self._collection_node_cache1:\n                col = self._collection_node_cache1[argpath]\n            else:\n                collect_root = self._collection_pkg_roots.get(argpath.dirname, self)\n                col = collect_root._collectfile(argpath, handle_dupes=False)\n                if col:\n                    self._collection_node_cache1[argpath] = col\n            m = self.matchnodes(col, names)\n            # If __init__.py was the only file requested, then the matched node will be\n            # the corresponding Package, and the first yielded item will be the __init__\n            # Module itself, so just use that. If this special case isn't taken, then all\n            # the files in the package will be yielded.\n            if argpath.basename == \"__init__.py\":\n                try:\n                    yield next(m[0].collect())\n                except StopIteration:\n                    # The package collects nothing with only an __init__.py\n                    # file in it, which gets ignored by the default\n                    # \"python_files\" option.\n                    pass\n                return\n            yield from m\n\n    @staticmethod\n    def _visit_filter(f):\n        return f.check(file=1)\n\n    def _tryconvertpyarg(self, x):\n        \"\"\"Convert a dotted module name to path.\"\"\"\n        try:\n            spec = importlib.util.find_spec(x)\n        # AttributeError: looks like package module, but actually filename\n        # ImportError: module does not exist\n        # ValueError: not a module name\n        except (AttributeError, ImportError, ValueError):\n            return x\n        if spec is None or spec.origin in {None, \"namespace\"}:\n            return x\n        elif spec.submodule_search_locations:\n            return os.path.dirname(spec.origin)\n        else:\n            return spec.origin\n\n    def _parsearg(self, arg):\n        \"\"\" return (fspath, names) tuple after checking the file exists. \"\"\"\n        strpath, *parts = str(arg).split(\"::\")\n        if self.config.option.pyargs:\n            strpath = self._tryconvertpyarg(strpath)\n        relpath = strpath.replace(\"/\", os.sep)\n        fspath = self.config.invocation_dir.join(relpath, abs=True)\n        if not fspath.check():\n            if self.config.option.pyargs:\n                raise UsageError(\n                    \"file or package not found: \" + arg + \" (missing __init__.py?)\"\n                )\n            raise UsageError(\"file not found: \" + arg)\n        fspath = fspath.realpath()\n        return (fspath, parts)\n\n    def matchnodes(self, matching, names):\n        self.trace(\"matchnodes\", matching, names)\n        self.trace.root.indent += 1\n        nodes = self._matchnodes(matching, names)\n        num = len(nodes)\n        self.trace(\"matchnodes finished -> \", num, \"nodes\")\n        self.trace.root.indent -= 1\n        if num == 0:\n            raise NoMatch(matching, names[:1])\n        return nodes\n\n    def _matchnodes(self, matching, names):\n        if not matching or not names:\n            return matching\n        name = names[0]\n        assert name\n        nextnames = names[1:]\n        resultnodes = []\n        for node in matching:\n            if isinstance(node, nodes.Item):\n                if not names:\n                    resultnodes.append(node)\n                continue\n            assert isinstance(node, nodes.Collector)\n            key = (type(node), node.nodeid)\n            if key in self._collection_node_cache3:\n                rep = self._collection_node_cache3[key]\n            else:\n                rep = collect_one_node(node)\n                self._collection_node_cache3[key] = rep\n            if rep.passed:\n                has_matched = False\n                for x in rep.result:\n                    # TODO: remove parametrized workaround once collection structure contains parametrization\n                    if x.name == name or x.name.split(\"[\")[0] == name:\n                        resultnodes.extend(self.matchnodes([x], nextnames))\n                        has_matched = True\n                # XXX accept IDs that don't have \"()\" for class instances\n                if not has_matched and len(rep.result) == 1 and x.name == \"()\":\n                    nextnames.insert(0, name)\n                    resultnodes.extend(self.matchnodes([x], nextnames))\n            else:\n                # report collection failures here to avoid failing to run some test\n                # specified in the command line because the module could not be\n                # imported (#134)\n                node.ihook.pytest_collectreport(report=rep)\n        return resultnodes\n\n    def genitems(self, node):\n        self.trace(\"genitems\", node)\n        if isinstance(node, nodes.Item):\n            node.ihook.pytest_itemcollected(item=node)\n            yield node\n        else:\n            assert isinstance(node, nodes.Collector)\n            rep = collect_one_node(node)\n            if rep.passed:\n                for subnode in rep.result:\n                    yield from self.genitems(subnode)\n            node.ihook.pytest_collectreport(report=rep)",
+        "start_line": 367,
+        "start_column": 11404,
+        "end_line": 0,
+        "end_column": 24571,
+        "start_byte": 11404,
+        "end_byte": 0
+      },
+      "_pytest.main.Session.Interrupted": {
+        "name": "_pytest.main.Session.Interrupted",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "Interrupted = Interrupted",
+        "start_line": 368,
+        "start_column": 11442,
+        "end_line": 4,
+        "end_column": 11467,
+        "start_byte": 11442,
+        "end_byte": 4
+      },
+      "_pytest.main.Session.Failed": {
+        "name": "_pytest.main.Session.Failed",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "Failed = Failed",
+        "start_line": 369,
+        "start_column": 11472,
+        "end_line": 4,
+        "end_column": 11487,
+        "start_byte": 11472,
+        "end_byte": 4
+      },
+      "_pytest.main.Session._setupstate": {
+        "name": "_pytest.main.Session._setupstate",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "_setupstate = None",
+        "start_line": 371,
+        "start_column": 11548,
+        "end_line": 4,
+        "end_column": 11566,
+        "start_byte": 11548,
+        "end_byte": 4
+      },
+      "_pytest.main.Session._fixturemanager": {
+        "name": "_pytest.main.Session._fixturemanager",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "_fixturemanager = None",
+        "start_line": 373,
+        "start_column": 11649,
+        "end_line": 4,
+        "end_column": 11671,
+        "start_byte": 11649,
+        "end_byte": 4
+      },
+      "_pytest.main.Session.exitstatus": {
+        "name": "_pytest.main.Session.exitstatus",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "exitstatus = None",
+        "start_line": 374,
+        "start_column": 11700,
+        "end_line": 4,
+        "end_column": 11717,
+        "start_byte": 11700,
+        "end_byte": 4
+      },
+      "_pytest.main.Session.__init__": {
+        "name": "_pytest.main.Session.__init__",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "def __init__(self, config: Config) -> None:\n        nodes.FSCollector.__init__(\n            self, config.rootdir, parent=None, config=config, session=self, nodeid=\"\"\n        )\n        self.testsfailed = 0\n        self.testscollected = 0\n        self.shouldstop = False\n        self.shouldfail = False\n        self.trace = config.trace.root.get(\"collection\")\n        self.startdir = config.invocation_dir\n        self._initialpaths = frozenset()  # type: FrozenSet[py.path.local]\n\n        # Keep track of any collected nodes in here, so we don't duplicate fixtures\n        self._collection_node_cache1 = (\n            {}\n        )  # type: Dict[py.path.local, Sequence[nodes.Collector]]\n        self._collection_node_cache2 = (\n            {}\n        )  # type: Dict[Tuple[Type[nodes.Collector], py.path.local], nodes.Collector]\n        self._collection_node_cache3 = (\n            {}\n        )  # type: Dict[Tuple[Type[nodes.Collector], str], CollectReport]\n\n        # Dirnames of pkgs with dunder-init files.\n        self._collection_pkg_roots = {}  # type: Dict[py.path.local, Package]\n\n        self._bestrelpathcache = _bestrelpath_cache(\n            config.rootdir\n        )  # type: Dict[py.path.local, str]\n\n        self.config.pluginmanager.register(self, name=\"session\")",
+        "start_line": 376,
+        "start_column": 11753,
+        "end_line": 4,
+        "end_column": 13031,
+        "start_byte": 11753,
+        "end_byte": 4
+      },
+      "_pytest.main.Session.from_config": {
+        "name": "_pytest.main.Session.from_config",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "@classmethod\n    def from_config(cls, config):\n        return cls._create(config)",
+        "start_line": 408,
+        "start_column": 13037,
+        "end_line": 4,
+        "end_column": 13118,
+        "start_byte": 13037,
+        "end_byte": 4
+      },
+      "_pytest.main.Session.__repr__": {
+        "name": "_pytest.main.Session.__repr__",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "def __repr__(self):\n        return \"<%s %s exitstatus=%r testsfailed=%d testscollected=%d>\" % (\n            self.__class__.__name__,\n            self.name,\n            getattr(self, \"exitstatus\", \"<UNSET>\"),\n            self.testsfailed,\n            self.testscollected,\n        )",
+        "start_line": 412,
+        "start_column": 13124,
+        "end_line": 4,
+        "end_column": 13404,
+        "start_byte": 13124,
+        "end_byte": 4
+      },
+      "_pytest.main.Session._node_location_to_relpath": {
+        "name": "_pytest.main.Session._node_location_to_relpath",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "def _node_location_to_relpath(self, node_path: py.path.local) -> str:\n        # bestrelpath is a quite slow function\n        return self._bestrelpathcache[node_path]",
+        "start_line": 421,
+        "start_column": 13410,
+        "end_line": 4,
+        "end_column": 13575,
+        "start_byte": 13410,
+        "end_byte": 4
+      },
+      "_pytest.main.Session.pytest_collectstart": {
+        "name": "_pytest.main.Session.pytest_collectstart",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "@hookimpl(tryfirst=True)\n    def pytest_collectstart(self):\n        if self.shouldfail:\n            raise self.Failed(self.shouldfail)\n        if self.shouldstop:\n            raise self.Interrupted(self.shouldstop)",
+        "start_line": 425,
+        "start_column": 13581,
+        "end_line": 4,
+        "end_column": 13795,
+        "start_byte": 13581,
+        "end_byte": 4
+      },
+      "_pytest.main.Session.pytest_runtest_logreport": {
+        "name": "_pytest.main.Session.pytest_runtest_logreport",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "@hookimpl(tryfirst=True)\n    def pytest_runtest_logreport(self, report):\n        if report.failed and not hasattr(report, \"wasxfail\"):\n            self.testsfailed += 1\n            maxfail = self.config.getvalue(\"maxfail\")\n            if maxfail and self.testsfailed >= maxfail:\n                self.shouldfail = \"stopping after %d failures\" % (self.testsfailed)",
+        "start_line": 432,
+        "start_column": 13801,
+        "end_line": 4,
+        "end_column": 14163,
+        "start_byte": 13801,
+        "end_byte": 4
+      },
+      "_pytest.main.Session.pytest_collectreport": {
+        "name": "_pytest.main.Session.pytest_collectreport",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "pytest_collectreport = pytest_runtest_logreport",
+        "start_line": 440,
+        "start_column": 14169,
+        "end_line": 4,
+        "end_column": 14216,
+        "start_byte": 14169,
+        "end_byte": 4
+      },
+      "_pytest.main.Session.isinitpath": {
+        "name": "_pytest.main.Session.isinitpath",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "def isinitpath(self, path):\n        return path in self._initialpaths",
+        "start_line": 442,
+        "start_column": 14222,
+        "end_line": 4,
+        "end_column": 14291,
+        "start_byte": 14222,
+        "end_byte": 4
+      },
+      "_pytest.main.Session.gethookproxy": {
+        "name": "_pytest.main.Session.gethookproxy",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "def gethookproxy(self, fspath: py.path.local):\n        return super()._gethookproxy(fspath)",
+        "start_line": 445,
+        "start_column": 14297,
+        "end_line": 4,
+        "end_column": 14388,
+        "start_byte": 14297,
+        "end_byte": 4
+      },
+      "_pytest.main.Session.perform_collect": {
+        "name": "_pytest.main.Session.perform_collect",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "def perform_collect(self, args=None, genitems=True):\n        hook = self.config.hook\n        try:\n            items = self._perform_collect(args, genitems)\n            self.config.pluginmanager.check_pending()\n            hook.pytest_collection_modifyitems(\n                session=self, config=self.config, items=items\n            )\n        finally:\n            hook.pytest_collection_finish(session=self)\n        self.testscollected = len(items)\n        return items",
+        "start_line": 448,
+        "start_column": 14394,
+        "end_line": 4,
+        "end_column": 14862,
+        "start_byte": 14394,
+        "end_byte": 4
+      },
+      "_pytest.main.Session._perform_collect": {
+        "name": "_pytest.main.Session._perform_collect",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "def _perform_collect(self, args, genitems):\n        if args is None:\n            args = self.config.args\n        self.trace(\"perform_collect\", self, args)\n        self.trace.root.indent += 1\n        self._notfound = []\n        initialpaths = []  # type: List[py.path.local]\n        self._initial_parts = []  # type: List[Tuple[py.path.local, List[str]]]\n        self.items = items = []\n        for arg in args:\n            fspath, parts = self._parsearg(arg)\n            self._initial_parts.append((fspath, parts))\n            initialpaths.append(fspath)\n        self._initialpaths = frozenset(initialpaths)\n        rep = collect_one_node(self)\n        self.ihook.pytest_collectreport(report=rep)\n        self.trace.root.indent -= 1\n        if self._notfound:\n            errors = []\n            for arg, exc in self._notfound:\n                line = \"(no name {!r} in any of {!r})\".format(arg, exc.args[0])\n                errors.append(\"not found: {}\\n{}\".format(arg, line))\n            raise UsageError(*errors)\n        if not genitems:\n            return rep.result\n        else:\n            if rep.passed:\n                for node in rep.result:\n                    self.items.extend(self.genitems(node))\n            return items",
+        "start_line": 461,
+        "start_column": 14868,
+        "end_line": 4,
+        "end_column": 16102,
+        "start_byte": 14868,
+        "end_byte": 4
+      },
+      "_pytest.main.Session.collect": {
+        "name": "_pytest.main.Session.collect",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "def collect(self):\n        for fspath, parts in self._initial_parts:\n            self.trace(\"processing argument\", (fspath, parts))\n            self.trace.root.indent += 1\n            try:\n                yield from self._collect(fspath, parts)\n            except NoMatch as exc:\n                report_arg = \"::\".join((str(fspath), *parts))\n                # we are inside a make_report hook so\n                # we cannot directly pass through the exception\n                self._notfound.append((report_arg, exc))\n\n            self.trace.root.indent -= 1\n        self._collection_node_cache1.clear()\n        self._collection_node_cache2.clear()\n        self._collection_node_cache3.clear()\n        self._collection_pkg_roots.clear()",
+        "start_line": 492,
+        "start_column": 16108,
+        "end_line": 4,
+        "end_column": 16843,
+        "start_byte": 16108,
+        "end_byte": 4
+      },
+      "_pytest.main.Session._collect": {
+        "name": "_pytest.main.Session._collect",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "def _collect(self, argpath, names):\n        from _pytest.python import Package\n\n        # Start with a Session root, and delve to argpath item (dir or file)\n        # and stack all Packages found on the way.\n        # No point in finding packages when collecting doctests\n        if not self.config.getoption(\"doctestmodules\", False):\n            pm = self.config.pluginmanager\n            for parent in reversed(argpath.parts()):\n                if pm._confcutdir and pm._confcutdir.relto(parent):\n                    break\n\n                if parent.isdir():\n                    pkginit = parent.join(\"__init__.py\")\n                    if pkginit.isfile():\n                        if pkginit not in self._collection_node_cache1:\n                            col = self._collectfile(pkginit, handle_dupes=False)\n                            if col:\n                                if isinstance(col[0], Package):\n                                    self._collection_pkg_roots[parent] = col[0]\n                                # always store a list in the cache, matchnodes expects it\n                                self._collection_node_cache1[col[0].fspath] = [col[0]]\n\n        # If it's a directory argument, recurse and look for any Subpackages.\n        # Let the Package collector deal with subnodes, don't collect here.\n        if argpath.check(dir=1):\n            assert not names, \"invalid arg {!r}\".format((argpath, names))\n\n            seen_dirs = set()\n            for path in argpath.visit(\n                fil=self._visit_filter, rec=self._recurse, bf=True, sort=True\n            ):\n                dirpath = path.dirpath()\n                if dirpath not in seen_dirs:\n                    # Collect packages first.\n                    seen_dirs.add(dirpath)\n                    pkginit = dirpath.join(\"__init__.py\")\n                    if pkginit.exists():\n                        for x in self._collectfile(pkginit):\n                            yield x\n                            if isinstance(x, Package):\n                                self._collection_pkg_roots[dirpath] = x\n                if dirpath in self._collection_pkg_roots:\n                    # Do not collect packages here.\n                    continue\n\n                for x in self._collectfile(path):\n                    key = (type(x), x.fspath)\n                    if key in self._collection_node_cache2:\n                        yield self._collection_node_cache2[key]\n                    else:\n                        self._collection_node_cache2[key] = x\n                        yield x\n        else:\n            assert argpath.check(file=1)\n\n            if argpath in self._collection_node_cache1:\n                col = self._collection_node_cache1[argpath]\n            else:\n                collect_root = self._collection_pkg_roots.get(argpath.dirname, self)\n                col = collect_root._collectfile(argpath, handle_dupes=False)\n                if col:\n                    self._collection_node_cache1[argpath] = col\n            m = self.matchnodes(col, names)\n            # If __init__.py was the only file requested, then the matched node will be\n            # the corresponding Package, and the first yielded item will be the __init__\n            # Module itself, so just use that. If this special case isn't taken, then all\n            # the files in the package will be yielded.\n            if argpath.basename == \"__init__.py\":\n                try:\n                    yield next(m[0].collect())\n                except StopIteration:\n                    # The package collects nothing with only an __init__.py\n                    # file in it, which gets ignored by the default\n                    # \"python_files\" option.\n                    pass\n                return\n            yield from m",
+        "start_line": 510,
+        "start_column": 16849,
+        "end_line": 4,
+        "end_column": 20645,
+        "start_byte": 16849,
+        "end_byte": 4
+      },
+      "_pytest.main.Session._visit_filter": {
+        "name": "_pytest.main.Session._visit_filter",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "@staticmethod\n    def _visit_filter(f):\n        return f.check(file=1)",
+        "start_line": 589,
+        "start_column": 20651,
+        "end_line": 4,
+        "end_column": 20721,
+        "start_byte": 20651,
+        "end_byte": 4
+      },
+      "_pytest.main.Session._tryconvertpyarg": {
+        "name": "_pytest.main.Session._tryconvertpyarg",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "def _tryconvertpyarg(self, x):\n        \"\"\"Convert a dotted module name to path.\"\"\"\n        try:\n            spec = importlib.util.find_spec(x)\n        # AttributeError: looks like package module, but actually filename\n        # ImportError: module does not exist\n        # ValueError: not a module name\n        except (AttributeError, ImportError, ValueError):\n            return x\n        if spec is None or spec.origin in {None, \"namespace\"}:\n            return x\n        elif spec.submodule_search_locations:\n            return os.path.dirname(spec.origin)\n        else:\n            return spec.origin",
+        "start_line": 593,
+        "start_column": 20727,
+        "end_line": 4,
+        "end_column": 21331,
+        "start_byte": 20727,
+        "end_byte": 4
+      },
+      "_pytest.main.Session._parsearg": {
+        "name": "_pytest.main.Session._parsearg",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "def _parsearg(self, arg):\n        \"\"\" return (fspath, names) tuple after checking the file exists. \"\"\"\n        strpath, *parts = str(arg).split(\"::\")\n        if self.config.option.pyargs:\n            strpath = self._tryconvertpyarg(strpath)\n        relpath = strpath.replace(\"/\", os.sep)\n        fspath = self.config.invocation_dir.join(relpath, abs=True)\n        if not fspath.check():\n            if self.config.option.pyargs:\n                raise UsageError(\n                    \"file or package not found: \" + arg + \" (missing __init__.py?)\"\n                )\n            raise UsageError(\"file not found: \" + arg)\n        fspath = fspath.realpath()\n        return (fspath, parts)",
+        "start_line": 609,
+        "start_column": 21337,
+        "end_line": 4,
+        "end_column": 22022,
+        "start_byte": 21337,
+        "end_byte": 4
+      },
+      "_pytest.main.Session.matchnodes": {
+        "name": "_pytest.main.Session.matchnodes",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "def matchnodes(self, matching, names):\n        self.trace(\"matchnodes\", matching, names)\n        self.trace.root.indent += 1\n        nodes = self._matchnodes(matching, names)\n        num = len(nodes)\n        self.trace(\"matchnodes finished -> \", num, \"nodes\")\n        self.trace.root.indent -= 1\n        if num == 0:\n            raise NoMatch(matching, names[:1])\n        return nodes",
+        "start_line": 625,
+        "start_column": 22028,
+        "end_line": 4,
+        "end_column": 22412,
+        "start_byte": 22028,
+        "end_byte": 4
+      },
+      "_pytest.main.Session._matchnodes": {
+        "name": "_pytest.main.Session._matchnodes",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "def _matchnodes(self, matching, names):\n        if not matching or not names:\n            return matching\n        name = names[0]\n        assert name\n        nextnames = names[1:]\n        resultnodes = []\n        for node in matching:\n            if isinstance(node, nodes.Item):\n                if not names:\n                    resultnodes.append(node)\n                continue\n            assert isinstance(node, nodes.Collector)\n            key = (type(node), node.nodeid)\n            if key in self._collection_node_cache3:\n                rep = self._collection_node_cache3[key]\n            else:\n                rep = collect_one_node(node)\n                self._collection_node_cache3[key] = rep\n            if rep.passed:\n                has_matched = False\n                for x in rep.result:\n                    # TODO: remove parametrized workaround once collection structure contains parametrization\n                    if x.name == name or x.name.split(\"[\")[0] == name:\n                        resultnodes.extend(self.matchnodes([x], nextnames))\n                        has_matched = True\n                # XXX accept IDs that don't have \"()\" for class instances\n                if not has_matched and len(rep.result) == 1 and x.name == \"()\":\n                    nextnames.insert(0, name)\n                    resultnodes.extend(self.matchnodes([x], nextnames))\n            else:\n                # report collection failures here to avoid failing to run some test\n                # specified in the command line because the module could not be\n                # imported (#134)\n                node.ihook.pytest_collectreport(report=rep)\n        return resultnodes",
+        "start_line": 636,
+        "start_column": 22418,
+        "end_line": 4,
+        "end_column": 24096,
+        "start_byte": 22418,
+        "end_byte": 4
+      },
+      "_pytest.main.Session.genitems": {
+        "name": "_pytest.main.Session.genitems",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "def genitems(self, node):\n        self.trace(\"genitems\", node)\n        if isinstance(node, nodes.Item):\n            node.ihook.pytest_itemcollected(item=node)\n            yield node\n        else:\n            assert isinstance(node, nodes.Collector)\n            rep = collect_one_node(node)\n            if rep.passed:\n                for subnode in rep.result:\n                    yield from self.genitems(subnode)\n            node.ihook.pytest_collectreport(report=rep)",
+        "start_line": 673,
+        "start_column": 24102,
+        "end_line": 4,
+        "end_column": 24571,
+        "start_byte": 24102,
+        "end_byte": 4
+      },
+      "_pytest.pytester.Testdir.Session": {
+        "name": "_pytest.pytester.Testdir.Session",
+        "file_path": "src/_pytest/main.py",
+        "file_content": "",
+        "start_line": 772,
+        "start_column": 25095,
+        "end_line": 4,
+        "end_column": 25112,
+        "start_byte": 25095,
+        "end_byte": 4
+      },
+      "_pytest._code.TracebackEntry.__repr__": {
+        "name": "_pytest._code.TracebackEntry.__repr__",
+        "file_path": "src/_pytest/_code/code.py",
+        "file_content": "def __repr__(self) -> str:\n        return \"<TracebackEntry %s:%d>\" % (self.frame.code.path, self.lineno + 1)",
+        "start_line": 206,
+        "start_column": 6201,
+        "end_line": 4,
+        "end_column": 6309,
+        "start_byte": 6201,
+        "end_byte": 4
+      },
+      "_pytest._code.ExceptionInfo.getrepr": {
+        "name": "_pytest._code.ExceptionInfo.getrepr",
+        "file_path": "src/_pytest/_code/code.py",
+        "file_content": "def getrepr(\n        self,\n        showlocals: bool = False,\n        style: \"_TracebackStyle\" = \"long\",\n        abspath: bool = False,\n        tbfilter: bool = True,\n        funcargs: bool = False,\n        truncate_locals: bool = True,\n        chain: bool = True,\n    ) -> Union[\"ReprExceptionInfo\", \"ExceptionChainRepr\"]:\n        \"\"\"\n        Return str()able representation of this exception info.\n\n        :param bool showlocals:\n            Show locals per traceback entry.\n            Ignored if ``style==\"native\"``.\n\n        :param str style: long|short|no|native traceback style\n\n        :param bool abspath:\n            If paths should be changed to absolute or left unchanged.\n\n        :param bool tbfilter:\n            Hide entries that contain a local variable ``__tracebackhide__==True``.\n            Ignored if ``style==\"native\"``.\n\n        :param bool funcargs:\n            Show fixtures (\"funcargs\" for legacy purposes) per traceback entry.\n\n        :param bool truncate_locals:\n            With ``showlocals==True``, make sure locals can be safely represented as strings.\n\n        :param bool chain: if chained exceptions in Python 3 should be shown.\n\n        .. versionchanged:: 3.9\n\n            Added the ``chain`` parameter.\n        \"\"\"\n        if style == \"native\":\n            return ReprExceptionInfo(\n                ReprTracebackNative(\n                    traceback.format_exception(\n                        self.type, self.value, self.traceback[0]._rawentry\n                    )\n                ),\n                self._getreprcrash(),\n            )\n\n        fmt = FormattedExcinfo(\n            showlocals=showlocals,\n            style=style,\n            abspath=abspath,\n            tbfilter=tbfilter,\n            funcargs=funcargs,\n            truncate_locals=truncate_locals,\n            chain=chain,\n        )\n        return fmt.repr_excinfo(self)",
+        "start_line": 577,
+        "start_column": 19023,
+        "end_line": 4,
+        "end_column": 20900,
+        "start_byte": 19023,
+        "end_byte": 4
+      },
+      "_pytest._code.FormattedExcinfo.repr_excinfo": {
+        "name": "_pytest._code.FormattedExcinfo.repr_excinfo",
+        "file_path": "src/_pytest/_code/code.py",
+        "file_content": "def repr_excinfo(self, excinfo: ExceptionInfo) -> \"ExceptionChainRepr\":\n        repr_chain = (\n            []\n        )  # type: List[Tuple[ReprTraceback, Optional[ReprFileLocation], Optional[str]]]\n        e = excinfo.value\n        excinfo_ = excinfo  # type: Optional[ExceptionInfo]\n        descr = None\n        seen = set()  # type: Set[int]\n        while e is not None and id(e) not in seen:\n            seen.add(id(e))\n            if excinfo_:\n                reprtraceback = self.repr_traceback(excinfo_)\n                reprcrash = excinfo_._getreprcrash()  # type: Optional[ReprFileLocation]\n            else:\n                # fallback to native repr if the exception doesn't have a traceback:\n                # ExceptionInfo objects require a full traceback to work\n                reprtraceback = ReprTracebackNative(\n                    traceback.format_exception(type(e), e, None)\n                )\n                reprcrash = None\n\n            repr_chain += [(reprtraceback, reprcrash, descr)]\n            if e.__cause__ is not None and self.chain:\n                e = e.__cause__\n                excinfo_ = (\n                    ExceptionInfo((type(e), e, e.__traceback__))\n                    if e.__traceback__\n                    else None\n                )\n                descr = \"The above exception was the direct cause of the following exception:\"\n            elif (\n                e.__context__ is not None and not e.__suppress_context__ and self.chain\n            ):\n                e = e.__context__\n                excinfo_ = (\n                    ExceptionInfo((type(e), e, e.__traceback__))\n                    if e.__traceback__\n                    else None\n                )\n                descr = \"During handling of the above exception, another exception occurred:\"\n            else:\n                e = None\n        repr_chain.reverse()\n        return ExceptionChainRepr(repr_chain)",
+        "start_line": 868,
+        "start_column": 30141,
+        "end_line": 4,
+        "end_column": 32060,
+        "start_byte": 30141,
+        "end_byte": 4
+      },
+      "_pytest._io.safeformat": {
+        "name": "_pytest._io.safeformat",
+        "file_path": "src/_pytest/_code/code.py",
+        "file_content": "https://github.com/python/mypy/issues/4266.\n    __hash__ = None  # type: ignore\n\n    def __ne__(self, other):\n        return not self == other\n\n    @property\n    def path(self) -> Union[py.path.local, str]:\n        \"\"\" return a path object pointing to source code (or a str in case\n        of OSError / non-existing file).\n",
+        "start_line": 63,
+        "start_column": 1751,
+        "end_line": 0,
+        "end_column": 2074,
+        "start_byte": 1751,
+        "end_byte": 0
+      },
+      "_pytest._io.saferepr": {
+        "name": "_pytest._io.saferepr",
+        "file_path": "src/_pytest/_io/saferepr.py",
+        "file_content": "def saferepr(obj: Any, maxsize: int = 240) -> str:\n    \"\"\"return a size-limited safe repr-string for the given object.\n    Failing __repr__ functions of user instances will be represented\n    with a short exception info and 'saferepr' generally takes\n    care to never raise exceptions itself.  This function is a wrapper\n    around the Repr/reprlib functionality of the standard 2.6 lib.\n    \"\"\"\n    return SafeRepr(maxsize).repr(obj)",
+        "start_line": 74,
+        "start_column": 2077,
+        "end_line": 0,
+        "end_column": 2512,
+        "start_byte": 2077,
+        "end_byte": 0
+      },
+      "_pytest.assertion._saferepr": {
+        "name": "_pytest.assertion._saferepr",
+        "file_path": "src/_pytest/_io/saferepr.py",
+        "file_content": "",
+        "start_line": 375,
+        "start_column": 13624,
+        "end_line": 0,
+        "end_column": 14124,
+        "start_byte": 13624,
+        "end_byte": 0
+      },
+      "_pytest._io._try_repr_or_str": {
+        "name": "_pytest._io._try_repr_or_str",
+        "file_path": "src/_pytest/_io/saferepr.py",
+        "file_content": "def _try_repr_or_str(obj):\n    try:\n        return repr(obj)\n    except (KeyboardInterrupt, SystemExit):\n        raise\n    except BaseException:\n        return '{}(\"{}\")'.format(type(obj).__name__, obj)",
+        "start_line": 5,
+        "start_column": 54,
+        "end_line": 0,
+        "end_column": 256,
+        "start_byte": 54,
+        "end_byte": 0
+      },
+      "_pytest._io._format_repr_exception": {
+        "name": "_pytest._io._format_repr_exception",
+        "file_path": "src/_pytest/_io/saferepr.py",
+        "file_content": "def _format_repr_exception(exc: BaseException, obj: Any) -> str:\n    try:\n        exc_info = _try_repr_or_str(exc)\n    except (KeyboardInterrupt, SystemExit):\n        raise\n    except BaseException as exc:\n        exc_info = \"unpresentable exception ({})\".format(_try_repr_or_str(exc))\n    return \"<[{} raised in repr()] {} object at 0x{:x}>\".format(\n        exc_info, obj.__class__.__name__, id(obj)\n    )",
+        "start_line": 14,
+        "start_column": 259,
+        "end_line": 0,
+        "end_column": 665,
+        "start_byte": 259,
+        "end_byte": 0
+      },
+      "_pytest._io.SafeRepr": {
+        "name": "_pytest._io.SafeRepr",
+        "file_path": "src/_pytest/_io/saferepr.py",
+        "file_content": "class SafeRepr(reprlib.Repr):\n    \"\"\"subclass of repr.Repr that limits the resulting size of repr()\n    and includes information on exceptions raised during the call.\n    \"\"\"\n\n    def __init__(self, maxsize: int) -> None:\n        super().__init__()\n        self.maxstring = maxsize\n        self.maxsize = maxsize\n\n    def repr(self, x: Any) -> str:\n        try:\n            s = super().repr(x)\n        except (KeyboardInterrupt, SystemExit):\n            raise\n        except BaseException as exc:\n            s = _format_repr_exception(exc, x)\n        return _ellipsize(s, self.maxsize)\n\n    def repr_instance(self, x: Any, level: int) -> str:\n        try:\n            s = repr(x)\n        except (KeyboardInterrupt, SystemExit):\n            raise\n        except BaseException as exc:\n            s = _format_repr_exception(exc, x)\n        return _ellipsize(s, self.maxsize)",
+        "start_line": 34,
+        "start_column": 875,
+        "end_line": 0,
+        "end_column": 1748,
+        "start_byte": 875,
+        "end_byte": 0
+      },
+      "_pytest._io.SafeRepr.__init__": {
+        "name": "_pytest._io.SafeRepr.__init__",
+        "file_path": "src/_pytest/_io/saferepr.py",
+        "file_content": "def __init__(self, maxsize: int) -> None:\n        super().__init__()\n        self.maxstring = maxsize\n        self.maxsize = maxsize",
+        "start_line": 39,
+        "start_column": 1055,
+        "end_line": 4,
+        "end_column": 1187,
+        "start_byte": 1055,
+        "end_byte": 4
+      },
+      "_pytest._io.SafeRepr.repr": {
+        "name": "_pytest._io.SafeRepr.repr",
+        "file_path": "src/_pytest/_io/saferepr.py",
+        "file_content": "def repr(self, x: Any) -> str:\n        try:\n            s = super().repr(x)\n        except (KeyboardInterrupt, SystemExit):\n            raise\n        except BaseException as exc:\n            s = _format_repr_exception(exc, x)\n        return _ellipsize(s, self.maxsize)",
+        "start_line": 44,
+        "start_column": 1193,
+        "end_line": 4,
+        "end_column": 1461,
+        "start_byte": 1193,
+        "end_byte": 4
+      },
+      "_pytest._io.SafeRepr.repr_instance": {
+        "name": "_pytest._io.SafeRepr.repr_instance",
+        "file_path": "src/_pytest/_io/saferepr.py",
+        "file_content": "def repr_instance(self, x: Any, level: int) -> str:\n        try:\n            s = repr(x)\n        except (KeyboardInterrupt, SystemExit):\n            raise\n        except BaseException as exc:\n            s = _format_repr_exception(exc, x)\n        return _ellipsize(s, self.maxsize)",
+        "start_line": 53,
+        "start_column": 1467,
+        "end_line": 4,
+        "end_column": 1748,
+        "start_byte": 1467,
+        "end_byte": 4
+      }
+    }
+  }
+}

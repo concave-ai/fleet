@@ -1,0 +1,85 @@
+{
+  "name": "FilesKeywordSearch",
+  "model": "gpt-4o-2024-08-06",
+  "metadata": {},
+  "issue": "<description>:pytest --collect-only needs a one char shortcut command\nI find myself needing to run `--collect-only` very often and that cli argument is a very long to type one. \r\n\r\nI do think that it would be great to allocate a character for it, not sure which one yet. Please use up/down thumbs to vote if you would find it useful or not and eventually proposing which char should be used. \r\n\r\nClearly this is a change very easy to implement but first I want to see if others would find it useful or not.\npytest --collect-only needs a one char shortcut command\nI find myself needing to run `--collect-only` very often and that cli argument is a very long to type one. \r\n\r\nI do think that it would be great to allocate a character for it, not sure which one yet. Please use up/down thumbs to vote if you would find it useful or not and eventually proposing which char should be used. \r\n\r\nClearly this is a change very easy to implement but first I want to see if others would find it useful or not.\n</description>",
+  "request": {
+    "tokens": [
+      "pytest_addoption",
+      "getoption",
+      "cmdline",
+      "parseconfig",
+      "pytest_cmdline_main"
+    ]
+  },
+  "response": {
+    "results": {
+      "pytest_addoption": [
+        "src/_pytest/resultlog.py",
+        "src/_pytest/junitxml.py",
+        "src/_pytest/logging.py",
+        "src/_pytest/python.py",
+        "src/_pytest/capture.py",
+        "src/_pytest/terminal.py",
+        "src/_pytest/helpconfig.py",
+        "src/_pytest/hookspec.py",
+        "src/_pytest/cacheprovider.py",
+        "src/_pytest/pytester.py",
+        "src/_pytest/report_log.py",
+        "src/_pytest/assertion/__init__.py",
+        "src/_pytest/warnings.py",
+        "src/_pytest/faulthandler.py",
+        "src/_pytest/mark/__init__.py",
+        "src/_pytest/doctest.py",
+        "src/_pytest/setupplan.py",
+        "src/_pytest/main.py",
+        "src/_pytest/fixtures.py",
+        "src/_pytest/debugging.py",
+        "src/_pytest/runner.py",
+        "src/_pytest/config/__init__.py",
+        "src/_pytest/setuponly.py",
+        "src/_pytest/skipping.py",
+        "src/_pytest/pastebin.py",
+        "src/_pytest/stepwise.py"
+      ],
+      "getoption": [
+        "src/_pytest/main.py",
+        "src/_pytest/fixtures.py",
+        "src/_pytest/reports.py",
+        "src/_pytest/terminal.py",
+        "src/_pytest/logging.py",
+        "src/_pytest/hookspec.py",
+        "src/_pytest/python.py",
+        "src/_pytest/runner.py",
+        "src/_pytest/nodes.py",
+        "src/_pytest/config/__init__.py",
+        "src/_pytest/warnings.py",
+        "src/_pytest/cacheprovider.py",
+        "src/_pytest/pytester.py",
+        "src/_pytest/doctest.py",
+        "src/_pytest/assertion/util.py",
+        "src/_pytest/stepwise.py"
+      ],
+      "pytest_cmdline_main": [
+        "src/_pytest/main.py",
+        "src/_pytest/helpconfig.py",
+        "src/_pytest/hookspec.py",
+        "src/_pytest/python.py",
+        "src/_pytest/config/__init__.py",
+        "src/_pytest/setuponly.py",
+        "src/_pytest/cacheprovider.py",
+        "src/_pytest/mark/__init__.py",
+        "src/_pytest/setupplan.py"
+      ],
+      "parseconfig": [
+        "src/_pytest/pytester.py"
+      ],
+      "cmdline": [
+        "src/_pytest/assertion/rewrite.py",
+        "src/_pytest/config/__init__.py",
+        "src/pytest.py",
+        "src/_pytest/warnings.py"
+      ]
+    }
+  }
+}

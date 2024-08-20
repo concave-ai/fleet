@@ -1,0 +1,68 @@
+
+diff --git a/src/_pytest/nodes.py b/src/_pytest/nodes.py
+index cfb9b5a36..b8005f744 100644
+--- a/src/_pytest/nodes.py
++++ b/src/_pytest/nodes.py
+@@ -17,7 +17,7 @@ from typing import Type
+ from typing import TYPE_CHECKING
+ from typing import TypeVar
+ from typing import Union
+-
++from itertools import chain
+ import _pytest._code
+ from _pytest._code import getfslineno
+ from _pytest._code.code import ExceptionInfo
+@@ -224,7 +224,9 @@ class Node(metaclass=NodeMeta):
+         self.keywords: MutableMapping[str, Any] = NodeKeywords(self)
+ 
+         #: The marker objects belonging to this node.
+-        self.own_markers: List[Mark] = []
++        self.own_markers: List[Mark] = list(chain.from_iterable(
++            getattr(cls, 'own_markers', []) for cls in type(self).__mro__
++        ))
+ 
+         #: Allow adding of extra keywords to use for matching.
+         self.extra_keyword_matches: Set[str] = set()
+diff --git a/test_reproduce.py b/test_reproduce.py
+new file mode 100644
+index 000000000..02faef180
+--- /dev/null
++++ b/test_reproduce.py
+@@ -0,0 +1,37 @@
++import itertools
++import pytest
++
++class BaseMeta(type):
++    @property
++    def pytestmark(self):
++        return (
++            getattr(self, "_pytestmark", []) +
++            list(itertools.chain.from_iterable(getattr(x, "_pytestmark", []) for x in self.__mro__))
++        )
++
++    @pytestmark.setter
++    def pytestmark(self, value):
++        self._pytestmark = value
++
++
++class Base(object):
++    # Without this metaclass, foo and bar markers override each other, and test_dings
++    # will only have one marker
++    # With the metaclass, test_dings will have both
++    __metaclass__ = BaseMeta
++
++@pytest.mark.foo
++class Foo(Base):
++    pass
++
++
++@pytest.mark.bar
++class Bar(Base):
++    pass
++
++class TestDings(Foo, Bar):
++    def test_dings(self):
++        # This test should have both markers, foo and bar.
++        # In practice markers are resolved using MRO (so foo wins), unless the
++        # metaclass is applied
++        print(self.pytestmark)

@@ -1,0 +1,105 @@
+{
+  "name": "FilesKeywordSearch",
+  "model": "gpt-4o-2024-08-06",
+  "metadata": {},
+  "issue": "<description>:Display fixture scope with `pytest --fixtures`\nIt would be useful to show fixture scopes with `pytest --fixtures`; currently the only way to learn the scope of a fixture is look at the docs (when that is documented) or at the source code.\n</description>",
+  "request": {
+    "tokens": [
+      "fixtures",
+      "fixture",
+      "mark",
+      "getfixtureinfo",
+      "FixtureManager",
+      "scopes",
+      "scope2index",
+      "getfixtureclosure",
+      "resolve_fixture_function"
+    ]
+  },
+  "response": {
+    "results": {
+      "mark": [
+        "src/_pytest/mark/structures.py",
+        "src/_pytest/mark/__init__.py",
+        "src/_pytest/fixtures.py",
+        "src/_pytest/python_api.py",
+        "src/pytest.py",
+        "src/_pytest/hookspec.py",
+        "src/_pytest/nodes.py",
+        "src/_pytest/warnings.py",
+        "src/_pytest/config/__init__.py",
+        "src/_pytest/python.py",
+        "src/_pytest/outcomes.py",
+        "src/_pytest/skipping.py",
+        "src/_pytest/warning_types.py",
+        "src/_pytest/mark/legacy.py",
+        "src/_pytest/mark/evaluate.py"
+      ],
+      "fixture": [
+        "src/_pytest/junitxml.py",
+        "src/_pytest/logging.py",
+        "src/_pytest/python.py",
+        "src/_pytest/capture.py",
+        "src/_pytest/terminal.py",
+        "src/_pytest/hookspec.py",
+        "src/_pytest/monkeypatch.py",
+        "src/_pytest/cacheprovider.py",
+        "src/_pytest/pytester.py",
+        "src/_pytest/unittest.py",
+        "src/pytest.py",
+        "src/_pytest/mark/__init__.py",
+        "src/_pytest/doctest.py",
+        "src/_pytest/setupplan.py",
+        "src/_pytest/tmpdir.py",
+        "src/_pytest/deprecated.py",
+        "src/_pytest/fixtures.py",
+        "src/_pytest/debugging.py",
+        "src/_pytest/setuponly.py",
+        "src/_pytest/compat.py"
+      ],
+      "fixtures": [
+        "src/_pytest/main.py",
+        "src/_pytest/deprecated.py",
+        "src/_pytest/fixtures.py",
+        "src/_pytest/recwarn.py",
+        "src/_pytest/capture.py",
+        "src/pytest.py",
+        "src/_pytest/helpconfig.py",
+        "src/_pytest/monkeypatch.py",
+        "src/_pytest/runner.py",
+        "src/_pytest/config/__init__.py",
+        "src/_pytest/_code/code.py",
+        "src/_pytest/python.py",
+        "src/_pytest/setuponly.py",
+        "src/_pytest/mark/__init__.py",
+        "src/_pytest/doctest.py",
+        "src/_pytest/compat.py",
+        "src/_pytest/setupplan.py"
+      ],
+      "scopes": [
+        "src/_pytest/fixtures.py",
+        "src/_pytest/nodes.py",
+        "src/_pytest/python.py"
+      ],
+      "getfixtureinfo": [
+        "src/_pytest/doctest.py",
+        "src/_pytest/python.py",
+        "src/_pytest/unittest.py",
+        "src/_pytest/fixtures.py"
+      ],
+      "scope2index": [
+        "src/_pytest/fixtures.py",
+        "src/_pytest/python.py"
+      ],
+      "FixtureManager": [
+        "src/_pytest/fixtures.py"
+      ],
+      "resolve_fixture_function": [
+        "src/_pytest/fixtures.py"
+      ],
+      "getfixtureclosure": [
+        "src/_pytest/fixtures.py"
+      ]
+    }
+  }
+}

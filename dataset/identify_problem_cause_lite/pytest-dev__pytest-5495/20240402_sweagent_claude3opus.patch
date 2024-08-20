@@ -1,0 +1,27 @@
+
+diff --git a/src/_pytest/_io/saferepr.py b/src/_pytest/_io/saferepr.py
+index 74f75124f..081936f36 100644
+--- a/src/_pytest/_io/saferepr.py
++++ b/src/_pytest/_io/saferepr.py
+@@ -42,7 +42,20 @@ class SafeRepr(reprlib.Repr):
+             s = repr(x[:i] + x[len(x) - j :])
+             s = s[:i] + "..." + s[len(s) - j :]
+         return s
+-
++    def repr_bytes(self, x, level):
++        s = repr(x)
++        if len(s) > self.maxstring:
++            i = max(0, (self.maxstring - 3) // 2)
++            j = max(0, self.maxstring - 3 - i)
++            s = s[:i] + "..." + s[len(s) - j :]
++        # Add ASCII representation of the bytes
++        ascii_repr = " ".join(f"{b:02x}" for b in x)
++        if len(ascii_repr) > self.maxstring:
++            i = max(0, (self.maxstring - 3) // 2)
++            j = max(0, self.maxstring - 3 - i)
++            ascii_repr = ascii_repr[:i] + "..." + ascii_repr[len(ascii_repr) - j :]
++        s += f" ({ascii_repr})"
++        return s
+     def repr_instance(self, x, level):
+         return self._callhelper(repr, x)
+ 

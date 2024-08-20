@@ -1,0 +1,289 @@
+{
+  "name": "SymbolSummary",
+  "model": "gpt-4o-2024-08-06",
+  "metadata": {},
+  "issue": "<description>:Unroll the iterable for all/any calls to get better reports\nSometime I need to assert some predicate on all of an iterable, and for that the builtin functions `all`/`any` are great - but the failure messages aren't useful at all!\r\nFor example - the same test written in three ways:\r\n\r\n- A generator expression\r\n```sh                                                                                                                                                                                                                         \r\n    def test_all_even():\r\n        even_stevens = list(range(1,100,2))\r\n>       assert all(is_even(number) for number in even_stevens)\r\nE       assert False\r\nE        +  where False = all(<generator object test_all_even.<locals>.<genexpr> at 0x101f82ed0>)\r\n```\r\n- A list comprehension\r\n```sh\r\n    def test_all_even():\r\n        even_stevens = list(range(1,100,2))\r\n>       assert all([is_even(number) for number in even_stevens])\r\nE       assert False\r\nE        +  where False = all([False, False, False, False, False, False, ...])\r\n```\r\n- A for loop\r\n```sh\r\n    def test_all_even():\r\n        even_stevens = list(range(1,100,2))\r\n        for number in even_stevens:\r\n>           assert is_even(number)\r\nE           assert False\r\nE            +  where False = is_even(1)\r\n\r\ntest_all_any.py:7: AssertionError\r\n```\r\nThe only one that gives a meaningful report is the for loop - but it's way more wordy, and `all` asserts don't translate to a for loop nicely (I'll have to write a `break` or a helper function - yuck)\r\nI propose the assertion re-writer \"unrolls\" the iterator to the third form, and then uses the already existing reports.\r\n\r\n- [x] Include a detailed description of the bug or suggestion\r\n- [x] `pip list` of the virtual environment you are using\r\n```\r\nPackage        Version\r\n-------------- -------\r\natomicwrites   1.3.0  \r\nattrs          19.1.0 \r\nmore-itertools 7.0.0  \r\npip            19.0.3 \r\npluggy         0.9.0  \r\npy             1.8.0  \r\npytest         4.4.0  \r\nsetuptools     40.8.0 \r\nsix            1.12.0 \r\n```\r\n- [x] pytest and operating system versions\r\n`platform darwin -- Python 3.7.3, pytest-4.4.0, py-1.8.0, pluggy-0.9.0`\r\n- [x] Minimal example if possible\r\n\n</description>",
+  "request": {
+    "symbols": {
+      "related_symbols": [
+        {
+          "name": "_pytest.assertion.AssertionRewriter.run",
+          "file_path": "src/_pytest/assertion/rewrite.py",
+          "file_content": "def run(self, mod):\n        \"\"\"Find all assert statements in *mod* and rewrite them.\"\"\"\n        if not mod.body:\n            # Nothing to do.\n            return\n        # Insert some special imports at the top of the module but after any\n        # docstrings and __future__ imports.\n        aliases = [\n            ast.alias(six.moves.builtins.__name__, \"@py_builtins\"),\n            ast.alias(\"_pytest.assertion.rewrite\", \"@pytest_ar\"),\n        ]\n        doc = getattr(mod, \"docstring\", None)\n        expect_docstring = doc is None\n        if doc is not None and self.is_rewrite_disabled(doc):\n            return\n        pos = 0\n        lineno = 1\n        for item in mod.body:\n            if (\n                expect_docstring\n                and isinstance(item, ast.Expr)\n                and isinstance(item.value, ast.Str)\n            ):\n                doc = item.value.s\n                if self.is_rewrite_disabled(doc):\n                    return\n                expect_docstring = False\n            elif (\n                not isinstance(item, ast.ImportFrom)\n                or item.level > 0\n                or item.module != \"__future__\"\n            ):\n                lineno = item.lineno\n                break\n            pos += 1\n        else:\n            lineno = item.lineno\n        imports = [\n            ast.Import([alias], lineno=lineno, col_offset=0) for alias in aliases\n        ]\n        mod.body[pos:pos] = imports\n        # Collect asserts.\n        nodes = [mod]\n        while nodes:\n            node = nodes.pop()\n            for name, field in ast.iter_fields(node):\n                if isinstance(field, list):\n                    new = []\n                    for i, child in enumerate(field):\n                        if isinstance(child, ast.Assert):\n                            # Transform assert.\n                            new.extend(self.visit(child))\n                        else:\n                            new.append(child)\n                            if isinstance(child, ast.AST):\n                                nodes.append(child)\n                    setattr(node, name, new)\n                elif (\n                    isinstance(field, ast.AST)\n                    # Don't recurse into expressions as they can't contain\n                    # asserts.\n                    and not isinstance(field, ast.expr)\n                ):\n                    nodes.append(field)",
+          "start_line": 664,
+          "start_column": 24108,
+          "end_line": 4,
+          "end_column": 26514,
+          "start_byte": 24108,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.assertion.AssertionRewriter.visit_Assert",
+          "file_path": "src/_pytest/assertion/rewrite.py",
+          "file_content": "def visit_Assert(self, assert_):\n        \"\"\"Return the AST statements to replace the ast.Assert instance.\n\n        This rewrites the test of an assertion to provide\n        intermediate values and replace it with an if statement which\n        raises an assertion error with a detailed explanation in case\n        the expression is false.\n\n        \"\"\"\n        if isinstance(assert_.test, ast.Tuple) and len(assert_.test.elts) >= 1:\n            from _pytest.warning_types import PytestAssertRewriteWarning\n            import warnings\n\n            warnings.warn_explicit(\n                PytestAssertRewriteWarning(\n                    \"assertion is always true, perhaps remove parentheses?\"\n                ),\n                category=None,\n                filename=str(self.module_path),\n                lineno=assert_.lineno,\n            )\n\n        self.statements = []\n        self.variables = []\n        self.variable_counter = itertools.count()\n        self.stack = []\n        self.on_failure = []\n        self.push_format_context()\n        # Rewrite assert into a bunch of statements.\n        top_condition, explanation = self.visit(assert_.test)\n        # If in a test module, check if directly asserting None, in order to warn [Issue #3191]\n        if self.module_path is not None:\n            self.statements.append(\n                self.warn_about_none_ast(\n                    top_condition, module_path=self.module_path, lineno=assert_.lineno\n                )\n            )\n        # Create failure message.\n        body = self.on_failure\n        negation = ast.UnaryOp(ast.Not(), top_condition)\n        self.statements.append(ast.If(negation, body, []))\n        if assert_.msg:\n            assertmsg = self.helper(\"_format_assertmsg\", assert_.msg)\n            explanation = \"\\n>assert \" + explanation\n        else:\n            assertmsg = ast.Str(\"\")\n            explanation = \"assert \" + explanation\n        template = ast.BinOp(assertmsg, ast.Add(), ast.Str(explanation))\n        msg = self.pop_format_context(template)\n        fmt = self.helper(\"_format_explanation\", msg)\n        err_name = ast.Name(\"AssertionError\", ast.Load())\n        exc = ast_Call(err_name, [fmt], [])\n        if sys.version_info[0] >= 3:\n            raise_ = ast.Raise(exc, None)\n        else:\n            raise_ = ast.Raise(exc, None, None)\n        body.append(raise_)\n        # Clear temporary variables by setting them to None.\n        if self.variables:\n            variables = [ast.Name(name, ast.Store()) for name in self.variables]\n            clear = ast.Assign(variables, _NameConstant(None))\n            self.statements.append(clear)\n        # Fix line numbers.\n        for stmt in self.statements:\n            set_location(stmt, assert_.lineno, assert_.col_offset)\n        return self.statements",
+          "start_line": 813,
+          "start_column": 29854,
+          "end_line": 4,
+          "end_column": 32649,
+          "start_byte": 29854,
+          "end_byte": 4
+        },
+        {
+          "name": "_pytest.assertion.pytest_assertrepr_compare",
+          "file_path": "src/_pytest/assertion/util.py",
+          "file_content": "n is not None:\n                        explanation.",
+          "start_line": 154,
+          "start_column": 5119,
+          "end_line": 0,
+          "end_column": 5170,
+          "start_byte": 5119,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.assertion._split_explanation",
+          "file_path": "src/_pytest/assertion/util.py",
+          "file_content": "def _split_explanation(explanation):\n    \"\"\"Return a list of individual lines in the explanation\n\n    This will return a list of lines split on '\\n{', '\\n}' and '\\n~'.\n    Any other newlines will be escaped and appear in the line as the\n    literal '\\n' characters.\n    \"\"\"\n    raw_lines = (explanation or u\"\").split(\"\\n\")\n    lines = [raw_lines[0]]\n    for values in raw_lines[1:]:\n        if values and values[0] in [\"{\", \"}\", \"~\", \">\"]:\n            lines.append(values)\n        else:\n            lines[-1] += \"\\\\n\" + values\n    return lines",
+          "start_line": 46,
+          "start_column": 1358,
+          "end_line": 0,
+          "end_column": 1901,
+          "start_byte": 1358,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.assertion._format_lines",
+          "file_path": "src/_pytest/assertion/util.py",
+          "file_content": "def _format_lines(lines):\n    \"\"\"Format the individual lines\n\n    This will replace the '{', '}' and '~' characters of our mini\n    formatting language with the proper 'where ...', 'and ...' and ' +\n    ...' text, taking care of indentation along the way.\n\n    Return a list of formatted lines.\n    \"\"\"\n    result = lines[:1]\n    stack = [0]\n    stackcnt = [0]\n    for line in lines[1:]:\n        if line.startswith(\"{\"):\n            if stackcnt[-1]:\n                s = u\"and   \"\n            else:\n                s = u\"where \"\n            stack.append(len(result))\n            stackcnt[-1] += 1\n            stackcnt.append(0)\n            result.append(u\" +\" + u\"  \" * (len(stack) - 1) + s + line[1:])\n        elif line.startswith(\"}\"):\n            stack.pop()\n            stackcnt.pop()\n            result[stack[-1]] += line[1:]\n        else:\n            assert line[0] in [\"~\", \">\"]\n            stack[-1] += 1\n            indent = len(stack) if line.startswith(\"~\") else len(stack) - 1\n            result.append(u\"  \" * indent + line[1:])\n    assert len(stack) == 1\n    return result",
+          "start_line": 63,
+          "start_column": 1904,
+          "end_line": 0,
+          "end_column": 2989,
+          "start_byte": 1904,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.assertion.issequence",
+          "file_path": "src/_pytest/assertion/util.py",
+          "file_content": "def issequence(x):\n    return isinstance(x, Sequence) and not isinstance(x, basestring)",
+          "start_line": 105,
+          "start_column": 3098,
+          "end_line": 0,
+          "end_column": 3185,
+          "start_byte": 3098,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.assertion.isiterable",
+          "file_path": "src/_pytest/assertion/util.py",
+          "file_content": "def isiterable(obj):\n    try:\n        iter(obj)\n        return not istext(obj)\n    except TypeError:\n        return False",
+          "start_line": 129,
+          "start_column": 3518,
+          "end_line": 0,
+          "end_column": 3639,
+          "start_byte": 3518,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.assertion.assertrepr_compare",
+          "file_path": "src/_pytest/assertion/util.py",
+          "file_content": "def assertrepr_compare(config, op, left, right):\n    \"\"\"Return specialised explanations for some operators/operands\"\"\"\n    width = 80 - 15 - len(op) - 2  # 15 chars indentation, 1 space around op\n    left_repr = saferepr(left, maxsize=int(width // 2))\n    right_repr = saferepr(right, maxsize=width - len(left_repr))\n\n    summary = u\"%s %s %s\" % (ecu(left_repr), op, ecu(right_repr))\n\n    verbose = config.getoption(\"verbose\")\n    explanation = None\n    try:\n        if op == \"==\":\n            if istext(left) and istext(right):\n                explanation = _diff_text(left, right, verbose)\n            else:\n                if issequence(left) and issequence(right):\n                    explanation = _compare_eq_sequence(left, right, verbose)\n                elif isset(left) and isset(right):\n                    explanation = _compare_eq_set(left, right, verbose)\n                elif isdict(left) and isdict(right):\n                    explanation = _compare_eq_dict(left, right, verbose)\n                elif type(left) == type(right) and (isdatacls(left) or isattrs(left)):\n                    type_fn = (isdatacls, isattrs)\n                    explanation = _compare_eq_cls(left, right, verbose, type_fn)\n                elif verbose > 0:\n                    explanation = _compare_eq_verbose(left, right)\n                if isiterable(left) and isiterable(right):\n                    expl = _compare_eq_iterable(left, right, verbose)\n                    if explanation is not None:\n                        explanation.extend(expl)\n                    else:\n                        explanation = expl\n        elif op == \"not in\":\n            if istext(left) and istext(right):\n                explanation = _notin_text(left, right, verbose)\n    except outcomes.Exit:\n        raise\n    except Exception:\n        explanation = [\n            u\"(pytest_assertion plugin: representation of details failed.  \"\n            u\"Probably an object has a faulty __repr__.)\",\n            six.text_type(_pytest._code.ExceptionInfo.from_current()),\n        ]\n\n    if not explanation:\n        return None\n\n    return [summary] + explanation",
+          "start_line": 137,
+          "start_column": 3642,
+          "end_line": 0,
+          "end_column": 5775,
+          "start_byte": 3642,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.assertion._compare_eq_iterable",
+          "file_path": "src/_pytest/assertion/util.py",
+          "file_content": "def _compare_eq_iterable(left, right, verbose=0):\n    if not verbose:\n        return [u\"Use -v to get the full diff\"]\n    # dynamic import to speedup pytest\n    import difflib\n\n    try:\n        left_formatting = pprint.pformat(left).splitlines()\n        right_formatting = pprint.pformat(right).splitlines()\n        explanation = [u\"Full diff:\"]\n    except Exception:\n        # hack: PrettyPrinter.pformat() in python 2 fails when formatting items that can't be sorted(), ie, calling\n        # sorted() on a list would raise. See issue #718.\n        # As a workaround, the full diff is generated by using the repr() string of each item of each container.\n        left_formatting = sorted(repr(x) for x in left)\n        right_formatting = sorted(repr(x) for x in right)\n        explanation = [u\"Full diff (fallback to calling repr on each item):\"]\n    explanation.extend(\n        line.strip() for line in difflib.ndiff(left_formatting, right_formatting)\n    )\n    return explanation",
+          "start_line": 262,
+          "start_column": 8366,
+          "end_line": 0,
+          "end_column": 9347,
+          "start_byte": 8366,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.assertion._compare_eq_sequence",
+          "file_path": "src/_pytest/assertion/util.py",
+          "file_content": "def _compare_eq_sequence(left, right, verbose=0):\n    explanation = []\n    len_left = len(left)\n    len_right = len(right)\n    for i in range(min(len_left, len_right)):\n        if left[i] != right[i]:\n            explanation += [u\"At index %s diff: %r != %r\" % (i, left[i], right[i])]\n            break\n    len_diff = len_left - len_right\n\n    if len_diff:\n        if len_diff > 0:\n            dir_with_more = \"Left\"\n            extra = saferepr(left[len_right])\n        else:\n            len_diff = 0 - len_diff\n            dir_with_more = \"Right\"\n            extra = saferepr(right[len_left])\n\n        if len_diff == 1:\n            explanation += [u\"%s contains one more item: %s\" % (dir_with_more, extra)]\n        else:\n            explanation += [\n                u\"%s contains %d more items, first extra item: %s\"\n                % (dir_with_more, len_diff, extra)\n            ]\n    return explanation",
+          "start_line": 285,
+          "start_column": 9350,
+          "end_line": 0,
+          "end_column": 10256,
+          "start_byte": 9350,
+          "end_byte": 0
+        },
+        {
+          "name": "_pytest.hookspec.pytest_assertrepr_compare",
+          "file_path": "src/_pytest/assertion/util.py",
+          "file_content": "",
+          "start_line": 475,
+          "start_column": 15508,
+          "end_line": 0,
+          "end_column": 16001,
+          "start_byte": 15508,
+          "end_byte": 0
+        }
+      ],
+      "root_caused_symbols": []
+    },
+    "symbols_evaluate": {
+      "scratch_pad": "1. Analyze User Instructions:\n1.1 The user wants better error reporting when using `all` and `any` in assertions. The default behavior doesn't provide useful messages.\n1.2 The issue arises because `all` and `any` return a single boolean result, which doesn't convey which specific item in the iterable caused the assertion to fail.\n1.3 The expected result is for assertion failures to identify which element(s) caused the failure, similar to individual assertions in a loop.\n1.4 If not provided, the expectation should be for detailed failure reports identifying exact elements causing failure.\n1.5 The issue could be resolved by modifying the assertion rewriter to 'unroll' iterables used in `all`/`any` into individual assertions for each element.\n\n2. Make the evaluate:\n2.1 Analyze `_pytest.assertion.AssertionRewriter.run`:\n   - This function collects and modifies AST nodes to change assert statements.\n   - It doesn't directly handle `all`/`any`, but it outlines what the rewriter is doing overall.\n\n2.2 Analyze `_pytest.assertion.AssertionRewriter.visit_Assert`:\n   - This function likely handles individual assertions and could be adapted to unroll iterables.\n   - Adding logic here to convert `all`/`any` constructs into individual assertions seems appropriate.\n\n2.3 Analyze `_pytest.assertion.pytest_assertrepr_compare`:\n   - This function customizes comparison messages, but not specifically for unrolling iterables.\n\n2.4 Analyze `_pytest.assertion._split_explanation` etc.:\n   - Functions for formatting and splitting explanations, not directly relevant to unrolling iterables.\n\nEvaluating potential code changes:\n1. `_pytest.assertion.AssertionRewriter.visit_Assert`\n   - Critically important as it already transforms asserts; can be modified to handle `all`/`any`.\n\n2. `_pytest.assertion.AssertionRewriter.run`\n   - May need only minor adjustments or none.\n\n3. Other symbols analyzed are not directly relevant to the specific solution of 'unrolling' iterables for `all`/`any`.",
+      "symbols": [
+        {
+          "name": "_pytest.assertion.AssertionRewriter.visit_Assert",
+          "file_path": "src/_pytest/assertion/rewrite.py",
+          "reason": "This function should transform asserts involving `all` or `any` to unroll iterables into individual assertions."
+        }
+      ],
+      "more_info": [],
+      "is_done": true,
+      "symbols_scratch_pad": [
+        "Analyzing `_pytest.assertion.AssertionRewriter.run`: The function rewrites assert statements but doesn't handle `all`/`any` directly. Unrolling logic would likely be added elsewhere.",
+        "The `visit_Assert` function is where assert transformations occur. Logic to unroll iterables in `all`/`any` should be added here, requiring examination and modification of assert test expressions.",
+        "The `pytest_assertrepr_compare` function customizes message comparisons and isn't directly related to unrolling iterable assertions.",
+        "The `_split_explanation` function involves formatting and explanation splitting, not directly relevant to unrolling.",
+        "The `_format_lines` function handles formatting lines in explanations, unrelated to unrolling iterables.",
+        "The `issequence` function checks if an object is a sequence; doesn't relate to unrolling `all`/`any`.",
+        "The `isiterable` function determines if an object is iterable; might be part of a type check but not a direct change.",
+        "The function `assertrepr_compare` generates custom explanations but isn't specific to unrolling changes.",
+        "The `_compare_eq_iterable` function deals with iterable equality but not relevant to unrolling `all`/`any`.",
+        "The `_compare_eq_sequence` function compares sequence equality but not related to unrolling."
+      ]
+    }
+  },
+  "response": {
+    "file_paths": [
+      "src/_pytest/assertion/rewrite.py"
+    ],
+    "symbols": [
+      "_pytest.assertion.AssertionRewriter.visit_Assert"
+    ],
+    "code_spans": {
+      "_pytest.assertion.AssertionRewriter.run": {
+        "name": "_pytest.assertion.AssertionRewriter.run",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def run(self, mod):\n        \"\"\"Find all assert statements in *mod* and rewrite them.\"\"\"\n        if not mod.body:\n            # Nothing to do.\n            return\n        # Insert some special imports at the top of the module but after any\n        # docstrings and __future__ imports.\n        aliases = [\n            ast.alias(six.moves.builtins.__name__, \"@py_builtins\"),\n            ast.alias(\"_pytest.assertion.rewrite\", \"@pytest_ar\"),\n        ]\n        doc = getattr(mod, \"docstring\", None)\n        expect_docstring = doc is None\n        if doc is not None and self.is_rewrite_disabled(doc):\n            return\n        pos = 0\n        lineno = 1\n        for item in mod.body:\n            if (\n                expect_docstring\n                and isinstance(item, ast.Expr)\n                and isinstance(item.value, ast.Str)\n            ):\n                doc = item.value.s\n                if self.is_rewrite_disabled(doc):\n                    return\n                expect_docstring = False\n            elif (\n                not isinstance(item, ast.ImportFrom)\n                or item.level > 0\n                or item.module != \"__future__\"\n            ):\n                lineno = item.lineno\n                break\n            pos += 1\n        else:\n            lineno = item.lineno\n        imports = [\n            ast.Import([alias], lineno=lineno, col_offset=0) for alias in aliases\n        ]\n        mod.body[pos:pos] = imports\n        # Collect asserts.\n        nodes = [mod]\n        while nodes:\n            node = nodes.pop()\n            for name, field in ast.iter_fields(node):\n                if isinstance(field, list):\n                    new = []\n                    for i, child in enumerate(field):\n                        if isinstance(child, ast.Assert):\n                            # Transform assert.\n                            new.extend(self.visit(child))\n                        else:\n                            new.append(child)\n                            if isinstance(child, ast.AST):\n                                nodes.append(child)\n                    setattr(node, name, new)\n                elif (\n                    isinstance(field, ast.AST)\n                    # Don't recurse into expressions as they can't contain\n                    # asserts.\n                    and not isinstance(field, ast.expr)\n                ):\n                    nodes.append(field)",
+        "start_line": 664,
+        "start_column": 24108,
+        "end_line": 4,
+        "end_column": 26514,
+        "start_byte": 24108,
+        "end_byte": 4
+      },
+      "_pytest.assertion.AssertionRewriter.visit_Assert": {
+        "name": "_pytest.assertion.AssertionRewriter.visit_Assert",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def visit_Assert(self, assert_):\n        \"\"\"Return the AST statements to replace the ast.Assert instance.\n\n        This rewrites the test of an assertion to provide\n        intermediate values and replace it with an if statement which\n        raises an assertion error with a detailed explanation in case\n        the expression is false.\n\n        \"\"\"\n        if isinstance(assert_.test, ast.Tuple) and len(assert_.test.elts) >= 1:\n            from _pytest.warning_types import PytestAssertRewriteWarning\n            import warnings\n\n            warnings.warn_explicit(\n                PytestAssertRewriteWarning(\n                    \"assertion is always true, perhaps remove parentheses?\"\n                ),\n                category=None,\n                filename=str(self.module_path),\n                lineno=assert_.lineno,\n            )\n\n        self.statements = []\n        self.variables = []\n        self.variable_counter = itertools.count()\n        self.stack = []\n        self.on_failure = []\n        self.push_format_context()\n        # Rewrite assert into a bunch of statements.\n        top_condition, explanation = self.visit(assert_.test)\n        # If in a test module, check if directly asserting None, in order to warn [Issue #3191]\n        if self.module_path is not None:\n            self.statements.append(\n                self.warn_about_none_ast(\n                    top_condition, module_path=self.module_path, lineno=assert_.lineno\n                )\n            )\n        # Create failure message.\n        body = self.on_failure\n        negation = ast.UnaryOp(ast.Not(), top_condition)\n        self.statements.append(ast.If(negation, body, []))\n        if assert_.msg:\n            assertmsg = self.helper(\"_format_assertmsg\", assert_.msg)\n            explanation = \"\\n>assert \" + explanation\n        else:\n            assertmsg = ast.Str(\"\")\n            explanation = \"assert \" + explanation\n        template = ast.BinOp(assertmsg, ast.Add(), ast.Str(explanation))\n        msg = self.pop_format_context(template)\n        fmt = self.helper(\"_format_explanation\", msg)\n        err_name = ast.Name(\"AssertionError\", ast.Load())\n        exc = ast_Call(err_name, [fmt], [])\n        if sys.version_info[0] >= 3:\n            raise_ = ast.Raise(exc, None)\n        else:\n            raise_ = ast.Raise(exc, None, None)\n        body.append(raise_)\n        # Clear temporary variables by setting them to None.\n        if self.variables:\n            variables = [ast.Name(name, ast.Store()) for name in self.variables]\n            clear = ast.Assign(variables, _NameConstant(None))\n            self.statements.append(clear)\n        # Fix line numbers.\n        for stmt in self.statements:\n            set_location(stmt, assert_.lineno, assert_.col_offset)\n        return self.statements",
+        "start_line": 813,
+        "start_column": 29854,
+        "end_line": 4,
+        "end_column": 32649,
+        "start_byte": 29854,
+        "end_byte": 4
+      },
+      "_pytest.assertion.pytest_assertrepr_compare": {
+        "name": "_pytest.assertion.pytest_assertrepr_compare",
+        "file_path": "src/_pytest/assertion/util.py",
+        "file_content": "n is not None:\n                        explanation.",
+        "start_line": 154,
+        "start_column": 5119,
+        "end_line": 0,
+        "end_column": 5170,
+        "start_byte": 5119,
+        "end_byte": 0
+      },
+      "_pytest.assertion._split_explanation": {
+        "name": "_pytest.assertion._split_explanation",
+        "file_path": "src/_pytest/assertion/util.py",
+        "file_content": "def _split_explanation(explanation):\n    \"\"\"Return a list of individual lines in the explanation\n\n    This will return a list of lines split on '\\n{', '\\n}' and '\\n~'.\n    Any other newlines will be escaped and appear in the line as the\n    literal '\\n' characters.\n    \"\"\"\n    raw_lines = (explanation or u\"\").split(\"\\n\")\n    lines = [raw_lines[0]]\n    for values in raw_lines[1:]:\n        if values and values[0] in [\"{\", \"}\", \"~\", \">\"]:\n            lines.append(values)\n        else:\n            lines[-1] += \"\\\\n\" + values\n    return lines",
+        "start_line": 46,
+        "start_column": 1358,
+        "end_line": 0,
+        "end_column": 1901,
+        "start_byte": 1358,
+        "end_byte": 0
+      },
+      "_pytest.assertion._format_lines": {
+        "name": "_pytest.assertion._format_lines",
+        "file_path": "src/_pytest/assertion/util.py",
+        "file_content": "def _format_lines(lines):\n    \"\"\"Format the individual lines\n\n    This will replace the '{', '}' and '~' characters of our mini\n    formatting language with the proper 'where ...', 'and ...' and ' +\n    ...' text, taking care of indentation along the way.\n\n    Return a list of formatted lines.\n    \"\"\"\n    result = lines[:1]\n    stack = [0]\n    stackcnt = [0]\n    for line in lines[1:]:\n        if line.startswith(\"{\"):\n            if stackcnt[-1]:\n                s = u\"and   \"\n            else:\n                s = u\"where \"\n            stack.append(len(result))\n            stackcnt[-1] += 1\n            stackcnt.append(0)\n            result.append(u\" +\" + u\"  \" * (len(stack) - 1) + s + line[1:])\n        elif line.startswith(\"}\"):\n            stack.pop()\n            stackcnt.pop()\n            result[stack[-1]] += line[1:]\n        else:\n            assert line[0] in [\"~\", \">\"]\n            stack[-1] += 1\n            indent = len(stack) if line.startswith(\"~\") else len(stack) - 1\n            result.append(u\"  \" * indent + line[1:])\n    assert len(stack) == 1\n    return result",
+        "start_line": 63,
+        "start_column": 1904,
+        "end_line": 0,
+        "end_column": 2989,
+        "start_byte": 1904,
+        "end_byte": 0
+      },
+      "_pytest.assertion.issequence": {
+        "name": "_pytest.assertion.issequence",
+        "file_path": "src/_pytest/assertion/util.py",
+        "file_content": "def issequence(x):\n    return isinstance(x, Sequence) and not isinstance(x, basestring)",
+        "start_line": 105,
+        "start_column": 3098,
+        "end_line": 0,
+        "end_column": 3185,
+        "start_byte": 3098,
+        "end_byte": 0
+      },
+      "_pytest.assertion.isiterable": {
+        "name": "_pytest.assertion.isiterable",
+        "file_path": "src/_pytest/assertion/util.py",
+        "file_content": "def isiterable(obj):\n    try:\n        iter(obj)\n        return not istext(obj)\n    except TypeError:\n        return False",
+        "start_line": 129,
+        "start_column": 3518,
+        "end_line": 0,
+        "end_column": 3639,
+        "start_byte": 3518,
+        "end_byte": 0
+      },
+      "_pytest.assertion.assertrepr_compare": {
+        "name": "_pytest.assertion.assertrepr_compare",
+        "file_path": "src/_pytest/assertion/util.py",
+        "file_content": "def assertrepr_compare(config, op, left, right):\n    \"\"\"Return specialised explanations for some operators/operands\"\"\"\n    width = 80 - 15 - len(op) - 2  # 15 chars indentation, 1 space around op\n    left_repr = saferepr(left, maxsize=int(width // 2))\n    right_repr = saferepr(right, maxsize=width - len(left_repr))\n\n    summary = u\"%s %s %s\" % (ecu(left_repr), op, ecu(right_repr))\n\n    verbose = config.getoption(\"verbose\")\n    explanation = None\n    try:\n        if op == \"==\":\n            if istext(left) and istext(right):\n                explanation = _diff_text(left, right, verbose)\n            else:\n                if issequence(left) and issequence(right):\n                    explanation = _compare_eq_sequence(left, right, verbose)\n                elif isset(left) and isset(right):\n                    explanation = _compare_eq_set(left, right, verbose)\n                elif isdict(left) and isdict(right):\n                    explanation = _compare_eq_dict(left, right, verbose)\n                elif type(left) == type(right) and (isdatacls(left) or isattrs(left)):\n                    type_fn = (isdatacls, isattrs)\n                    explanation = _compare_eq_cls(left, right, verbose, type_fn)\n                elif verbose > 0:\n                    explanation = _compare_eq_verbose(left, right)\n                if isiterable(left) and isiterable(right):\n                    expl = _compare_eq_iterable(left, right, verbose)\n                    if explanation is not None:\n                        explanation.extend(expl)\n                    else:\n                        explanation = expl\n        elif op == \"not in\":\n            if istext(left) and istext(right):\n                explanation = _notin_text(left, right, verbose)\n    except outcomes.Exit:\n        raise\n    except Exception:\n        explanation = [\n            u\"(pytest_assertion plugin: representation of details failed.  \"\n            u\"Probably an object has a faulty __repr__.)\",\n            six.text_type(_pytest._code.ExceptionInfo.from_current()),\n        ]\n\n    if not explanation:\n        return None\n\n    return [summary] + explanation",
+        "start_line": 137,
+        "start_column": 3642,
+        "end_line": 0,
+        "end_column": 5775,
+        "start_byte": 3642,
+        "end_byte": 0
+      },
+      "_pytest.assertion._compare_eq_iterable": {
+        "name": "_pytest.assertion._compare_eq_iterable",
+        "file_path": "src/_pytest/assertion/util.py",
+        "file_content": "def _compare_eq_iterable(left, right, verbose=0):\n    if not verbose:\n        return [u\"Use -v to get the full diff\"]\n    # dynamic import to speedup pytest\n    import difflib\n\n    try:\n        left_formatting = pprint.pformat(left).splitlines()\n        right_formatting = pprint.pformat(right).splitlines()\n        explanation = [u\"Full diff:\"]\n    except Exception:\n        # hack: PrettyPrinter.pformat() in python 2 fails when formatting items that can't be sorted(), ie, calling\n        # sorted() on a list would raise. See issue #718.\n        # As a workaround, the full diff is generated by using the repr() string of each item of each container.\n        left_formatting = sorted(repr(x) for x in left)\n        right_formatting = sorted(repr(x) for x in right)\n        explanation = [u\"Full diff (fallback to calling repr on each item):\"]\n    explanation.extend(\n        line.strip() for line in difflib.ndiff(left_formatting, right_formatting)\n    )\n    return explanation",
+        "start_line": 262,
+        "start_column": 8366,
+        "end_line": 0,
+        "end_column": 9347,
+        "start_byte": 8366,
+        "end_byte": 0
+      },
+      "_pytest.assertion._compare_eq_sequence": {
+        "name": "_pytest.assertion._compare_eq_sequence",
+        "file_path": "src/_pytest/assertion/util.py",
+        "file_content": "def _compare_eq_sequence(left, right, verbose=0):\n    explanation = []\n    len_left = len(left)\n    len_right = len(right)\n    for i in range(min(len_left, len_right)):\n        if left[i] != right[i]:\n            explanation += [u\"At index %s diff: %r != %r\" % (i, left[i], right[i])]\n            break\n    len_diff = len_left - len_right\n\n    if len_diff:\n        if len_diff > 0:\n            dir_with_more = \"Left\"\n            extra = saferepr(left[len_right])\n        else:\n            len_diff = 0 - len_diff\n            dir_with_more = \"Right\"\n            extra = saferepr(right[len_left])\n\n        if len_diff == 1:\n            explanation += [u\"%s contains one more item: %s\" % (dir_with_more, extra)]\n        else:\n            explanation += [\n                u\"%s contains %d more items, first extra item: %s\"\n                % (dir_with_more, len_diff, extra)\n            ]\n    return explanation",
+        "start_line": 285,
+        "start_column": 9350,
+        "end_line": 0,
+        "end_column": 10256,
+        "start_byte": 9350,
+        "end_byte": 0
+      },
+      "_pytest.hookspec.pytest_assertrepr_compare": {
+        "name": "_pytest.hookspec.pytest_assertrepr_compare",
+        "file_path": "src/_pytest/assertion/util.py",
+        "file_content": "",
+        "start_line": 475,
+        "start_column": 15508,
+        "end_line": 0,
+        "end_column": 16001,
+        "start_byte": 15508,
+        "end_byte": 0
+      }
+    }
+  }
+}

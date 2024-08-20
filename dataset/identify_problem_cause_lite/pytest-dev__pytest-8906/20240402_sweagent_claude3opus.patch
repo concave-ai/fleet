@@ -1,0 +1,28 @@
+
+diff --git a/pos_only.py b/pos_only.py
+new file mode 100644
+index 000000000..cd4011087
+--- /dev/null
++++ b/pos_only.py
+@@ -0,0 +1,2 @@
++def foo(a, /, b):
++    return a + b
+diff --git a/test_skip_module.py b/test_skip_module.py
+new file mode 100644
+index 000000000..40dca66be
+--- /dev/null
++++ b/test_skip_module.py
+@@ -0,0 +1,13 @@
++import sys
++import pytest
++from pytest import raises
++pytestmark = pytest.mark.skipif(sys.version_info < (3, 8), reason="Requires Python >= 3.8")
++
++# import must be after the module level skip:
++from pos_only import *
++
++def test_foo():
++    assert foo(10, 20) == 30
++    assert foo(10, b=20) == 30
++    with raises(TypeError):
++        assert foo(a=10, b=20)

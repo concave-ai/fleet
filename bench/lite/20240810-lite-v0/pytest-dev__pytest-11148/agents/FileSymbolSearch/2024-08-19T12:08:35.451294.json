@@ -1,0 +1,79 @@
+{
+  "name": "FileSymbolSearch",
+  "model": "gpt-4o-2024-08-06",
+  "metadata": {},
+  "issue": "<description>:Module imported twice under import-mode=importlib\nIn pmxbot/pmxbot@7f189ad, I'm attempting to switch pmxbot off of pkg_resources style namespace packaging to PEP 420 namespace packages. To do so, I've needed to switch to `importlib` for the `import-mode` and re-organize the tests to avoid import errors on the tests.\r\n\r\nYet even after working around these issues, the tests are failing when the effect of `core.initialize()` doesn't seem to have had any effect.\r\n\r\nInvestigating deeper, I see that initializer is executed and performs its actions (setting a class variable `pmxbot.logging.Logger.store`), but when that happens, there are two different versions of `pmxbot.logging` present, one in `sys.modules` and another found in `tests.unit.test_commands.logging`:\r\n\r\n```\r\n=========================================================================== test session starts ===========================================================================\r\nplatform darwin -- Python 3.11.1, pytest-7.2.0, pluggy-1.0.0\r\ncachedir: .tox/python/.pytest_cache\r\nrootdir: /Users/jaraco/code/pmxbot/pmxbot, configfile: pytest.ini\r\nplugins: black-0.3.12, mypy-0.10.3, jaraco.test-5.3.0, checkdocs-2.9.0, flake8-1.1.1, enabler-2.0.0, jaraco.mongodb-11.2.1, pmxbot-1122.14.3.dev13+g7f189ad\r\ncollected 421 items / 180 deselected / 241 selected                                                                                                                       \r\nrun-last-failure: rerun previous 240 failures (skipped 14 files)\r\n\r\ntests/unit/test_commands.py E\r\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> traceback >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\r\n\r\ncls = <class 'tests.unit.test_commands.TestCommands'>\r\n\r\n    @classmethod\r\n    def setup_class(cls):\r\n        path = os.path.dirname(os.path.abspath(__file__))\r\n        configfile = os.path.join(path, 'testconf.yaml')\r\n        config = pmxbot.dictlib.ConfigDict.from_yaml(configfile)\r\n        cls.bot = core.initialize(config)\r\n>       logging.Logger.store.message(\"logged\", \"testrunner\", \"some text\")\r\nE       AttributeError: type object 'Logger' has no attribute 'store'\r\n\r\ntests/unit/test_commands.py:37: AttributeError\r\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> entering PDB >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\r\n\r\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> PDB post_mortem (IO-capturing turned off) >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\r\n> /Users/jaraco/code/pmxbot/pmxbot/tests/unit/test_commands.py(37)setup_class()\r\n-> logging.Logger.store.message(\"logged\", \"testrunner\", \"some text\")\r\n(Pdb) logging.Logger\r\n<class 'pmxbot.logging.Logger'>\r\n(Pdb) logging\r\n<module 'pmxbot.logging' from '/Users/jaraco/code/pmxbot/pmxbot/pmxbot/logging.py'>\r\n(Pdb) import sys\r\n(Pdb) sys.modules['pmxbot.logging']\r\n<module 'pmxbot.logging' from '/Users/jaraco/code/pmxbot/pmxbot/pmxbot/logging.py'>\r\n(Pdb) sys.modules['pmxbot.logging'] is logging\r\nFalse\r\n```\r\n\r\nI haven't yet made a minimal reproducer, but I wanted to first capture this condition.\r\n\n</description>",
+  "request": {
+    "files": [
+      {
+        "file_path": "src/_pytest/config/__init__.py",
+        "relevant_symbol_keys": [
+          "_prepareconfig",
+          "_try_load_conftest",
+          "import_plugin"
+        ],
+        "root_cause_symbol_keys": []
+      },
+      {
+        "file_path": "src/_pytest/monkeypatch.py",
+        "relevant_symbol_keys": [],
+        "root_cause_symbol_keys": []
+      },
+      {
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "relevant_symbol_keys": [],
+        "root_cause_symbol_keys": []
+      }
+    ],
+    "with_content": true
+  },
+  "response": {
+    "related_symbols": [
+      {
+        "name": "_pytest.config._prepareconfig",
+        "file_path": "src/_pytest/config/__init__.py",
+        "file_content": "def _prepareconfig(\n    args: Optional[Union[List[str], \"os.PathLike[str]\"]] = None,\n    plugins: Optional[Sequence[Union[str, _PluggyPlugin]]] = None,\n) -> \"Config\":\n    if args is None:\n        args = sys.argv[1:]\n    elif isinstance(args, os.PathLike):\n        args = [os.fspath(args)]\n    elif not isinstance(args, list):\n        msg = (  # type:ignore[unreachable]\n            \"`args` parameter expected to be a list of strings, got: {!r} (type: {})\"\n        )\n        raise TypeError(msg.format(args, type(args)))\n\n    config = get_config(args, plugins)\n    pluginmanager = config.pluginmanager\n    try:\n        if plugins:\n            for plugin in plugins:\n                if isinstance(plugin, str):\n                    pluginmanager.consider_pluginarg(plugin)\n                else:\n                    pluginmanager.register(plugin)\n        config = pluginmanager.hook.pytest_cmdline_parse(\n            pluginmanager=pluginmanager, args=args\n        )\n        return config\n    except BaseException:\n        config._ensure_unconfigure()\n        raise",
+        "start_line": 305,
+        "start_column": 8342,
+        "end_line": 0,
+        "end_column": 9402,
+        "start_byte": 8342,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.config.PytestPluginManager._try_load_conftest",
+        "file_path": "src/_pytest/config/__init__.py",
+        "file_content": "def _try_load_conftest(\n        self, anchor: Path, importmode: Union[str, ImportMode], rootpath: Path\n    ) -> None:\n        self._getconftestmodules(anchor, importmode, rootpath)\n        # let's also consider test* subdirs\n        if anchor.is_dir():\n            for x in anchor.glob(\"test*\"):\n                if x.is_dir():\n                    self._getconftestmodules(x, importmode, rootpath)",
+        "start_line": 578,
+        "start_column": 18588,
+        "end_line": 4,
+        "end_column": 18984,
+        "start_byte": 18588,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.config.PytestPluginManager._import_plugin_specs",
+        "file_path": "src/_pytest/config/__init__.py",
+        "file_content": "def _import_plugin_specs(\n        self, spec: Union[None, types.ModuleType, str, Sequence[str]]\n    ) -> None:\n        plugins = _get_plugin_specs_as_list(spec)\n        for import_spec in plugins:\n            self.import_plugin(import_spec)",
+        "start_line": 750,
+        "start_column": 25091,
+        "end_line": 4,
+        "end_column": 25331,
+        "start_byte": 25091,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.config.PytestPluginManager.import_plugin",
+        "file_path": "src/_pytest/config/__init__.py",
+        "file_content": "def import_plugin(self, modname: str, consider_entry_points: bool = False) -> None:\n        \"\"\"Import a plugin with ``modname``.\n\n        If ``consider_entry_points`` is True, entry point names are also\n        considered to find a plugin.\n        \"\"\"\n        # Most often modname refers to builtin modules, e.g. \"pytester\",\n        # \"terminal\" or \"capture\".  Those plugins are registered under their\n        # basename for historic purposes but must be imported with the\n        # _pytest prefix.\n        assert isinstance(modname, str), (\n            \"module name as text required, got %r\" % modname\n        )\n        if self.is_blocked(modname) or self.get_plugin(modname) is not None:\n            return\n\n        importspec = \"_pytest.\" + modname if modname in builtin_plugins else modname\n        self.rewrite_hook.mark_rewrite(importspec)\n\n        if consider_entry_points:\n            loaded = self.load_setuptools_entrypoints(\"pytest11\", name=modname)\n            if loaded:\n                return\n\n        try:\n            __import__(importspec)\n        except ImportError as e:\n            raise ImportError(\n                f'Error importing plugin \"{modname}\": {e.args[0]}'\n            ).with_traceback(e.__traceback__) from e\n\n        except Skipped as e:\n            self.skipped_plugins.append((modname, e.msg or \"\"))\n        else:\n            mod = sys.modules[importspec]\n            self.register(mod, modname)",
+        "start_line": 757,
+        "start_column": 25337,
+        "end_line": 4,
+        "end_column": 26766,
+        "start_byte": 25337,
+        "end_byte": 4
+      }
+    ],
+    "root_caused_symbols": []
+  }
+}

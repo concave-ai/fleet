@@ -1,0 +1,20 @@
+
+diff --git a/src/_pytest/mark/evaluate.py b/src/_pytest/mark/evaluate.py
+index 759191668..1d689dc47 100644
+--- a/src/_pytest/mark/evaluate.py
++++ b/src/_pytest/mark/evaluate.py
+@@ -98,7 +98,13 @@ class MarkEvaluator:
+                     self.expr = expr
+                     if isinstance(expr, str):
+                         d = self._getglobals()
+-                        result = cached_eval(self.item.config, expr, d)
++                        evalcache = self.item.config._store.setdefault(evalcache_key, {})
++                        try:
++                            result = evalcache[expr]
++                        except KeyError:
++                            import _pytest._code
++                            exprcode = _pytest._code.compile(expr, mode="eval")
++                            result = evalcache[expr] = eval(exprcode, d)
+                     else:
+                         if "reason" not in mark.kwargs:
+                             # XXX better be checked at collection time

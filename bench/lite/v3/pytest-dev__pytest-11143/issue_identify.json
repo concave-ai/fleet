@@ -1,0 +1,44 @@
+{
+    "file_paths": [
+        "src/_pytest/assertion/rewrite.py"
+    ],
+    "symbols": [
+        "_pytest.assertion.AssertionRewritingHook.exec_module",
+        "_pytest.assertion.rewrite_asserts"
+    ],
+    "code_spans": {
+        "_pytest.assertion.AssertionRewritingHook.exec_module": {
+            "name": "_pytest.assertion.AssertionRewritingHook.exec_module",
+            "file_path": "src/_pytest/assertion/rewrite.py",
+            "file_content": "def exec_module(self, module: types.ModuleType) -> None:\n        assert module.__spec__ is not None\n        assert module.__spec__.origin is not None\n        fn = Path(module.__spec__.origin)\n        state = self.config.stash[assertstate_key]\n\n        self._rewritten_names[module.__name__] = fn\n\n        # The requested module looks like a test file, so rewrite it. This is\n        # the most magical part of the process: load the source, rewrite the\n        # asserts, and load the rewritten source. We also cache the rewritten\n        # module code in a special pyc. We must be aware of the possibility of\n        # concurrent pytest processes rewriting and loading pycs. To avoid\n        # tricky race conditions, we maintain the following invariant: The\n        # cached pyc is always a complete, valid pyc. Operations on it must be\n        # atomic. POSIX's atomic rename comes in handy.\n        write = not sys.dont_write_bytecode\n        cache_dir = get_cache_dir(fn)\n        if write:\n            ok = try_makedirs(cache_dir)\n            if not ok:\n                write = False\n                state.trace(f\"read only directory: {cache_dir}\")\n\n        cache_name = fn.name[:-3] + PYC_TAIL\n        pyc = cache_dir / cache_name\n        # Notice that even if we're in a read-only directory, I'm going\n        # to check for a cached pyc. This may not be optimal...\n        co = _read_pyc(fn, pyc, state.trace)\n        if co is None:\n            state.trace(f\"rewriting {fn!r}\")\n            source_stat, co = _rewrite_test(fn, self.config)\n            if write:\n                self._writing_pyc = True\n                try:\n                    _write_pyc(state, co, source_stat, pyc)\n                finally:\n                    self._writing_pyc = False\n        else:\n            state.trace(f\"found cached rewritten pyc for {fn}\")\n        exec(co, module.__dict__)",
+            "start_line": 126,
+            "start_column": 4180,
+            "end_line": 4,
+            "end_column": 6052,
+            "start_byte": 4180,
+            "end_byte": 4
+        },
+        "_pytest.assertion.rewrite_asserts": {
+            "name": "_pytest.assertion.rewrite_asserts",
+            "file_path": "src/_pytest/assertion/rewrite.py",
+            "file_content": "def rewrite_asserts(\n    mod: ast.Module,\n    source: bytes,\n    module_path: Optional[str] = None,\n    config: Optional[Config] = None,\n) -> None:\n    \"\"\"Rewrite the assert statements in mod.\"\"\"\n    AssertionRewriter(module_path, config, source).run(mod)",
+            "start_line": 394,
+            "start_column": 14700,
+            "end_line": 0,
+            "end_column": 14955,
+            "start_byte": 14700,
+            "end_byte": 0
+        },
+        "_pytest.pathlib.import_path": {
+            "name": "_pytest.pathlib.import_path",
+            "file_path": "src/_pytest/pathlib.py",
+            "file_content": "def import_path(\n    p: Union[str, \"os.PathLike[str]\"],\n    *,\n    mode: Union[str, ImportMode] = ImportMode.prepend,\n    root: Path,\n) -> ModuleType:\n    \"\"\"Import and return a module from the given path, which can be a file (a module) or\n    a directory (a package).\n\n    The import mechanism used is controlled by the `mode` parameter:\n\n    * `mode == ImportMode.prepend`: the directory containing the module (or package, taking\n      `__init__.py` files into account) will be put at the *start* of `sys.path` before\n      being imported with `importlib.import_module`.\n\n    * `mode == ImportMode.append`: same as `prepend`, but the directory will be appended\n      to the end of `sys.path`, if not already in `sys.path`.\n\n    * `mode == ImportMode.importlib`: uses more fine control mechanisms provided by `importlib`\n      to import the module, which avoids having to muck with `sys.path` at all. It effectively\n      allows having same-named test modules in different places.\n\n    :param root:\n        Used as an anchor when mode == ImportMode.importlib to obtain\n        a unique name for the module being imported so it can safely be stored\n        into ``sys.modules``.\n\n    :raises ImportPathMismatchError:\n        If after importing the given `path` and the module `__file__`\n        are different. Only raised in `prepend` and `append` modes.\n    \"\"\"\n    mode = ImportMode(mode)\n\n    path = Path(p)\n\n    if not path.exists():\n        raise ImportError(path)\n\n    if mode is ImportMode.importlib:\n        module_name = module_name_from_path(path, root)\n        with contextlib.suppress(KeyError):\n            return sys.modules[module_name]\n\n        for meta_importer in sys.meta_path:\n            spec = meta_importer.find_spec(module_name, [str(path.parent)])\n            if spec is not None:\n                break\n        else:\n            spec = importlib.util.spec_from_file_location(module_name, str(path))\n\n        if spec is None:\n            raise ImportError(f\"Can't find module {module_name} at location {path}\")\n        mod = importlib.util.module_from_spec(spec)\n        sys.modules[module_name] = mod\n        spec.loader.exec_module(mod)  # type: ignore[union-attr]\n        insert_missing_modules(sys.modules, module_name)\n        return mod\n\n    pkg_path = resolve_package_path(path)\n    if pkg_path is not None:\n        pkg_root = pkg_path.parent\n        names = list(path.with_suffix(\"\").relative_to(pkg_root).parts)\n        if names[-1] == \"__init__\":\n            names.pop()\n        module_name = \".\".join(names)\n    else:\n        pkg_root = path.parent\n        module_name = path.stem\n\n    # Change sys.path permanently: restoring it at the end of this function would cause surprising\n    # problems because of delayed imports: for example, a conftest.py file imported by this function\n    # might have local imports, which would fail at runtime if we restored sys.path.\n    if mode is ImportMode.append:\n        if str(pkg_root) not in sys.path:\n            sys.path.append(str(pkg_root))\n    elif mode is ImportMode.prepend:\n        if str(pkg_root) != sys.path[0]:\n            sys.path.insert(0, str(pkg_root))\n    else:\n        assert_never(mode)\n\n    importlib.import_module(module_name)\n\n    mod = sys.modules[module_name]\n    if path.name == \"__init__.py\":\n        return mod\n\n    ignore = os.environ.get(\"PY_IGNORE_IMPORTMISMATCH\", \"\")\n    if ignore != \"1\":\n        module_file = mod.__file__\n        if module_file is None:\n            raise ImportPathMismatchError(module_name, module_file, path)\n\n        if module_file.endswith((\".pyc\", \".pyo\")):\n            module_file = module_file[:-1]\n        if module_file.endswith(os.sep + \"__init__.py\"):\n            module_file = module_file[: -(len(os.sep + \"__init__.py\"))]\n\n        try:\n            is_same = _is_same(str(path), module_file)\n        except FileNotFoundError:\n            is_same = False\n\n        if not is_same:\n            raise ImportPathMismatchError(module_name, module_file, path)\n\n    return mod",
+            "start_line": 485,
+            "start_column": 15363,
+            "end_line": 0,
+            "end_column": 19370,
+            "start_byte": 15363,
+            "end_byte": 0
+        }
+    }
+}

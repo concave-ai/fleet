@@ -1,0 +1,55 @@
+
+diff --git a/enable_pdb_plugin.py b/enable_pdb_plugin.py
+new file mode 100644
+index 000000000..903cb49ed
+--- /dev/null
++++ b/enable_pdb_plugin.py
+@@ -0,0 +1,23 @@
++import unittest
++import pdb
++
++class MyTestCase(unittest.TestCase):
++    def setUp(self):
++        raise NameError("Intentional error in setUp")
++
++    @unittest.skip("hello")
++    def test_one(self):
++        pass
++
++    def tearDown(self):
++        try:
++            raise NameError("Intentional error in tearDown")
++        except:
++            pdb.set_trace()  # Manually start the debugger
++
++print("Script completed successfully, no errors.")
++
++def pytest_configure(config):
++    config.option.usepdb = True
++
++print("enable_pdb_plugin.py created successfully.")
+diff --git a/test_repro.py b/test_repro.py
+new file mode 100644
+index 000000000..ffe8f46ac
+--- /dev/null
++++ b/test_repro.py
+@@ -0,0 +1,19 @@
++import unittest
++import pdb
++
++class MyTestCase(unittest.TestCase):
++    def setUp(self):
++        with open('test_output.txt', 'a') as f:
++            f.write("setUp is running\n")
++        raise NameError("Intentional error in setUp")
++
++    def tearDown(self):
++        with open('test_output.txt', 'a') as f:
++            f.write("tearDown is running\n")
++        try:
++            raise NameError("Intentional error in tearDown")
++        except:
++            pass  # Skip the pdb call for now
++
++    def test_one(self):
++        raise Exception("Force test to run and trigger tearDown")

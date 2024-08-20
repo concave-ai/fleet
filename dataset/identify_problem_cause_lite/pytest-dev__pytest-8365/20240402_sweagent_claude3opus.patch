@@ -1,0 +1,22 @@
+
+diff --git a/src/_pytest/tmpdir.py b/src/_pytest/tmpdir.py
+index 29c7e19d7..2ce94eaab 100644
+--- a/src/_pytest/tmpdir.py
++++ b/src/_pytest/tmpdir.py
+@@ -111,7 +111,7 @@ class TempPathFactory:
+         else:
+             from_env = os.environ.get("PYTEST_DEBUG_TEMPROOT")
+             temproot = Path(from_env or tempfile.gettempdir()).resolve()
+-            user = get_user() or "unknown"
++            user = Path(get_user() or "unknown").name
+             # use a sub-directory in the temproot to speed-up
+             # make_numbered_dir() call
+             rootdir = temproot.joinpath(f"pytest-of-{user}")
+diff --git a/test_tmp.py b/test_tmp.py
+new file mode 100644
+index 000000000..1428bb0da
+--- /dev/null
++++ b/test_tmp.py
+@@ -0,0 +1,2 @@
++def test_tmpdir(tmpdir):
++    pass

@@ -1,0 +1,419 @@
+{
+    "file_paths": [
+        "src/_pytest/main.py",
+        "src/_pytest/config/argparsing.py"
+    ],
+    "symbols": [
+        "_pytest.main.pytest_addoption",
+        "_pytest.config.Parser.addoption"
+    ],
+    "code_spans": {
+        "_pytest.config.ArgumentError": {
+            "name": "_pytest.config.ArgumentError",
+            "file_path": "src/_pytest/config/argparsing.py",
+            "file_content": "class ArgumentError(Exception):\n    \"\"\"\n    Raised if an Argument instance is created with invalid or\n    inconsistent arguments.\n    \"\"\"\n\n    def __init__(self, msg, option):\n        self.msg = msg\n        self.option_id = str(option)\n\n    def __str__(self):\n        if self.option_id:\n            return \"option {}: {}\".format(self.option_id, self.msg)\n        else:\n            return self.msg",
+            "start_line": 145,
+            "start_column": 5419,
+            "end_line": 0,
+            "end_column": 5815,
+            "start_byte": 5419,
+            "end_byte": 0
+        },
+        "_pytest.config.ArgumentError.__init__": {
+            "name": "_pytest.config.ArgumentError.__init__",
+            "file_path": "src/_pytest/config/argparsing.py",
+            "file_content": "def __init__(self, msg, option):\n        self.msg = msg\n        self.option_id = str(option)",
+            "start_line": 151,
+            "start_column": 5562,
+            "end_line": 4,
+            "end_column": 5654,
+            "start_byte": 5562,
+            "end_byte": 4
+        },
+        "_pytest.config.ArgumentError.__str__": {
+            "name": "_pytest.config.ArgumentError.__str__",
+            "file_path": "src/_pytest/config/argparsing.py",
+            "file_content": "def __str__(self):\n        if self.option_id:\n            return \"option {}: {}\".format(self.option_id, self.msg)\n        else:\n            return self.msg",
+            "start_line": 155,
+            "start_column": 5660,
+            "end_line": 4,
+            "end_column": 5815,
+            "start_byte": 5660,
+            "end_byte": 4
+        },
+        "_pytest.config.Argument": {
+            "name": "_pytest.config.Argument",
+            "file_path": "src/_pytest/config/argparsing.py",
+            "file_content": "class Argument:\n    \"\"\"class that mimics the necessary behaviour of optparse.Option\n\n    it's currently a least effort implementation\n    and ignoring choices and integer prefixes\n    https://docs.python.org/3/library/optparse.html#optparse-standard-option-types\n    \"\"\"\n\n    _typ_map = {\"int\": int, \"string\": str, \"float\": float, \"complex\": complex}\n\n    def __init__(self, *names, **attrs):\n        \"\"\"store parms in private vars for use in add_argument\"\"\"\n        self._attrs = attrs\n        self._short_opts = []  # type: List[str]\n        self._long_opts = []  # type: List[str]\n        self.dest = attrs.get(\"dest\")\n        if \"%default\" in (attrs.get(\"help\") or \"\"):\n            warnings.warn(\n                'pytest now uses argparse. \"%default\" should be'\n                ' changed to \"%(default)s\" ',\n                DeprecationWarning,\n                stacklevel=3,\n            )\n        try:\n            typ = attrs[\"type\"]\n        except KeyError:\n            pass\n        else:\n            # this might raise a keyerror as well, don't want to catch that\n            if isinstance(typ, str):\n                if typ == \"choice\":\n                    warnings.warn(\n                        \"`type` argument to addoption() is the string %r.\"\n                        \" For choices this is optional and can be omitted, \"\n                        \" but when supplied should be a type (for example `str` or `int`).\"\n                        \" (options: %s)\" % (typ, names),\n                        DeprecationWarning,\n                        stacklevel=4,\n                    )\n                    # argparse expects a type here take it from\n                    # the type of the first element\n                    attrs[\"type\"] = type(attrs[\"choices\"][0])\n                else:\n                    warnings.warn(\n                        \"`type` argument to addoption() is the string %r, \"\n                        \" but when supplied should be a type (for example `str` or `int`).\"\n                        \" (options: %s)\" % (typ, names),\n                        DeprecationWarning,\n                        stacklevel=4,\n                    )\n                    attrs[\"type\"] = Argument._typ_map[typ]\n                # used in test_parseopt -> test_parse_defaultgetter\n                self.type = attrs[\"type\"]\n            else:\n                self.type = typ\n        try:\n            # attribute existence is tested in Config._processopt\n            self.default = attrs[\"default\"]\n        except KeyError:\n            pass\n        self._set_opt_strings(names)\n        if not self.dest:\n            if self._long_opts:\n                self.dest = self._long_opts[0][2:].replace(\"-\", \"_\")\n            else:\n                try:\n                    self.dest = self._short_opts[0][1:]\n                except IndexError:\n                    raise ArgumentError(\"need a long or short option\", self)\n\n    def names(self):\n        return self._short_opts + self._long_opts\n\n    def attrs(self):\n        # update any attributes set by processopt\n        attrs = \"default dest help\".split()\n        if self.dest:\n            attrs.append(self.dest)\n        for attr in attrs:\n            try:\n                self._attrs[attr] = getattr(self, attr)\n            except AttributeError:\n                pass\n        if self._attrs.get(\"help\"):\n            a = self._attrs[\"help\"]\n            a = a.replace(\"%default\", \"%(default)s\")\n            # a = a.replace('%prog', '%(prog)s')\n            self._attrs[\"help\"] = a\n        return self._attrs\n\n    def _set_opt_strings(self, opts):\n        \"\"\"directly from optparse\n\n        might not be necessary as this is passed to argparse later on\"\"\"\n        for opt in opts:\n            if len(opt) < 2:\n                raise ArgumentError(\n                    \"invalid option string %r: \"\n                    \"must be at least two characters long\" % opt,\n                    self,\n                )\n            elif len(opt) == 2:\n                if not (opt[0] == \"-\" and opt[1] != \"-\"):\n                    raise ArgumentError(\n                        \"invalid short option string %r: \"\n                        \"must be of the form -x, (x any non-dash char)\" % opt,\n                        self,\n                    )\n                self._short_opts.append(opt)\n            else:\n                if not (opt[0:2] == \"--\" and opt[2] != \"-\"):\n                    raise ArgumentError(\n                        \"invalid long option string %r: \"\n                        \"must start with --, followed by non-dash\" % opt,\n                        self,\n                    )\n                self._long_opts.append(opt)\n\n    def __repr__(self) -> str:\n        args = []  # type: List[str]\n        if self._short_opts:\n            args += [\"_short_opts: \" + repr(self._short_opts)]\n        if self._long_opts:\n            args += [\"_long_opts: \" + repr(self._long_opts)]\n        args += [\"dest: \" + repr(self.dest)]\n        if hasattr(self, \"type\"):\n            args += [\"type: \" + repr(self.type)]\n        if hasattr(self, \"default\"):\n            args += [\"default: \" + repr(self.default)]\n        return \"Argument({})\".format(\", \".join(args))",
+            "start_line": 162,
+            "start_column": 5818,
+            "end_line": 0,
+            "end_column": 10992,
+            "start_byte": 5818,
+            "end_byte": 0
+        },
+        "_pytest.config.Argument._typ_map": {
+            "name": "_pytest.config.Argument._typ_map",
+            "file_path": "src/_pytest/config/argparsing.py",
+            "file_content": "_typ_map = {\"int\": int, \"string\": str, \"float\": float, \"complex\": complex}",
+            "start_line": 170,
+            "start_column": 6094,
+            "end_line": 4,
+            "end_column": 6168,
+            "start_byte": 6094,
+            "end_byte": 4
+        },
+        "_pytest.config.Argument.__init__": {
+            "name": "_pytest.config.Argument.__init__",
+            "file_path": "src/_pytest/config/argparsing.py",
+            "file_content": "def __init__(self, *names, **attrs):\n        \"\"\"store parms in private vars for use in add_argument\"\"\"\n        self._attrs = attrs\n        self._short_opts = []  # type: List[str]\n        self._long_opts = []  # type: List[str]\n        self.dest = attrs.get(\"dest\")\n        if \"%default\" in (attrs.get(\"help\") or \"\"):\n            warnings.warn(\n                'pytest now uses argparse. \"%default\" should be'\n                ' changed to \"%(default)s\" ',\n                DeprecationWarning,\n                stacklevel=3,\n            )\n        try:\n            typ = attrs[\"type\"]\n        except KeyError:\n            pass\n        else:\n            # this might raise a keyerror as well, don't want to catch that\n            if isinstance(typ, str):\n                if typ == \"choice\":\n                    warnings.warn(\n                        \"`type` argument to addoption() is the string %r.\"\n                        \" For choices this is optional and can be omitted, \"\n                        \" but when supplied should be a type (for example `str` or `int`).\"\n                        \" (options: %s)\" % (typ, names),\n                        DeprecationWarning,\n                        stacklevel=4,\n                    )\n                    # argparse expects a type here take it from\n                    # the type of the first element\n                    attrs[\"type\"] = type(attrs[\"choices\"][0])\n                else:\n                    warnings.warn(\n                        \"`type` argument to addoption() is the string %r, \"\n                        \" but when supplied should be a type (for example `str` or `int`).\"\n                        \" (options: %s)\" % (typ, names),\n                        DeprecationWarning,\n                        stacklevel=4,\n                    )\n                    attrs[\"type\"] = Argument._typ_map[typ]\n                # used in test_parseopt -> test_parse_defaultgetter\n                self.type = attrs[\"type\"]\n            else:\n                self.type = typ\n        try:\n            # attribute existence is tested in Config._processopt\n            self.default = attrs[\"default\"]\n        except KeyError:\n            pass\n        self._set_opt_strings(names)\n        if not self.dest:\n            if self._long_opts:\n                self.dest = self._long_opts[0][2:].replace(\"-\", \"_\")\n            else:\n                try:\n                    self.dest = self._short_opts[0][1:]\n                except IndexError:\n                    raise ArgumentError(\"need a long or short option\", self)",
+            "start_line": 172,
+            "start_column": 6174,
+            "end_line": 4,
+            "end_column": 8718,
+            "start_byte": 6174,
+            "end_byte": 4
+        },
+        "_pytest.config.Argument.names": {
+            "name": "_pytest.config.Argument.names",
+            "file_path": "src/_pytest/config/argparsing.py",
+            "file_content": "def names(self):\n        return self._short_opts + self._long_opts",
+            "start_line": 232,
+            "start_column": 8724,
+            "end_line": 4,
+            "end_column": 8790,
+            "start_byte": 8724,
+            "end_byte": 4
+        },
+        "_pytest.config.Argument.attrs": {
+            "name": "_pytest.config.Argument.attrs",
+            "file_path": "src/_pytest/config/argparsing.py",
+            "file_content": "def attrs(self):\n        # update any attributes set by processopt\n        attrs = \"default dest help\".split()\n        if self.dest:\n            attrs.append(self.dest)\n        for attr in attrs:\n            try:\n                self._attrs[attr] = getattr(self, attr)\n            except AttributeError:\n                pass\n        if self._attrs.get(\"help\"):\n            a = self._attrs[\"help\"]\n            a = a.replace(\"%default\", \"%(default)s\")\n            # a = a.replace('%prog', '%(prog)s')\n            self._attrs[\"help\"] = a\n        return self._attrs",
+            "start_line": 235,
+            "start_column": 8796,
+            "end_line": 4,
+            "end_column": 9357,
+            "start_byte": 8796,
+            "end_byte": 4
+        },
+        "_pytest.config.Argument._set_opt_strings": {
+            "name": "_pytest.config.Argument._set_opt_strings",
+            "file_path": "src/_pytest/config/argparsing.py",
+            "file_content": "def _set_opt_strings(self, opts):\n        \"\"\"directly from optparse\n\n        might not be necessary as this is passed to argparse later on\"\"\"\n        for opt in opts:\n            if len(opt) < 2:\n                raise ArgumentError(\n                    \"invalid option string %r: \"\n                    \"must be at least two characters long\" % opt,\n                    self,\n                )\n            elif len(opt) == 2:\n                if not (opt[0] == \"-\" and opt[1] != \"-\"):\n                    raise ArgumentError(\n                        \"invalid short option string %r: \"\n                        \"must be of the form -x, (x any non-dash char)\" % opt,\n                        self,\n                    )\n                self._short_opts.append(opt)\n            else:\n                if not (opt[0:2] == \"--\" and opt[2] != \"-\"):\n                    raise ArgumentError(\n                        \"invalid long option string %r: \"\n                        \"must start with --, followed by non-dash\" % opt,\n                        self,\n                    )\n                self._long_opts.append(opt)",
+            "start_line": 252,
+            "start_column": 9363,
+            "end_line": 4,
+            "end_column": 10468,
+            "start_byte": 9363,
+            "end_byte": 4
+        },
+        "_pytest.config.Argument.__repr__": {
+            "name": "_pytest.config.Argument.__repr__",
+            "file_path": "src/_pytest/config/argparsing.py",
+            "file_content": "def __repr__(self) -> str:\n        args = []  # type: List[str]\n        if self._short_opts:\n            args += [\"_short_opts: \" + repr(self._short_opts)]\n        if self._long_opts:\n            args += [\"_long_opts: \" + repr(self._long_opts)]\n        args += [\"dest: \" + repr(self.dest)]\n        if hasattr(self, \"type\"):\n            args += [\"type: \" + repr(self.type)]\n        if hasattr(self, \"default\"):\n            args += [\"default: \" + repr(self.default)]\n        return \"Argument({})\".format(\", \".join(args))",
+            "start_line": 280,
+            "start_column": 10474,
+            "end_line": 4,
+            "end_column": 10992,
+            "start_byte": 10474,
+            "end_byte": 4
+        },
+        "_pytest.config.OptionGroup.addoption": {
+            "name": "_pytest.config.OptionGroup.addoption",
+            "file_path": "src/_pytest/config/argparsing.py",
+            "file_content": "def addoption(self, *optnames, **attrs):\n        \"\"\" add an option to this group.\n\n        if a shortened version of a long option is specified it will\n        be suppressed in the help. addoption('--twowords', '--two-words')\n        results in help showing '--two-words' only, but --twowords gets\n        accepted **and** the automatic destination is in args.twowords\n        \"\"\"\n        conflict = set(optnames).intersection(\n            name for opt in self.options for name in opt.names()\n        )\n        if conflict:\n            raise ValueError(\"option names %s already added\" % conflict)\n        option = Argument(*optnames, **attrs)\n        self._addoption_instance(option, shortupper=False)",
+            "start_line": 301,
+            "start_column": 11221,
+            "end_line": 4,
+            "end_column": 11922,
+            "start_byte": 11221,
+            "end_byte": 4
+        },
+        "_pytest.assertion.pytest_addoption": {
+            "name": "_pytest.assertion.pytest_addoption",
+            "file_path": "src/_pytest/main.py",
+            "file_content": "rom _pytest import nodes\nfrom _pytest.config import directory_arg\nfrom _pytest.config import hookimpl\nfrom _pytest.config import UsageError\nfrom _pytest.outcomes import exit\nfrom _pytest.runner import collect_one_node\nfrom _pytest.runner import SetupState\n\n\nclass ExitCode(enum.IntEnum):\n    \"\"\"\n    .. versionadded:: 5.0\n\n    Encodes the valid exit codes by pytest.\n\n    Currently users and plugins may supply other exit codes as well.\n    \"\"\"\n\n    #: tests passed\n    OK = 0\n    #: tests failed\n    TESTS_FAILED = 1\n    #: pytest was interrupted\n    INTERRUPTED = 2\n    #: an internal error got in the way\n    INTERNAL_ERROR = 3\n    #: pytest was misused\n    USAGE_ERROR = 4\n    #: pytest couldn't find tests\n    NO_TESTS_COLLECTED = 5\n\n\ndef pytest_addoption(parser):\n    parser.addini(\n        \"norecursedirs\",\n        \"",
+            "start_line": 11,
+            "start_column": 229,
+            "end_line": 0,
+            "end_column": 1052,
+            "start_byte": 229,
+            "end_byte": 0
+        },
+        "_pytest.cacheprovider.pytest_addoption": {
+            "name": "_pytest.cacheprovider.pytest_addoption",
+            "file_path": "src/_pytest/main.py",
+            "file_content": "        self.testsfailed = 0\n        self.testscollected = 0\n        self.shouldstop = False\n        self.shouldfail = False\n        self.trace = config.trace.root.get(\"collection\")\n        self._norecursepatterns = config.getini(\"norecursedirs\")\n        self.startdir = config.invocation_dir\n        self._initialpaths = frozenset()\n        # Keep track of any collected nodes in here, so we don't duplicate fixtures\n        self._node_cache = {}\n        self._bestrelpathcache = _bestrelpath_cache(\n            config.rootdir\n        )  # type: Dict[str, str]\n        # Dirnames of pkgs with dunder-init files.\n        self._pkg_roots = {}\n\n        self.config.pluginmanager.register(self, name=\"session\")\n\n    def __repr__(self):\n        return \"<%s %s exitstatus=%r testsfailed=%d testscollected=%d>\" % (\n            self.__class__.__name__,\n            self.name,\n            getattr(self, \"exitstatus\", \"<UNSET>\"),\n            self.testsfailed,\n            self.testscollected,\n        )\n\n    def _node_location_to_relpath(self, node_path: str) -> str:\n        # bestrelpath is a quite slow function\n        return self._bestrelpathcache[node_path]\n\n    @hookimpl(tryfirst=True)\n    def pytest_collectstart(self):\n        if self.shouldfail:\n            raise self.Failed(self.shouldfail)\n        if self.shouldstop:\n            raise self.Interrupted(self.shouldstop)\n\n    @hookimpl(tryfirst=True)\n    def pytest_runtest_logreport(self, report):\n        if report.failed and not hasattr(report, \"wasxfail\"):\n            self.testsfailed += 1\n            maxfail = self.config.getvalue(\"maxfail\")\n            if maxfail and self.testsfailed >= maxfail:\n                self.shouldfail = \"stopping after %d failures\" % (self.testsfailed)\n\n    pytest_collectrep",
+            "start_line": 301,
+            "start_column": 11226,
+            "end_line": 0,
+            "end_column": 12991,
+            "start_byte": 11226,
+            "end_byte": 0
+        },
+        "_pytest.capture.pytest_addoption": {
+            "name": "_pytest.capture.pytest_addoption",
+            "file_path": "src/_pytest/main.py",
+            "file_content": "onfig import UsageError\nfrom _pytest.outcomes import exit\nfrom _pytest.runner import collect_one_node\nfrom _pytest.runner import SetupState\n\n\nclass ExitCode(enum.IntEnum):\n    \"\"\"\n    .. versionadded:: 5.0\n\n    Encodes the valid exit codes by pytest.\n\n    Currently users and plugins may supply other exit codes as well.\n    \"\"\"\n\n    #: tests passed\n    OK = 0\n    #: tests failed\n    TESTS_FAILED = 1\n    #: pytest was interrupted\n    INTERRUPTED = 2\n    #: an internal error go",
+            "start_line": 19,
+            "start_column": 345,
+            "end_line": 0,
+            "end_column": 824,
+            "start_byte": 345,
+            "end_byte": 0
+        },
+        "_pytest.debugging.pytest_addoption": {
+            "name": "_pytest.debugging.pytest_addoption",
+            "file_path": "src/_pytest/main.py",
+            "file_content": "added:: 5.0\n\n    Encodes the valid exit codes by pytest.\n\n    Currently users and plugins may supply other exit codes as well.\n    \"\"\"\n\n    #: tests passed\n    OK = 0\n    #: tests failed\n    TESTS_FAILED = 1\n    #: pytest was interrupted\n    INTERRUPTED = 2\n    #: an internal error got in the way\n    INTERNAL_ERROR = 3\n    #: pytest was misused\n    USAGE_ERROR = 4\n    #: pytest couldn't find tests\n    NO_TESTS_COLLECTED = 5\n\n\ndef pytest_addoption(parser):\n    parser.addini(\n        \"norecursedirs\",\n        \"directory patterns to avoid for recursion\",\n        type=\"args\",\n        default=[\".*\", \"build\", \"dist\", \"CVS\", \"_darcs\", \"{arch}\", \"*.egg\", \"venv\"],\n    )\n    parser.addini(\n        \"t",
+            "start_line": 21,
+            "start_column": 539,
+            "end_line": 0,
+            "end_column": 1237,
+            "start_byte": 539,
+            "end_byte": 0
+        },
+        "_pytest.doctest.pytest_addoption": {
+            "name": "_pytest.doctest.pytest_addoption",
+            "file_path": "src/_pytest/main.py",
+            "file_content": " default=[],\n    )\n    group = parser.getgroup(\"general\", \"running and selection options\")\n    group._addoption(\n        \"-x\",\n        \"--exitfirst\",\n        action=\"store_const\",\n        dest=\"maxfail\",\n        const=1,\n        help=\"exit instantly on first error or failed test.\",\n    ),\n    group._addoption(\n        \"--maxfail\",\n        metavar=\"num\",\n        action=\"store\",\n        type=int,\n        dest=\"maxfail\",\n        default=0,\n        help=\"exit after first num failures or errors.\",\n    )\n    group._addoption(\n        \"--strict-markers\",\n        \"--strict\",\n        action=\"store_true\",\n        help=\"markers not registered in the `markers` section of the configuration file raise errors.\",\n    )\n    group._addoption(\n        \"-c\",\n        metavar=\"file\",\n        type=str,\n        dest=\"inifilename\",\n        help=\"load configuration from `file` instead of trying to locate one of the implicit \"\n        \"configuration files.\",\n    )\n    group._addoption(\n        \"--continue-on-collection-errors\",\n        action=\"store_true\",\n        default=False,\n        dest=\"continue_on_collection_errors\",\n        help=\"Force test execution even if collection errors occur.\",\n    )\n    group._addoption(\n        \"--rootdir\",\n        action=\"store\",\n        dest=\"rootdir\",\n        help=\"Define root directory for tests. Can be relative path: 'root_dir', './root_dir', \"\n        \"'root_dir/another_dir/'; absol",
+            "start_line": 50,
+            "start_column": 1390,
+            "end_line": 0,
+            "end_column": 2808,
+            "start_byte": 1390,
+            "end_byte": 0
+        },
+        "_pytest.faulthandler.pytest_addoption": {
+            "name": "_pytest.faulthandler.pytest_addoption",
+            "file_path": "src/_pytest/main.py",
+            "file_content": ", session, runtest loop. \"\"\"\nimport enum\nimport fnmatch\nimport functools\nimport importlib\nimport os\nimport sys\nfrom typing import Dict\n\nimport attr\nimport py\n\nimport _pytest._code\nfrom _pytest import nodes\nfrom _pytest.config import directory_arg\nfrom _py",
+            "start_line": 7,
+            "start_column": 48,
+            "end_line": 0,
+            "end_column": 303,
+            "start_byte": 48,
+            "end_byte": 0
+        },
+        "_pytest.fixtures.pytest_addoption": {
+            "name": "_pytest.fixtures.pytest_addoption",
+            "file_path": "src/_pytest/main.py",
+            "file_content": "",
+            "start_line": 1190,
+            "start_column": 44317,
+            "end_line": 0,
+            "end_column": 44505,
+            "start_byte": 44317,
+            "end_byte": 0
+        },
+        "_pytest.helpconfig.pytest_addoption": {
+            "name": "_pytest.helpconfig.pytest_addoption",
+            "file_path": "src/_pytest/main.py",
+            "file_content": "rcs\", \"{arch}\", \"*.egg\", \"venv\"],\n    )\n    parser.addini(\n        \"testpaths\",\n        \"directories to search for tests when no files or directories are given in the \"\n        \"command line.\",\n        type=\"args\",\n        default=[],\n    )\n    group = parser.getgroup(\"general\", \"running and selection options\")\n    group._addoption(\n        \"-x\",\n        \"--exitfirst\",\n        action=\"store_const\",\n        dest=\"maxfail\",\n        const=1,\n        help=\"exit instantly on first error or failed test.\",\n    ),\n    group._addoption(\n        \"--maxfail\",\n        metavar=\"num\",\n        action=\"store\",\n        type=int,\n        dest=\"maxfail\",\n        default=0,\n        help=\"exit after first num failures or errors.\",\n    )\n    group._addoption(\n        \"--strict-markers\",\n        \"--strict\",\n        action=\"store_true\",\n        help=\"markers not registered in the `markers` section of the configuration file raise errors.\",\n    )\n    group._addoption(\n        \"-c\",\n        metavar=\"file\",\n        type=str,\n        dest=\"inifilename\",\n        help=\"load configuration from `file` instead of trying to locate one of the implicit \"\n        \"configuration files.\",\n    )\n    group._addoption(\n        \"--continue-on-collection-errors\",\n        action=\"store_true\",\n        default=False,\n        dest=\"continue_",
+            "start_line": 38,
+            "start_column": 1168,
+            "end_line": 0,
+            "end_column": 2482,
+            "start_byte": 1168,
+            "end_byte": 0
+        },
+        "_pytest.hookspec.pytest_addoption": {
+            "name": "_pytest.hookspec.pytest_addoption",
+            "file_path": "src/_pytest/main.py",
+            "file_content": " to avoid for recursion\",\n        type=\"args\",\n        default=[\".*\", \"build\", \"dist\", \"CVS\", \"_darcs\", \"{arch}\", \"*.egg\", \"venv\"],\n    )\n    parser.addini(\n        \"testpaths\",\n        \"directories to search for tests when no files or directories are given in the \"\n        \"command line.\",\n        type=\"args\",\n        default=[],\n    )\n    group = parser.getgroup(\"general\", \"running and selection options\")\n    group._addoption(\n        \"-x\",\n        \"--exitfirst\",\n        action=\"store_const\",\n        dest=\"maxfail\",\n        const=1,\n        help=\"exit instantly on first error or failed test.\",\n    ),\n    group._addoption(\n        \"--maxfail\",\n        metavar=\"num\",\n        action=\"store\",\n        type=int,\n        dest=\"maxfail\",\n        default=0,\n        help=\"exit after first num failures or errors.\",\n    )\n    group._addoption(\n        \"--strict-markers\",\n        \"--strict\",\n        action=\"store_true\",\n        help=\"markers not registered in the `markers` section of the configuration file raise errors.\",\n    )\n    group._addoption(\n        \"-c\",\n        metavar=\"file\",\n        type=str,\n        dest=\"inifilename\",\n        help=\"load configuration from `file` instead of trying to locate one of the implicit \"\n        \"configuration files.\",\n    )\n    group._addoption(\n        \"--continue-on-collection-errors\",\n        action=\"store_true\",\n        default=False,\n        dest=\"continue_on_collection_errors\",\n        help=\"Force test execution even if collection errors occur.\",\n    )\n    group._addoption(\n        \"--rootdir\",\n",
+            "start_line": 36,
+            "start_column": 1070,
+            "end_line": 0,
+            "end_column": 2624,
+            "start_byte": 1070,
+            "end_byte": 0
+        },
+        "_pytest.junitxml.pytest_addoption": {
+            "name": "_pytest.junitxml.pytest_addoption",
+            "file_path": "src/_pytest/main.py",
+            "file_content": "   raise self.Interrupted(self.shouldstop)\n\n    @hookimpl(tryfirst=True)\n    def pytest_runtest_logreport(self, report):\n        if report.failed and not hasattr(report, \"wasxfail\"):\n            self.testsfailed += 1\n            maxfail = self.config.getvalue(\"maxfail\")\n            if maxfail and self.testsfailed >= maxfail:\n                self.shouldfail = \"stopping after %d failures\" % (self.testsfailed)\n\n    pytest_collectreport = pytest_runtest_logreport\n\n    def isinitpath(self, path):\n        return path in self._initialpaths\n\n    def gethookproxy(self, fspath):\n        # check if we have the common case of running\n        # hooks with all conftest.py files\n        pm = self.config.pluginmanager\n        my_conftestmodules = pm._getconftestmodules(fspath)\n        remove_mods = pm._conftest_plugins.difference(my_conftestmodules)\n        if remove_mods:\n            # one or more conftests are not in use at this fspath\n            proxy = FSHookProxy(fspath, pm, remove_mods)\n        else:\n            # all plugins are active for this fspath\n            proxy = self.config.hook\n        return proxy\n\n    def perform_collect(self, args=None, genitems=True):\n        hook = self.config.hook\n        try:\n            items = self._perform_collect(args, genitems)\n            self.config.pluginmanager.check_pending()\n            hook.pytest_collection_modifyitems(\n  ",
+            "start_line": 382,
+            "start_column": 12558,
+            "end_line": 0,
+            "end_column": 13941,
+            "start_byte": 12558,
+            "end_byte": 0
+        },
+        "_pytest.logging.pytest_addoption": {
+            "name": "_pytest.logging.pytest_addoption",
+            "file_path": "src/_pytest/main.py",
+            "file_content": "r.write(\n                        \"{}: {}\\n\".format(excinfo.typename, excinfo.value.msg)\n                    )\n            config.hook.pytest_keyboard_interrupt(excinfo=excinfo)\n            session.exitstatus = exitstatus\n        except:  # noqa\n            excinfo = _pytest._code.ExceptionInfo.from_current()\n            config.notify_exception(excinfo, config.option)\n            session.exitstatus = ExitCode.INTERNAL_ERROR\n            if excinfo.errisinstance(SystemExit):\n                sys.stderr.write(\"mainloop: caught unexpected SystemExit!\\n\")\n\n    finally:\n        excinfo = None  # Explicitly break reference cycle.\n        session.startdir.chdir()\n        if initstate >= 2:\n            config.hook.pytest_sessionfinish(\n                session=session, exitstatus=session.exitstatus\n            )\n        config._ensure_unconfigure()\n    return session.exitstatus\n\n\ndef pytest_cmdline_main(config):\n    return wrap_session(config, _main)\n\n\ndef _main(config, session):\n    \"\"\" default command line protocol for initialization, session,\n    running tests and reporting. \"\"\"\n    config.hook.pytest_collection(session=session)\n    config.hook.pytest_runtestloop(session=session)\n\n    if session.testsfailed:\n        return ExitCode.TESTS_FAILED\n    elif session.testscollected == 0:\n        return ExitCode.NO_TESTS_COLLECTED\n\n\ndef pytest_collection(session):\n    return session.perform_collect()\n\n\ndef pytest_runtestloop(session):\n    if session.testsfailed and not session.config.option.continue_on_collection_errors:\n        raise session.Interrupted(\n            \"%d error%s during collection\"\n            % (session.testsfailed, \"s\" if session.testsfailed != 1 else \"\")\n        )\n\n    if session.config.option.collectonly:\n        return True\n\n    for i, item in enumerate(session.items):\n        nextitem = session.items[i + 1] if i + 1 < len(session.items) else None\n        item.config.hook.pytest_runtest_protocol(item=item, nextitem=nextitem)\n        if session.shouldfail:\n            raise session.Failed(session.shouldfail)\n        if session.shouldstop:\n            raise session.Interrupted(session.shouldstop)\n    return True\n\n\ndef _in_venv(path):\n    \"\"\"Attempts to detect if ``path`` is the root of a Virtual Environment by\n    checking for the existence of the appropriate activate script\"\"\"\n    bindir = path.join(\"Scripts\" if sys.platform.startswith(\"win\") else \"bin\")\n    if not bindir.isdir():\n        return False\n    activates = (\n        \"activate\",\n        \"activate.csh\",\n        \"activate.fish\",\n        \"Activate\",\n        \"Activate.bat\",\n        \"Activate.ps1\",\n    )\n    return any([fname.basename in activates fo",
+            "start_line": 171,
+            "start_column": 6052,
+            "end_line": 0,
+            "end_column": 8708,
+            "start_byte": 6052,
+            "end_byte": 0
+        },
+        "_pytest.main.pytest_addoption": {
+            "name": "_pytest.main.pytest_addoption",
+            "file_path": "src/_pytest/main.py",
+            "file_content": "def pytest_addoption(parser):\n    parser.addini(\n        \"norecursedirs\",\n        \"directory patterns to avoid for recursion\",\n        type=\"args\",\n        default=[\".*\", \"build\", \"dist\", \"CVS\", \"_darcs\", \"{arch}\", \"*.egg\", \"venv\"],\n    )\n    parser.addini(\n        \"testpaths\",\n        \"directories to search for tests when no files or directories are given in the \"\n        \"command line.\",\n        type=\"args\",\n        default=[],\n    )\n    group = parser.getgroup(\"general\", \"running and selection options\")\n    group._addoption(\n        \"-x\",\n        \"--exitfirst\",\n        action=\"store_const\",\n        dest=\"maxfail\",\n        const=1,\n        help=\"exit instantly on first error or failed test.\",\n    ),\n    group._addoption(\n        \"--maxfail\",\n        metavar=\"num\",\n        action=\"store\",\n        type=int,\n        dest=\"maxfail\",\n        default=0,\n        help=\"exit after first num failures or errors.\",\n    )\n    group._addoption(\n        \"--strict-markers\",\n        \"--strict\",\n        action=\"store_true\",\n        help=\"markers not registered in the `markers` section of the configuration file raise errors.\",\n    )\n    group._addoption(\n        \"-c\",\n        metavar=\"file\",\n        type=str,\n        dest=\"inifilename\",\n        help=\"load configuration from `file` instead of trying to locate one of the implicit \"\n        \"configuration files.\",\n    )\n    group._addoption(\n        \"--continue-on-collection-errors\",\n        action=\"store_true\",\n        default=False,\n        dest=\"continue_on_collection_errors\",\n        help=\"Force test execution even if collection errors occur.\",\n    )\n    group._addoption(\n        \"--rootdir\",\n        action=\"store\",\n        dest=\"rootdir\",\n        help=\"Define root directory for tests. Can be relative path: 'root_dir', './root_dir', \"\n        \"'root_dir/another_dir/'; absolute path: '/home/user/root_dir'; path with variables: \"\n        \"'$HOME/root_dir'.\",\n    )\n\n    group = parser.getgroup(\"collect\", \"collection\")\n    group.addoption(\n        \"--collectonly\",\n        \"--collect-only\",\n        action=\"store_true\",\n        help=\"only collect tests, don't execute them.\",\n    ),\n    group.addoption(\n        \"--pyargs\",\n        action=\"store_true\",\n        help=\"try to interpret all arguments as python packages.\",\n    )\n    group.addoption(\n        \"--ignore\",\n        action=\"append\",\n        metavar=\"path\",\n        help=\"ignore path during collection (multi-allowed).\",\n    )\n    group.addoption(\n        \"--ignore-glob\",\n        action=\"append\",\n        metavar=\"path\",\n        help=\"ignore path pattern during collection (multi-allowed).\",\n    )\n    group.addoption(\n        \"--deselect\",\n        action=\"append\",\n        metavar=\"nodeid_prefix\",\n        help=\"deselect item during collection (multi-allowed).\",\n    )\n    # when changing this to --conf-cut-dir, config.py Conftest.setinitial\n    # needs upgrading as well\n    group.addoption(\n        \"--confcutdir\",\n        dest=\"confcutdir\",\n        default=None,\n        metavar=\"dir\",\n        type=functools.partial(directory_arg, optname=\"--confcutdir\"),\n        help=\"only load conftest.py's relative to specified dir.\",\n    )\n    group.addoption(\n        \"--noconftest\",\n        action=\"store_true\",\n        dest=\"noconftest\",\n        default=False,\n        help=\"Don't load any conftest.py files.\",\n    )\n    group.addoption(\n        \"--keepduplicates\",\n        \"--keep-duplicates\",\n        action=\"store_true\",\n        dest=\"keepduplicates\",\n        default=False,\n        help=\"Keep duplicate tests.\",\n    )\n    group.addoption(\n        \"--collect-in-virtualenv\",\n        action=\"store_true\",\n        dest=\"collect_in_virtualenv\",\n        default=False,\n        help=\"Don't ignore tests in a local virtualenv directory\",\n    )\n\n    group = parser.getgroup(\"debugconfig\", \"test session debugging and configuration\")\n    group.addoption(\n        \"--basetemp\",\n        dest=\"basetemp\",\n        default=None,\n        metavar=\"dir\",\n        help=(\n            \"base temporary directory for this test run.\"\n            \"(warning: this directory is removed if it exists)\"\n        ),\n    )",
+            "start_line": 45,
+            "start_column": 969,
+            "end_line": 0,
+            "end_column": 5086,
+            "start_byte": 969,
+            "end_byte": 0
+        },
+        "_pytest.mark.pytest_addoption": {
+            "name": "_pytest.mark.pytest_addoption",
+            "file_path": "src/_pytest/main.py",
+            "file_content": "en no files or directories are given in the \"\n        \"command line.\",\n        type=\"args\",\n        default=[],\n    )\n    group = parser.getgroup(\"general\", \"running and selection options\")\n    group._addoption(\n        \"-x\",\n        \"--exitfirst\",\n        action=\"store_const\",\n        dest=\"maxfail\",\n        const=1,\n        help=\"exit instantly on first error or failed test.\",\n    ),\n    group._addoption(\n        \"--maxfail\",\n        metavar=\"num\",\n        action=\"store\",\n        type=int,\n        dest=\"maxfail\",\n        default=0,\n        help=\"exit after first num failures or errors.\",\n    )\n    group._addoption(\n        \"--strict-markers\",\n        \"--strict\",\n        action=\"store_true\",\n        help=\"markers not registered in the `markers` section of the configuration file raise errors.\",\n    )\n    group._addoption(\n        \"-c\",\n        metavar=\"file\",\n        type=str,\n        dest=\"inifilename\",\n        help=\"load configuration from `file` instead of trying to locate one of the implicit \"\n        \"configuration files.\",\n    )\n    group._addoption(\n        \"--continue-on-collection-errors\",\n        action=\"store_true\",\n        default=False,\n        dest=\"continue_on_collection_errors\",\n        help=\"Force test execution even if collection errors occur.\",\n    )\n    group._addoption(\n        \"--rootdir\",\n        action=\"store\",\n        dest=\"rootdir\",\n        help=\"Define root directory for tests. Can be relative path: 'root_dir', './root_dir', \"\n        \"'root_dir/another_dir/'; absolute path: '/home/user/root_dir'; path",
+            "start_line": 36,
+            "start_column": 1291,
+            "end_line": 0,
+            "end_column": 2845,
+            "start_byte": 1291,
+            "end_byte": 0
+        },
+        "_pytest.pastebin.pytest_addoption": {
+            "name": "_pytest.pastebin.pytest_addoption",
+            "file_path": "src/_pytest/main.py",
+            "file_content": "ort functools\nimport importlib\nimport os\nimport sys\nfrom typing import Dict\n\nimport attr\nimport py\n\nimport _pytest._code\nfrom _pytest import nodes\nfrom _pytest.config import directory_arg\nfrom _pytest.config import hookimpl\nfrom _pytest.config import UsageError\nfrom _pytest.outcomes import exit\nfrom _pytest.runner import colle",
+            "start_line": 6,
+            "start_column": 107,
+            "end_line": 0,
+            "end_column": 435,
+            "start_byte": 107,
+            "end_byte": 0
+        },
+        "_pytest.pytester.pytest_addoption": {
+            "name": "_pytest.pytester.pytest_addoption",
+            "file_path": "src/_pytest/main.py",
+            "file_content": "      type=\"args\",\n        default=[\".*\", \"build\", \"dist\", \"CVS\", \"_darcs\", \"{arch}\", \"*.egg\", \"venv\"],\n    )\n    parser.addini(\n        \"testpaths\",\n        \"directories to search for tests when no files or directories are given in the \"\n        \"command line.\",\n        type=\"args\",\n        default=[],\n    )\n    group = parser.getgroup(\"general\", \"running and selection options\")\n    group._addoption(\n        \"-x\",\n        \"--exitfirst\",\n        action=\"store_const\",\n        dest=\"maxfail\",\n        const=1,\n        help=\"exit instantly on first error or failed test.\",\n    ),\n    group._addoption(\n       ",
+            "start_line": 46,
+            "start_column": 1098,
+            "end_line": 0,
+            "end_column": 1709,
+            "start_byte": 1098,
+            "end_byte": 0
+        },
+        "_pytest.python.pytest_addoption": {
+            "name": "_pytest.python.pytest_addoption",
+            "file_path": "src/_pytest/main.py",
+            "file_content": "maxfail\",\n        metavar=\"num\",\n        action=\"store\",\n        type=int,\n        dest=\"maxfail\",\n        default=0,\n        help=\"exit after first num failures or errors.\",\n    )\n    group._addoption(\n        \"--strict-markers\",\n        \"--strict\",\n        action=\"store_true\",\n        help=\"markers not registered in the `markers` section of the configuration file raise errors.\",\n    )\n    group._addoption(\n        \"-c\",\n        metavar=\"file\",\n        type=str,\n        dest=\"inifilename\",\n        help=\"load configuration from `file` instead of trying to locate one of the implicit \"\n        \"configuration files.\",\n    )\n    group._addoption(\n        \"--continue-on-collection-errors\",\n        action=\"store_true\",\n        default=False,\n        dest=\"continue_on_collection_errors\",\n        help=\"Force test execution even if collection errors occur.\",\n    )\n    group._addoption(\n        \"--rootdir\",\n        action=\"store\",\n        dest=\"rootdir\",\n        help=\"Define root directory for tests. Can be relative path: 'root_dir', './root_dir', \"\n        \"'root_dir/another_dir/'; absolute path: '/home/user/root_dir'; path with variables: \"\n        \"'$HOME/root_dir'.\",\n    )\n\n    group = parser.getgroup(\"collect\", \"collection\")\n    group.addoption(\n        \"--collectonly\",\n        \"--collect-only\",\n        action=\"store_true\",\n        help=\"only collect tests, don't execute them.\",\n    ),\n    group.addoption(\n        \"--pyargs\",\n        action=\"store_true\",\n        help=\"try to interpret all arguments as python packages.\",\n    )\n    group.addoption(\n        \"--ignore\",\n        action=\"append\",\n        metavar=\"path\",\n        help=\"ignore path during colle",
+            "start_line": 56,
+            "start_column": 1713,
+            "end_line": 0,
+            "end_column": 3388,
+            "start_byte": 1713,
+            "end_byte": 0
+        },
+        "_pytest.runner.pytest_addoption": {
+            "name": "_pytest.runner.pytest_addoption",
+            "file_path": "src/_pytest/main.py",
+            "file_content": "supply other exit codes as well.\n    \"\"\"\n\n    #: tests passed\n    OK = 0\n    #: tests failed\n    TESTS_FAILED = 1\n    #: pytest was interrupted\n    INTERRUPTED = 2\n    #: an internal error got in the way\n    INTERNAL_ERROR = 3\n    #: pytest was misused\n    USAGE_ERROR = 4\n    #: pytest couldn't find tests\n    N",
+            "start_line": 29,
+            "start_column": 633,
+            "end_line": 0,
+            "end_column": 945,
+            "start_byte": 633,
+            "end_byte": 0
+        },
+        "_pytest.setuponly.pytest_addoption": {
+            "name": "_pytest.setuponly.pytest_addoption",
+            "file_path": "src/_pytest/main.py",
+            "file_content": "ntation of testing process: init, session, runtest loop. \"\"\"\nimport enum\nimport fnmatch\nimport functools\nimport importlib\nimport os\nimport sys\nfrom typing import Dict\n\nimport attr\nimport py\n\nimport _pytest._code\nfrom _pytest import nodes\nfrom _pytest.config import directory_arg\nfrom _pytest.config import hookimpl\nfrom _pytest.config import UsageError\nfrom _pytest.outcomes import exit\nfrom _pytest",
+            "start_line": 3,
+            "start_column": 16,
+            "end_line": 0,
+            "end_column": 415,
+            "start_byte": 16,
+            "end_byte": 0
+        },
+        "_pytest.setupplan.pytest_addoption": {
+            "name": "_pytest.setupplan.pytest_addoption",
+            "file_path": "src/_pytest/main.py",
+            "file_content": "ntation of testing process: init, session, runtest loop. \"\"\"\nimport enum\nimport fnmatch\nimport functools\nimport importlib\nimport os\nimport sys\nfrom typing import Dict\n\nimport attr\nimport py\n\nimport _pytest._code\nfrom _pytest import nodes\nfrom _pytest.config import directory_ar",
+            "start_line": 3,
+            "start_column": 16,
+            "end_line": 0,
+            "end_column": 293,
+            "start_byte": 16,
+            "end_byte": 0
+        },
+        "_pytest.skipping.pytest_addoption": {
+            "name": "_pytest.skipping.pytest_addoption",
+            "file_path": "src/_pytest/main.py",
+            "file_content": "port nodes\nfrom _pytest.config import directory_arg\nfrom _pytest.config import hookimpl\nfrom _pytest.config import UsageError\nfrom _pytest.outcomes import exit\nfrom _pytest.runner import collect_one_node\nfrom _pytest.runner import SetupState\n\n\nclass ExitCode(enum.IntEnum):\n    \"\"\"\n    .. versionadded:: 5.0\n\n    Encodes the valid exit codes by pytest.\n\n    Currently users and plugins may supply other exit codes as well.\n    \"\"\"\n\n    #: tests passed\n    OK = 0\n    #: tests fail",
+            "start_line": 8,
+            "start_column": 243,
+            "end_line": 0,
+            "end_column": 723,
+            "start_byte": 243,
+            "end_byte": 0
+        },
+        "_pytest.stepwise.pytest_addoption": {
+            "name": "_pytest.stepwise.pytest_addoption",
+            "file_path": "src/_pytest/main.py",
+            "file_content": "ntation of testing process: init, session, runtest loop. \"\"\"\nimport enum\nimport fnmatch\nimport functools\nimport importlib\nimport os\nimport sys\nfrom typing import Dict\n\nimport attr\nimport py\n\nimport _pytest._code\nfrom _pytest import nodes\nfrom _pytest.config import directory_arg\nfrom _pytest.config import hookimpl\nfrom _pytest.config import UsageError\nfrom _pytest.outcomes import exit\nfrom _pytest.runner import collect_one_node\nfrom _pytest.runner import Setup",
+            "start_line": 3,
+            "start_column": 16,
+            "end_line": 0,
+            "end_column": 479,
+            "start_byte": 16,
+            "end_byte": 0
+        },
+        "_pytest.terminal.pytest_addoption": {
+            "name": "_pytest.terminal.pytest_addoption",
+            "file_path": "src/_pytest/main.py",
+            "file_content": "\n    )\n    group = parser.getgroup(\"general\", \"running and selection options\")\n    group._addoption(\n        \"-x\",\n        \"--exitfirst\",\n        action=\"store_const\",\n        dest=\"maxfail\",\n        const=1,\n        help=\"exit instantly on first error or failed test.\",\n    ),\n    group._addoption(\n        \"--maxfail\",\n        metavar=\"num\",\n        action=\"store\",\n        type=int,\n        dest=\"maxfail\",\n        default=0,\n        help=\"exit after first num failures or errors.\",\n    )\n    group._addoption(\n        \"--strict-markers\",\n        \"--strict\",\n        action=\"store_true\",\n        help=\"markers not registered in the `markers` section of the configuration file raise errors.\",\n    )\n    group._addoption(\n        \"-c\",\n        metavar=\"file\",\n        type=str,\n        dest=\"inifilename\",\n        help=\"load configuration from `file` instead of trying to locate one of the implicit \"\n        \"configuration files.\",\n    )\n    group._addoption(\n        \"--continue-on-collection-errors\",\n        action=\"store_true\",\n        default=False,\n        dest=\"continue_on_collection_errors\",\n        help=\"Force test execution even if collection errors occur.\",\n    )\n    group._addoption(\n        \"--rootdir\",\n        action=\"store\",\n        dest=\"rootdir\",\n        help=\"Define root directory for tests. Can be relative path: 'root_dir', './root_dir', \"\n        \"'root_dir/another_dir/'; absolute path: '/home/user/root_dir'; path with variables: \"\n        \"'$HOME/root_dir'.\",\n    )\n\n    group = parser.getgroup(\"collect\", \"collection\")\n    group.addoption(\n        \"--collectonly\",\n        \"--collect-only\",\n        action=\"store_true\",\n        help=\"only collect tests, don't execute them.\",\n    ),\n    group.addoption(\n        \"--pyargs\",\n        action=\"store_true\",\n        help=\"try to interpret all arguments as python packages.\",\n    )\n    group.addoption(\n        \"--ignore\",\n        action=\"append\",\n        metavar=\"path\",\n        help=\"ignore path during collection (multi-allowed).\",\n    )\n    group.addoption(\n        \"--ignore-glob\",\n        action=\"append\",\n        metavar=\"path\",\n        help=\"ignore path pattern during collection (multi-allowed).\",\n    )\n    group.addoption(\n        \"--deselect\",\n        action=\"append\",\n        metavar=\"nodeid_prefix\",\n        help=\"deselect item during collection (multi-allowed).\",\n    )\n    # when changing this to --conf-cut-dir, config.py Conftest.setinitial\n    # needs upgrading as well\n    group.addoption(\n        \"--confcutdir\",\n        dest=\"confcutdir\",\n        default=None,\n        metavar=\"dir\",\n        type=functools.partial(directory_arg, optname=\"--confcutdir\"),\n        hel",
+            "start_line": 56,
+            "start_column": 1402,
+            "end_line": 0,
+            "end_column": 4066,
+            "start_byte": 1402,
+            "end_byte": 0
+        },
+        "_pytest.warnings.pytest_addoption": {
+            "name": "_pytest.warnings.pytest_addoption",
+            "file_path": "src/_pytest/main.py",
+            "file_content": "est was misused\n    USAGE_ERROR = 4\n    #: pytest couldn't find tests\n    NO_TESTS_COLLECTED = 5\n\n\ndef pytest_addoption(parser):\n    parser.addini(\n        \"norecursedirs\",\n        \"directory patterns to avoid for recursion\",\n        type=\"args\",\n        default=[\".*\", \"build\", \"dist\", \"CVS\", \"_darcs\", \"{arch}\", \"*.egg\", \"venv\"],\n    )\n    parser.addini(\n        \"testpaths\",\n        \"directories to search for tests when no files or directories are given ",
+            "start_line": 31,
+            "start_column": 870,
+            "end_line": 0,
+            "end_column": 1328,
+            "start_byte": 870,
+            "end_byte": 0
+        },
+        "_pytest.report_log.pytest_addoption": {
+            "name": "_pytest.report_log.pytest_addoption",
+            "file_path": "src/_pytest/main.py",
+            "file_content": "ion, runtest loop. \"\"\"\nimport enum\nimport fnmatch\nimport functools\nimport importlib\nimport os\nimport sys\nfrom typing import Dict\n\nimport attr\nimport py\n\nimport _pytest._code\nfrom _pytest import nodes\nfrom _pytest.config import directory_arg\nfrom _pytest.config import hookimpl\nfrom _pytest.config impo",
+            "start_line": 6,
+            "start_column": 54,
+            "end_line": 0,
+            "end_column": 355,
+            "start_byte": 54,
+            "end_byte": 0
+        },
+        "_pytest.resultlog.pytest_addoption": {
+            "name": "_pytest.resultlog.pytest_addoption",
+            "file_path": "src/_pytest/main.py",
+            "file_content": "ort functools\nimport importlib\nimport os\nimport sys\nfrom typing import Dict\n\nimport attr\nimport py\n\nimport _pytest._code\nfrom _pytest import nodes\nfrom _pytest.config import directory_arg\nfrom _pytest.config import hookimpl\nfrom _pytest.config import UsageError\nfrom _pytest.outcomes import exit\nfrom _pytest.runner ",
+            "start_line": 8,
+            "start_column": 107,
+            "end_line": 0,
+            "end_column": 423,
+            "start_byte": 107,
+            "end_byte": 0
+        },
+        "_pytest.config.Parser.addoption": {
+            "name": "_pytest.config.Parser.addoption",
+            "file_path": "src/_pytest/config/argparsing.py",
+            "file_content": "def addoption(self, *opts, **attrs):\n        \"\"\" register a command line option.\n\n        :opts: option names, can be short or long options.\n        :attrs: same attributes which the ``add_option()`` function of the\n           `argparse library\n           <http://docs.python.org/2/library/argparse.html>`_\n           accepts.\n\n        After command line parsing options are available on the pytest config\n        object via ``config.option.NAME`` where ``NAME`` is usually set\n        by passing a ``dest`` attribute, for example\n        ``addoption(\"--long\", dest=\"NAME\", ...)``.\n        \"\"\"\n        self._anonymous.addoption(*opts, **attrs)",
+            "start_line": 63,
+            "start_column": 1972,
+            "end_line": 4,
+            "end_column": 2615,
+            "start_byte": 1972,
+            "end_byte": 4
+        }
+    }
+}

@@ -1,0 +1,36 @@
+
+diff --git a/src/_pytest/junitxml.py b/src/_pytest/junitxml.py
+index 15c630b1d..778a998ca 100644
+--- a/src/_pytest/junitxml.py
++++ b/src/_pytest/junitxml.py
+@@ -657,18 +657,19 @@ class LogXML:
+         )
+         logfile.write('<?xml version="1.0" encoding="utf-8"?>')
+ 
++        import socket
+         suite_node = Junit.testsuite(
+             self._get_global_properties_node(),
+             [x.to_xml() for x in self.node_reporters_ordered],
+             name=self.suite_name,
+             errors=self.stats["error"],
+-            failures=self.stats["failure"],
++            failures=self.stats["failure"], 
+             skipped=self.stats["skipped"],
+             tests=numtests,
+             time="%.3f" % suite_time_delta,
++            hostname=socket.gethostname(),
++            timestamp=self.suite_start_time
+         )
+-        logfile.write(Junit.testsuites([suite_node]).unicode(indent=0))
+-        logfile.close()
+ 
+     def pytest_terminal_summary(self, terminalreporter):
+         terminalreporter.write_sep("-", "generated xml file: %s" % (self.logfile))
+diff --git a/testing/report.xml b/testing/report.xml
+new file mode 100644
+index 000000000..42c1bdf97
+--- /dev/null
++++ b/testing/report.xml
+@@ -0,0 +1 @@
++<?xml version="1.0" encoding="utf-8"?>
+\ No newline at end of file

@@ -1,0 +1,43 @@
+
+diff --git a/reproduce_issue.py b/reproduce_issue.py
+new file mode 100644
+index 000000000..d78f23679
+--- /dev/null
++++ b/reproduce_issue.py
+@@ -0,0 +1,7 @@
++import pytest
++
++def test_b_42():
++    assert b"" == b"42"
++
++def test_b_1():
++    assert b"" == b"1"
+diff --git a/src/_pytest/assertion/util.py b/src/_pytest/assertion/util.py
+index 762e5761d..7a2e15f57 100644
+--- a/src/_pytest/assertion/util.py
++++ b/src/_pytest/assertion/util.py
+@@ -181,10 +181,11 @@ def _diff_text(left, right, verbose=0):
+         This is done using repr() which then needs post-processing to fix the encompassing quotes and un-escape
+         newlines and carriage returns (#429).
+         """
+-        r = str(repr(binary_text)[1:-1])
+-        r = r.replace(r"\n", "\n")
+-        r = r.replace(r"\r", "\r")
+-        return r
++        if isinstance(binary_text, bytes):
++            # Use a custom representation for bytes to make diffs more readable
++            return ' '.join(f'{byte:02x}' for byte in binary_text)
++        else:
++            return binary_text
+ 
+     if isinstance(left, bytes):
+         left = escape_for_readable_diff(left)
+@@ -281,7 +282,7 @@ def _compare_eq_sequence(left, right, verbose=0):
+         else:
+             explanation += [
+                 "%s contains %d more items, first extra item: %s"
+-                % (dir_with_more, len_diff, extra)
++                % (dir_with_more, len_diff, extra.hex() if isinstance(extra, bytes) else extra)
+             ]
+     return explanation
+ 

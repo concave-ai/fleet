@@ -1,0 +1,51 @@
+
+diff --git a/reproduce_bug.py b/reproduce_bug.py
+new file mode 100644
+index 000000000..1e32f6c5f
+--- /dev/null
++++ b/reproduce_bug.py
+@@ -0,0 +1,31 @@
++import os
++import tempfile
++import getpass
++from _pytest.tmpdir import TempPathFactory
++
++# Mock trace function
++def mock_trace(*args, **kwargs):
++    pass
++
++# Simulate the behavior of setting LOGNAME to an illegal directory name
++os.environ['LOGNAME'] = 'contoso\\john_doe'
++
++# Create an instance of TempPathFactory with a mock trace function and a given_basetemp
++given_basetemp = tempfile.mkdtemp()
++temp_path_factory = TempPathFactory(given_basetemp, mock_trace)
++
++# Function to mimic tmpdir_factory.mktemp behavior using TempPathFactory
++def create_temp_dir():
++    user = getpass.getuser()
++    temp_dir = temp_path_factory.mktemp(f"pytest-of-{user}", numbered=False)
++    return temp_dir
++
++# Attempt to create the temp directory and catch any exceptions
++try:
++    temp_dir = create_temp_dir()
++    print(f"Temporary directory created: {temp_dir}")
++except Exception as e:
++    print(f"Error: {e}")
++
++# Add a success message at the end of the script
++print("Script completed successfully, no errors.")
+diff --git a/src/_pytest/tmpdir.py b/src/_pytest/tmpdir.py
+index 29c7e19d7..471154c67 100644
+--- a/src/_pytest/tmpdir.py
++++ b/src/_pytest/tmpdir.py
+@@ -90,6 +90,8 @@ class TempPathFactory:
+         :returns:
+             The path to the new directory.
+         """
++        # Sanitize the basename to ensure it does not contain illegal characters
++        basename = re.sub(r'[\\/*?:"<>|]', '_', basename)
+         basename = self._ensure_relative_to_basetemp(basename)
+         if not numbered:
+             p = self.getbasetemp().joinpath(basename)

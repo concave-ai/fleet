@@ -1,0 +1,121 @@
+{
+    "file_paths": [
+        "src/_pytest/tmpdir.py"
+    ],
+    "symbols": [
+        "_pytest.tmpdir.get_user",
+        "_pytest.tmpdir.TempPathFactory.getbasetemp"
+    ],
+    "code_spans": {
+        "_pytest.tmpdir.TempPathFactory": {
+            "name": "_pytest.tmpdir.TempPathFactory",
+            "file_path": "src/_pytest/tmpdir.py",
+            "file_content": "@final\n@attr.s(init=False)\nclass TempPathFactory:\n    \"\"\"Factory for temporary directories under the common base temp directory.\n\n    The base directory can be configured using the ``--basetemp`` option.\n    \"\"\"\n\n    _given_basetemp = attr.ib(type=Optional[Path])\n    _trace = attr.ib()\n    _basetemp = attr.ib(type=Optional[Path])\n\n    def __init__(\n        self,\n        given_basetemp: Optional[Path],\n        trace,\n        basetemp: Optional[Path] = None,\n        *,\n        _ispytest: bool = False,\n    ) -> None:\n        check_ispytest(_ispytest)\n        if given_basetemp is None:\n            self._given_basetemp = None\n        else:\n            # Use os.path.abspath() to get absolute path instead of resolve() as it\n            # does not work the same in all platforms (see #4427).\n            # Path.absolute() exists, but it is not public (see https://bugs.python.org/issue25012).\n            self._given_basetemp = Path(os.path.abspath(str(given_basetemp)))\n        self._trace = trace\n        self._basetemp = basetemp\n\n    @classmethod\n    def from_config(\n        cls,\n        config: Config,\n        *,\n        _ispytest: bool = False,\n    ) -> \"TempPathFactory\":\n        \"\"\"Create a factory according to pytest configuration.\n\n        :meta private:\n        \"\"\"\n        check_ispytest(_ispytest)\n        return cls(\n            given_basetemp=config.option.basetemp,\n            trace=config.trace.get(\"tmpdir\"),\n            _ispytest=True,\n        )\n\n    def _ensure_relative_to_basetemp(self, basename: str) -> str:\n        basename = os.path.normpath(basename)\n        if (self.getbasetemp() / basename).resolve().parent != self.getbasetemp():\n            raise ValueError(f\"{basename} is not a normalized and relative path\")\n        return basename\n\n    def mktemp(self, basename: str, numbered: bool = True) -> Path:\n        \"\"\"Create a new temporary directory managed by the factory.\n\n        :param basename:\n            Directory base name, must be a relative path.\n\n        :param numbered:\n            If ``True``, ensure the directory is unique by adding a numbered\n            suffix greater than any existing one: ``basename=\"foo-\"`` and ``numbered=True``\n            means that this function will create directories named ``\"foo-0\"``,\n            ``\"foo-1\"``, ``\"foo-2\"`` and so on.\n\n        :returns:\n            The path to the new directory.\n        \"\"\"\n        basename = self._ensure_relative_to_basetemp(basename)\n        if not numbered:\n            p = self.getbasetemp().joinpath(basename)\n            p.mkdir()\n        else:\n            p = make_numbered_dir(root=self.getbasetemp(), prefix=basename)\n            self._trace(\"mktemp\", p)\n        return p\n\n    def getbasetemp(self) -> Path:\n        \"\"\"Return base temporary directory.\"\"\"\n        if self._basetemp is not None:\n            return self._basetemp\n\n        if self._given_basetemp is not None:\n            basetemp = self._given_basetemp\n            ensure_reset_dir(basetemp)\n            basetemp = basetemp.resolve()\n        else:\n            from_env = os.environ.get(\"PYTEST_DEBUG_TEMPROOT\")\n            temproot = Path(from_env or tempfile.gettempdir()).resolve()\n            user = get_user() or \"unknown\"\n            # use a sub-directory in the temproot to speed-up\n            # make_numbered_dir() call\n            rootdir = temproot.joinpath(f\"pytest-of-{user}\")\n            rootdir.mkdir(exist_ok=True)\n            basetemp = make_numbered_dir_with_cleanup(\n                prefix=\"pytest-\", root=rootdir, keep=3, lock_timeout=LOCK_TIMEOUT\n            )\n        assert basetemp is not None, basetemp\n        self._basetemp = t = basetemp\n        self._trace(\"new basetemp\", t)\n        return t",
+            "start_line": 22,
+            "start_column": 585,
+            "end_line": 0,
+            "end_column": 4297,
+            "start_byte": 585,
+            "end_byte": 0
+        },
+        "_pytest.tmpdir.TempPathFactory._given_basetemp": {
+            "name": "_pytest.tmpdir.TempPathFactory._given_basetemp",
+            "file_path": "src/_pytest/tmpdir.py",
+            "file_content": "_given_basetemp = attr.ib(type=Optional[Path])",
+            "start_line": 30,
+            "start_column": 802,
+            "end_line": 4,
+            "end_column": 848,
+            "start_byte": 802,
+            "end_byte": 4
+        },
+        "_pytest.tmpdir.TempPathFactory._trace": {
+            "name": "_pytest.tmpdir.TempPathFactory._trace",
+            "file_path": "src/_pytest/tmpdir.py",
+            "file_content": "_trace = attr.ib()",
+            "start_line": 31,
+            "start_column": 853,
+            "end_line": 4,
+            "end_column": 871,
+            "start_byte": 853,
+            "end_byte": 4
+        },
+        "_pytest.tmpdir.TempPathFactory._basetemp": {
+            "name": "_pytest.tmpdir.TempPathFactory._basetemp",
+            "file_path": "src/_pytest/tmpdir.py",
+            "file_content": "_basetemp = attr.ib(type=Optional[Path])",
+            "start_line": 32,
+            "start_column": 876,
+            "end_line": 4,
+            "end_column": 916,
+            "start_byte": 876,
+            "end_byte": 4
+        },
+        "_pytest.tmpdir.TempPathFactory.__init__": {
+            "name": "_pytest.tmpdir.TempPathFactory.__init__",
+            "file_path": "src/_pytest/tmpdir.py",
+            "file_content": "def __init__(\n        self,\n        given_basetemp: Optional[Path],\n        trace,\n        basetemp: Optional[Path] = None,\n        *,\n        _ispytest: bool = False,\n    ) -> None:\n        check_ispytest(_ispytest)\n        if given_basetemp is None:\n            self._given_basetemp = None\n        else:\n            # Use os.path.abspath() to get absolute path instead of resolve() as it\n            # does not work the same in all platforms (see #4427).\n            # Path.absolute() exists, but it is not public (see https://bugs.python.org/issue25012).\n            self._given_basetemp = Path(os.path.abspath(str(given_basetemp)))\n        self._trace = trace\n        self._basetemp = basetemp",
+            "start_line": 34,
+            "start_column": 922,
+            "end_line": 4,
+            "end_column": 1619,
+            "start_byte": 922,
+            "end_byte": 4
+        },
+        "_pytest.tmpdir.TempPathFactory.from_config": {
+            "name": "_pytest.tmpdir.TempPathFactory.from_config",
+            "file_path": "src/_pytest/tmpdir.py",
+            "file_content": "@classmethod\n    def from_config(\n        cls,\n        config: Config,\n        *,\n        _ispytest: bool = False,\n    ) -> \"TempPathFactory\":\n        \"\"\"Create a factory according to pytest configuration.\n\n        :meta private:\n        \"\"\"\n        check_ispytest(_ispytest)\n        return cls(\n            given_basetemp=config.option.basetemp,\n            trace=config.trace.get(\"tmpdir\"),\n            _ispytest=True,\n        )",
+            "start_line": 53,
+            "start_column": 1625,
+            "end_line": 4,
+            "end_column": 2055,
+            "start_byte": 1625,
+            "end_byte": 4
+        },
+        "_pytest.tmpdir.TempPathFactory._ensure_relative_to_basetemp": {
+            "name": "_pytest.tmpdir.TempPathFactory._ensure_relative_to_basetemp",
+            "file_path": "src/_pytest/tmpdir.py",
+            "file_content": "def _ensure_relative_to_basetemp(self, basename: str) -> str:\n        basename = os.path.normpath(basename)\n        if (self.getbasetemp() / basename).resolve().parent != self.getbasetemp():\n            raise ValueError(f\"{basename} is not a normalized and relative path\")\n        return basename",
+            "start_line": 71,
+            "start_column": 2061,
+            "end_line": 4,
+            "end_column": 2357,
+            "start_byte": 2061,
+            "end_byte": 4
+        },
+        "_pytest.tmpdir.TempPathFactory.mktemp": {
+            "name": "_pytest.tmpdir.TempPathFactory.mktemp",
+            "file_path": "src/_pytest/tmpdir.py",
+            "file_content": "def mktemp(self, basename: str, numbered: bool = True) -> Path:\n        \"\"\"Create a new temporary directory managed by the factory.\n\n        :param basename:\n            Directory base name, must be a relative path.\n\n        :param numbered:\n            If ``True``, ensure the directory is unique by adding a numbered\n            suffix greater than any existing one: ``basename=\"foo-\"`` and ``numbered=True``\n            means that this function will create directories named ``\"foo-0\"``,\n            ``\"foo-1\"``, ``\"foo-2\"`` and so on.\n\n        :returns:\n            The path to the new directory.\n        \"\"\"\n        basename = self._ensure_relative_to_basetemp(basename)\n        if not numbered:\n            p = self.getbasetemp().joinpath(basename)\n            p.mkdir()\n        else:\n            p = make_numbered_dir(root=self.getbasetemp(), prefix=basename)\n            self._trace(\"mktemp\", p)\n        return p",
+            "start_line": 77,
+            "start_column": 2363,
+            "end_line": 4,
+            "end_column": 3283,
+            "start_byte": 2363,
+            "end_byte": 4
+        },
+        "_pytest.tmpdir.TempPathFactory.getbasetemp": {
+            "name": "_pytest.tmpdir.TempPathFactory.getbasetemp",
+            "file_path": "src/_pytest/tmpdir.py",
+            "file_content": "def getbasetemp(self) -> Path:\n        \"\"\"Return base temporary directory.\"\"\"\n        if self._basetemp is not None:\n            return self._basetemp\n\n        if self._given_basetemp is not None:\n            basetemp = self._given_basetemp\n            ensure_reset_dir(basetemp)\n            basetemp = basetemp.resolve()\n        else:\n            from_env = os.environ.get(\"PYTEST_DEBUG_TEMPROOT\")\n            temproot = Path(from_env or tempfile.gettempdir()).resolve()\n            user = get_user() or \"unknown\"\n            # use a sub-directory in the temproot to speed-up\n            # make_numbered_dir() call\n            rootdir = temproot.joinpath(f\"pytest-of-{user}\")\n            rootdir.mkdir(exist_ok=True)\n            basetemp = make_numbered_dir_with_cleanup(\n                prefix=\"pytest-\", root=rootdir, keep=3, lock_timeout=LOCK_TIMEOUT\n            )\n        assert basetemp is not None, basetemp\n        self._basetemp = t = basetemp\n        self._trace(\"new basetemp\", t)\n        return t",
+            "start_line": 101,
+            "start_column": 3289,
+            "end_line": 4,
+            "end_column": 4297,
+            "start_byte": 3289,
+            "end_byte": 4
+        },
+        "_pytest.tmpdir.get_user": {
+            "name": "_pytest.tmpdir.get_user",
+            "file_path": "src/_pytest/tmpdir.py",
+            "file_content": "def get_user() -> Optional[str]:\n    \"\"\"Return the current user name, or None if getuser() does not work\n    in the current environment (see #1010).\"\"\"\n    import getpass\n\n    try:\n        return getpass.getuser()\n    except (ImportError, KeyError):\n        return None",
+            "start_line": 150,
+            "start_column": 5171,
+            "end_line": 0,
+            "end_column": 5440,
+            "start_byte": 5171,
+            "end_byte": 0
+        }
+    }
+}

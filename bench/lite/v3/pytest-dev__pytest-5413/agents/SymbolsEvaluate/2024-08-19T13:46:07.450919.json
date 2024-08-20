@@ -1,0 +1,575 @@
+{
+  "name": "SymbolsEvaluate",
+  "model": "gpt-4o-2024-08-06",
+  "metadata": {
+    "token_count": 0,
+    "cost": 0
+  },
+  "issue": "<description>:str() on the pytest.raises context variable doesn't behave same as normal exception catch\nPytest 4.6.2, macOS 10.14.5\r\n\r\n```Python\r\ntry:\r\n    raise LookupError(\r\n        f\"A\\n\"\r\n        f\"B\\n\"\r\n        f\"C\"\r\n    )\r\nexcept LookupError as e:\r\n    print(str(e))\r\n```\r\nprints\r\n\r\n> A\r\n> B\r\n> C\r\n\r\nBut\r\n\r\n```Python\r\nwith pytest.raises(LookupError) as e:\r\n    raise LookupError(\r\n        f\"A\\n\"\r\n        f\"B\\n\"\r\n        f\"C\"\r\n    )\r\n\r\nprint(str(e))\r\n```\r\n\r\nprints\r\n\r\n> <console>:3: LookupError: A\r\n\r\nIn order to get the full error message, one must do `str(e.value)`, which is documented, but this is a different interaction. Any chance the behavior could be changed to eliminate this gotcha?\r\n\r\n-----\r\n\r\nPip list gives\r\n\r\n```\r\nPackage            Version  Location\r\n------------------ -------- ------------------------------------------------------\r\napipkg             1.5\r\nasn1crypto         0.24.0\r\natomicwrites       1.3.0\r\nattrs              19.1.0\r\naws-xray-sdk       0.95\r\nboto               2.49.0\r\nboto3              1.9.51\r\nbotocore           1.12.144\r\ncertifi            2019.3.9\r\ncffi               1.12.3\r\nchardet            3.0.4\r\nClick              7.0\r\ncodacy-coverage    1.3.11\r\ncolorama           0.4.1\r\ncoverage           4.5.3\r\ncryptography       2.6.1\r\ndecorator          4.4.0\r\ndocker             3.7.2\r\ndocker-pycreds     0.4.0\r\ndocutils           0.14\r\necdsa              0.13.2\r\nexecnet            1.6.0\r\nfuture             0.17.1\r\nidna               2.8\r\nimportlib-metadata 0.17\r\nipaddress          1.0.22\r\nJinja2             2.10.1\r\njmespath           0.9.4\r\njsondiff           1.1.1\r\njsonpickle         1.1\r\njsonschema         2.6.0\r\nMarkupSafe         1.1.1\r\nmock               3.0.4\r\nmore-itertools     7.0.0\r\nmoto               1.3.7\r\nneobolt            1.7.10\r\nneotime            1.7.4\r\nnetworkx           2.1\r\nnumpy              1.15.0\r\npackaging          19.0\r\npandas             0.24.2\r\npip                19.1.1\r\npluggy             0.12.0\r\nprompt-toolkit     2.0.9\r\npy                 1.8.0\r\npy2neo             4.2.0\r\npyaml              19.4.1\r\npycodestyle        2.5.0\r\npycparser          2.19\r\npycryptodome       3.8.1\r\nPygments           2.3.1\r\npyOpenSSL          19.0.0\r\npyparsing          2.4.0\r\npytest             4.6.2\r\npytest-cache       1.0\r\npytest-codestyle   1.4.0\r\npytest-cov         2.6.1\r\npytest-forked      1.0.2\r\npython-dateutil    2.7.3\r\npython-jose        2.0.2\r\npytz               2018.5\r\nPyYAML             5.1\r\nrequests           2.21.0\r\nrequests-mock      1.5.2\r\nresponses          0.10.6\r\ns3transfer         0.1.13\r\nsetuptools         41.0.1\r\nsix                1.11.0\r\nsqlite3worker      1.1.7\r\ntabulate           0.8.3\r\nurllib3            1.24.3\r\nwcwidth            0.1.7\r\nwebsocket-client   0.56.0\r\nWerkzeug           0.15.2\r\nwheel              0.33.1\r\nwrapt              1.11.1\r\nxlrd               1.1.0\r\nxmltodict          0.12.0\r\nzipp               0.5.1\r\n```\n</description>",
+  "request": {
+    "related_symbols": [
+      {
+        "name": "_pytest.python_api._cmp_raises_type_error",
+        "file_path": "src/_pytest/python_api.py",
+        "file_content": "def _cmp_raises_type_error(self, other):\n    \"\"\"__cmp__ implementation which raises TypeError. Used\n    by Approx base classes to implement only == and != and raise a\n    TypeError for other comparisons.\n\n    Needed in Python 2 only, Python 3 all it takes is not implementing the\n    other operators at all.\n    \"\"\"\n    __tracebackhide__ = True\n    raise TypeError(\n        \"Comparison operators other than == and != not supported by approx objects\"\n    )",
+        "start_line": 22,
+        "start_column": 496,
+        "end_line": 0,
+        "end_column": 951,
+        "start_byte": 496,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.python_api.raises",
+        "file_path": "src/_pytest/python_api.py",
+        "file_content": "def raises(expected_exception, *args, **kwargs):\n    r\"\"\"\n    Assert that a code block/function call raises ``expected_exception``\n    or raise a failure exception otherwise.\n\n    :kwparam match: if specified, a string containing a regular expression,\n        or a regular expression object, that is tested against the string\n        representation of the exception using ``re.search``. To match a literal\n        string that may contain `special characters`__, the pattern can\n        first be escaped with ``re.escape``.\n\n    __ https://docs.python.org/3/library/re.html#regular-expression-syntax\n\n    :kwparam message: **(deprecated since 4.1)** if specified, provides a custom failure message\n        if the exception is not raised. See :ref:`the deprecation docs <raises message deprecated>` for a workaround.\n\n    .. currentmodule:: _pytest._code\n\n    Use ``pytest.raises`` as a context manager, which will capture the exception of the given\n    type::\n\n        >>> with raises(ZeroDivisionError):\n        ...    1/0\n\n    If the code block does not raise the expected exception (``ZeroDivisionError`` in the example\n    above), or no exception at all, the check will fail instead.\n\n    You can also use the keyword argument ``match`` to assert that the\n    exception matches a text or regex::\n\n        >>> with raises(ValueError, match='must be 0 or None'):\n        ...     raise ValueError(\"value must be 0 or None\")\n\n        >>> with raises(ValueError, match=r'must be \\d+$'):\n        ...     raise ValueError(\"value must be 42\")\n\n    The context manager produces an :class:`ExceptionInfo` object which can be used to inspect the\n    details of the captured exception::\n\n        >>> with raises(ValueError) as exc_info:\n        ...     raise ValueError(\"value must be 42\")\n        >>> assert exc_info.type is ValueError\n        >>> assert exc_info.value.args[0] == \"value must be 42\"\n\n    .. deprecated:: 4.1\n\n        In the context manager form you may use the keyword argument\n        ``message`` to specify a custom failure message that will be displayed\n        in case the ``pytest.raises`` check fails. This has been deprecated as it\n        is considered error prone as users often mean to use ``match`` instead.\n        See :ref:`the deprecation docs <raises message deprecated>` for a workaround.\n\n    .. note::\n\n       When using ``pytest.raises`` as a context manager, it's worthwhile to\n       note that normal context manager rules apply and that the exception\n       raised *must* be the final line in the scope of the context manager.\n       Lines of code after that, within the scope of the context manager will\n       not be executed. For example::\n\n           >>> value = 15\n           >>> with raises(ValueError) as exc_info:\n           ...     if value > 10:\n           ...         raise ValueError(\"value must be <= 10\")\n           ...     assert exc_info.type is ValueError  # this will not execute\n\n       Instead, the following approach must be taken (note the difference in\n       scope)::\n\n           >>> with raises(ValueError) as exc_info:\n           ...     if value > 10:\n           ...         raise ValueError(\"value must be <= 10\")\n           ...\n           >>> assert exc_info.type is ValueError\n\n    **Using with** ``pytest.mark.parametrize``\n\n    When using :ref:`pytest.mark.parametrize ref`\n    it is possible to parametrize tests such that\n    some runs raise an exception and others do not.\n\n    See :ref:`parametrizing_conditional_raising` for an example.\n\n    **Legacy form**\n\n    It is possible to specify a callable by passing a to-be-called lambda::\n\n        >>> raises(ZeroDivisionError, lambda: 1/0)\n        <ExceptionInfo ...>\n\n    or you can specify an arbitrary callable with arguments::\n\n        >>> def f(x): return 1/x\n        ...\n        >>> raises(ZeroDivisionError, f, 0)\n        <ExceptionInfo ...>\n        >>> raises(ZeroDivisionError, f, x=0)\n        <ExceptionInfo ...>\n\n    The form above is fully supported but discouraged for new code because the\n    context manager form is regarded as more readable and less error-prone.\n\n    .. note::\n        Similar to caught exception objects in Python, explicitly clearing\n        local references to returned ``ExceptionInfo`` objects can\n        help the Python interpreter speed up its garbage collection.\n\n        Clearing those references breaks a reference cycle\n        (``ExceptionInfo`` --> caught exception --> frame stack raising\n        the exception --> current frame stack --> local variables -->\n        ``ExceptionInfo``) which makes Python keep all objects referenced\n        from that cycle (including all local variables in the current\n        frame) alive until the next cyclic garbage collection run. See the\n        official Python ``try`` statement documentation for more detailed\n        information.\n\n    \"\"\"\n    __tracebackhide__ = True\n    for exc in filterfalse(isclass, always_iterable(expected_exception, BASE_TYPE)):\n        msg = (\n            \"exceptions must be old-style classes or\"\n            \" derived from BaseException, not %s\"\n        )\n        raise TypeError(msg % type(exc))\n\n    message = \"DID NOT RAISE {}\".format(expected_exception)\n    match_expr = None\n\n    if not args:\n        if \"message\" in kwargs:\n            message = kwargs.pop(\"message\")\n            warnings.warn(deprecated.RAISES_MESSAGE_PARAMETER, stacklevel=2)\n        if \"match\" in kwargs:\n            match_expr = kwargs.pop(\"match\")\n        if kwargs:\n            msg = \"Unexpected keyword arguments passed to pytest.raises: \"\n            msg += \", \".join(sorted(kwargs))\n            raise TypeError(msg)\n        return RaisesContext(expected_exception, message, match_expr)\n    elif isinstance(args[0], str):\n        warnings.warn(deprecated.RAISES_EXEC, stacklevel=2)\n        code, = args\n        assert isinstance(code, str)\n        frame = sys._getframe(1)\n        loc = frame.f_locals.copy()\n        loc.update(kwargs)\n        # print \"raises frame scope: %r\" % frame.f_locals\n        try:\n            code = _pytest._code.Source(code).compile(_genframe=frame)\n            exec(code, frame.f_globals, loc)\n            # XXX didn't mean f_globals == f_locals something special?\n            #     this is destroyed here ...\n        except expected_exception:\n            return _pytest._code.ExceptionInfo.from_current()\n    else:\n        func = args[0]\n        try:\n            func(*args[1:], **kwargs)\n        except expected_exception:\n            return _pytest._code.ExceptionInfo.from_current()\n    fail(message)",
+        "start_line": 542,
+        "start_column": 20241,
+        "end_line": 0,
+        "end_column": 26789,
+        "start_byte": 20241,
+        "end_byte": 0
+      }
+    ],
+    "root_caused_symbols": [
+      {
+        "name": "_pytest.python_api.RaisesContext",
+        "file_path": "src/_pytest/python_api.py",
+        "file_content": "class RaisesContext:\n    def __init__(self, expected_exception, message, match_expr):\n        self.expected_exception = expected_exception\n        self.message = message\n        self.match_expr = match_expr\n        self.excinfo = None\n\n    def __enter__(self):\n        self.excinfo = _pytest._code.ExceptionInfo.for_later()\n        return self.excinfo\n\n    def __exit__(self, *tp):\n        __tracebackhide__ = True\n        if tp[0] is None:\n            fail(self.message)\n        self.excinfo.__init__(tp)\n        suppress_exception = issubclass(self.excinfo.type, self.expected_exception)\n        if self.match_expr is not None and suppress_exception:\n            self.excinfo.match(self.match_expr)\n        return suppress_exception",
+        "start_line": 708,
+        "start_column": 26828,
+        "end_line": 0,
+        "end_column": 27562,
+        "start_byte": 26828,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.python_api.RaisesContext.__init__",
+        "file_path": "src/_pytest/python_api.py",
+        "file_content": "def __init__(self, expected_exception, message, match_expr):\n        self.expected_exception = expected_exception\n        self.message = message\n        self.match_expr = match_expr\n        self.excinfo = None",
+        "start_line": 709,
+        "start_column": 26853,
+        "end_line": 4,
+        "end_column": 27062,
+        "start_byte": 26853,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.python_api.RaisesContext.__enter__",
+        "file_path": "src/_pytest/python_api.py",
+        "file_content": "def __enter__(self):\n        self.excinfo = _pytest._code.ExceptionInfo.for_later()\n        return self.excinfo",
+        "start_line": 715,
+        "start_column": 27068,
+        "end_line": 4,
+        "end_column": 27179,
+        "start_byte": 27068,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.python_api.RaisesContext.__exit__",
+        "file_path": "src/_pytest/python_api.py",
+        "file_content": "def __exit__(self, *tp):\n        __tracebackhide__ = True\n        if tp[0] is None:\n            fail(self.message)\n        self.excinfo.__init__(tp)\n        suppress_exception = issubclass(self.excinfo.type, self.expected_exception)\n        if self.match_expr is not None and suppress_exception:\n            self.excinfo.match(self.match_expr)\n        return suppress_exception",
+        "start_line": 719,
+        "start_column": 27185,
+        "end_line": 4,
+        "end_column": 27562,
+        "start_byte": 27185,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.ExceptionInfo",
+        "file_path": "src/_pytest/_code/code.py",
+        "file_content": "@attr.s(repr=False)\nclass ExceptionInfo:\n    \"\"\" wraps sys.exc_info() objects and offers\n        help for navigating the traceback.\n    \"\"\"\n\n    _assert_start_repr = \"AssertionError('assert \"\n\n    _excinfo = attr.ib()\n    _striptext = attr.ib(default=\"\")\n    _traceback = attr.ib(default=None)\n\n    @classmethod\n    def from_current(cls, exprinfo=None):\n        \"\"\"returns an ExceptionInfo matching the current traceback\n\n        .. warning::\n\n            Experimental API\n\n\n        :param exprinfo: a text string helping to determine if we should\n                         strip ``AssertionError`` from the output, defaults\n                         to the exception message/``__str__()``\n        \"\"\"\n        tup = sys.exc_info()\n        assert tup[0] is not None, \"no current exception\"\n        _striptext = \"\"\n        if exprinfo is None and isinstance(tup[1], AssertionError):\n            exprinfo = getattr(tup[1], \"msg\", None)\n            if exprinfo is None:\n                exprinfo = saferepr(tup[1])\n            if exprinfo and exprinfo.startswith(cls._assert_start_repr):\n                _striptext = \"AssertionError: \"\n\n        return cls(tup, _striptext)\n\n    @classmethod\n    def for_later(cls):\n        \"\"\"return an unfilled ExceptionInfo\n        \"\"\"\n        return cls(None)\n\n    @property\n    def type(self):\n        \"\"\"the exception class\"\"\"\n        return self._excinfo[0]\n\n    @property\n    def value(self):\n        \"\"\"the exception value\"\"\"\n        return self._excinfo[1]\n\n    @property\n    def tb(self):\n        \"\"\"the exception raw traceback\"\"\"\n        return self._excinfo[2]\n\n    @property\n    def typename(self):\n        \"\"\"the type name of the exception\"\"\"\n        return self.type.__name__\n\n    @property\n    def traceback(self):\n        \"\"\"the traceback\"\"\"\n        if self._traceback is None:\n            self._traceback = Traceback(self.tb, excinfo=ref(self))\n        return self._traceback\n\n    @traceback.setter\n    def traceback(self, value):\n        self._traceback = value\n\n    def __repr__(self):\n        if self._excinfo is None:\n            return \"<ExceptionInfo for raises contextmanager>\"\n        return \"<ExceptionInfo %s tblen=%d>\" % (self.typename, len(self.traceback))\n\n    def exconly(self, tryshort=False):\n        \"\"\" return the exception as a string\n\n            when 'tryshort' resolves to True, and the exception is a\n            _pytest._code._AssertionError, only the actual exception part of\n            the exception representation is returned (so 'AssertionError: ' is\n            removed from the beginning)\n        \"\"\"\n        lines = format_exception_only(self.type, self.value)\n        text = \"\".join(lines)\n        text = text.rstrip()\n        if tryshort:\n            if text.startswith(self._striptext):\n                text = text[len(self._striptext) :]\n        return text\n\n    def errisinstance(self, exc):\n        \"\"\" return True if the exception is an instance of exc \"\"\"\n        return isinstance(self.value, exc)\n\n    def _getreprcrash(self):\n        exconly = self.exconly(tryshort=True)\n        entry = self.traceback.getcrashentry()\n        path, lineno = entry.frame.code.raw.co_filename, entry.lineno\n        return ReprFileLocation(path, lineno + 1, exconly)\n\n    def getrepr(\n        self,\n        showlocals=False,\n        style=\"long\",\n        abspath=False,\n        tbfilter=True,\n        funcargs=False,\n        truncate_locals=True,\n        chain=True,\n    ):\n        \"\"\"\n        Return str()able representation of this exception info.\n\n        :param bool showlocals:\n            Show locals per traceback entry.\n            Ignored if ``style==\"native\"``.\n\n        :param str style: long|short|no|native traceback style\n\n        :param bool abspath:\n            If paths should be changed to absolute or left unchanged.\n\n        :param bool tbfilter:\n            Hide entries that contain a local variable ``__tracebackhide__==True``.\n            Ignored if ``style==\"native\"``.\n\n        :param bool funcargs:\n            Show fixtures (\"funcargs\" for legacy purposes) per traceback entry.\n\n        :param bool truncate_locals:\n            With ``showlocals==True``, make sure locals can be safely represented as strings.\n\n        :param bool chain: if chained exceptions in Python 3 should be shown.\n\n        .. versionchanged:: 3.9\n\n            Added the ``chain`` parameter.\n        \"\"\"\n        if style == \"native\":\n            return ReprExceptionInfo(\n                ReprTracebackNative(\n                    traceback.format_exception(\n                        self.type, self.value, self.traceback[0]._rawentry\n                    )\n                ),\n                self._getreprcrash(),\n            )\n\n        fmt = FormattedExcinfo(\n            showlocals=showlocals,\n            style=style,\n            abspath=abspath,\n            tbfilter=tbfilter,\n            funcargs=funcargs,\n            truncate_locals=truncate_locals,\n            chain=chain,\n        )\n        return fmt.repr_excinfo(self)\n\n    def __str__(self):\n        if self._excinfo is None:\n            return repr(self)\n        entry = self.traceback[-1]\n        loc = ReprFileLocation(entry.path, entry.lineno + 1, self.exconly())\n        return str(loc)\n\n    def match(self, regexp):\n        \"\"\"\n        Check whether the regular expression 'regexp' is found in the string\n        representation of the exception using ``re.search``. If it matches\n        then True is returned (so that it is possible to write\n        ``assert excinfo.match()``). If it doesn't match an AssertionError is\n        raised.\n        \"\"\"\n        __tracebackhide__ = True\n        if not re.search(regexp, str(self.value)):\n            assert 0, \"Pattern '{!s}' not found in '{!s}'\".format(regexp, self.value)\n        return True",
+        "start_line": 372,
+        "start_column": 11617,
+        "end_line": 0,
+        "end_column": 17390,
+        "start_byte": 11617,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest._code.ExceptionInfo._assert_start_repr",
+        "file_path": "src/_pytest/_code/code.py",
+        "file_content": "_assert_start_repr = \"AssertionError('assert \"",
+        "start_line": 378,
+        "start_column": 11762,
+        "end_line": 4,
+        "end_column": 11808,
+        "start_byte": 11762,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.ExceptionInfo._excinfo",
+        "file_path": "src/_pytest/_code/code.py",
+        "file_content": "_excinfo = attr.ib()",
+        "start_line": 380,
+        "start_column": 11814,
+        "end_line": 4,
+        "end_column": 11834,
+        "start_byte": 11814,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.ExceptionInfo._striptext",
+        "file_path": "src/_pytest/_code/code.py",
+        "file_content": "_striptext = attr.ib(default=\"\")",
+        "start_line": 381,
+        "start_column": 11839,
+        "end_line": 4,
+        "end_column": 11871,
+        "start_byte": 11839,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.ExceptionInfo._traceback",
+        "file_path": "src/_pytest/_code/code.py",
+        "file_content": "_traceback = attr.ib(default=None)",
+        "start_line": 382,
+        "start_column": 11876,
+        "end_line": 4,
+        "end_column": 11910,
+        "start_byte": 11876,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.ExceptionInfo.from_current",
+        "file_path": "src/_pytest/_code/code.py",
+        "file_content": "@classmethod\n    def from_current(cls, exprinfo=None):\n        \"\"\"returns an ExceptionInfo matching the current traceback\n\n        .. warning::\n\n            Experimental API\n\n\n        :param exprinfo: a text string helping to determine if we should\n                         strip ``AssertionError`` from the output, defaults\n                         to the exception message/``__str__()``\n        \"\"\"\n        tup = sys.exc_info()\n        assert tup[0] is not None, \"no current exception\"\n        _striptext = \"\"\n        if exprinfo is None and isinstance(tup[1], AssertionError):\n            exprinfo = getattr(tup[1], \"msg\", None)\n            if exprinfo is None:\n                exprinfo = saferepr(tup[1])\n            if exprinfo and exprinfo.startswith(cls._assert_start_repr):\n                _striptext = \"AssertionError: \"\n\n        return cls(tup, _striptext)",
+        "start_line": 384,
+        "start_column": 11916,
+        "end_line": 4,
+        "end_column": 12782,
+        "start_byte": 11916,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.ExceptionInfo.for_later",
+        "file_path": "src/_pytest/_code/code.py",
+        "file_content": "@classmethod\n    def for_later(cls):\n        \"\"\"return an unfilled ExceptionInfo\n        \"\"\"\n        return cls(None)",
+        "start_line": 409,
+        "start_column": 12788,
+        "end_line": 4,
+        "end_column": 12905,
+        "start_byte": 12788,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.ExceptionInfo.type",
+        "file_path": "src/_pytest/_code/code.py",
+        "file_content": "@property\n    def type(self):\n        \"\"\"the exception class\"\"\"\n        return self._excinfo[0]",
+        "start_line": 415,
+        "start_column": 12911,
+        "end_line": 4,
+        "end_column": 13006,
+        "start_byte": 12911,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.ExceptionInfo.value",
+        "file_path": "src/_pytest/_code/code.py",
+        "file_content": "@property\n    def value(self):\n        \"\"\"the exception value\"\"\"\n        return self._excinfo[1]",
+        "start_line": 420,
+        "start_column": 13012,
+        "end_line": 4,
+        "end_column": 13108,
+        "start_byte": 13012,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.ExceptionInfo.tb",
+        "file_path": "src/_pytest/_code/code.py",
+        "file_content": "@property\n    def tb(self):\n        \"\"\"the exception raw traceback\"\"\"\n        return self._excinfo[2]",
+        "start_line": 425,
+        "start_column": 13114,
+        "end_line": 4,
+        "end_column": 13215,
+        "start_byte": 13114,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.ExceptionInfo.typename",
+        "file_path": "src/_pytest/_code/code.py",
+        "file_content": "@property\n    def typename(self):\n        \"\"\"the type name of the exception\"\"\"\n        return self.type.__name__",
+        "start_line": 430,
+        "start_column": 13221,
+        "end_line": 4,
+        "end_column": 13333,
+        "start_byte": 13221,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.ExceptionInfo.traceback",
+        "file_path": "src/_pytest/_code/code.py",
+        "file_content": "@property\n    def traceback(self):\n        \"\"\"the traceback\"\"\"\n        if self._traceback is None:\n            self._traceback = Traceback(self.tb, excinfo=ref(self))\n        return self._traceback",
+        "start_line": 435,
+        "start_column": 13339,
+        "end_line": 4,
+        "end_column": 13536,
+        "start_byte": 13339,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.ExceptionInfo.traceback",
+        "file_path": "src/_pytest/_code/code.py",
+        "file_content": "@traceback.setter\n    def traceback(self, value):\n        self._traceback = value",
+        "start_line": 442,
+        "start_column": 13542,
+        "end_line": 4,
+        "end_column": 13623,
+        "start_byte": 13542,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.ExceptionInfo.__repr__",
+        "file_path": "src/_pytest/_code/code.py",
+        "file_content": "def __repr__(self):\n        if self._excinfo is None:\n            return \"<ExceptionInfo for raises contextmanager>\"\n        return \"<ExceptionInfo %s tblen=%d>\" % (self.typename, len(self.traceback))",
+        "start_line": 446,
+        "start_column": 13629,
+        "end_line": 4,
+        "end_column": 13829,
+        "start_byte": 13629,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.ExceptionInfo.exconly",
+        "file_path": "src/_pytest/_code/code.py",
+        "file_content": "def exconly(self, tryshort=False):\n        \"\"\" return the exception as a string\n\n            when 'tryshort' resolves to True, and the exception is a\n            _pytest._code._AssertionError, only the actual exception part of\n            the exception representation is returned (so 'AssertionError: ' is\n            removed from the beginning)\n        \"\"\"\n        lines = format_exception_only(self.type, self.value)\n        text = \"\".join(lines)\n        text = text.rstrip()\n        if tryshort:\n            if text.startswith(self._striptext):\n                text = text[len(self._striptext) :]\n        return text",
+        "start_line": 451,
+        "start_column": 13835,
+        "end_line": 4,
+        "end_column": 14454,
+        "start_byte": 13835,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.ExceptionInfo.errisinstance",
+        "file_path": "src/_pytest/_code/code.py",
+        "file_content": "def errisinstance(self, exc):\n        \"\"\" return True if the exception is an instance of exc \"\"\"\n        return isinstance(self.value, exc)",
+        "start_line": 467,
+        "start_column": 14460,
+        "end_line": 4,
+        "end_column": 14599,
+        "start_byte": 14460,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.ExceptionInfo._getreprcrash",
+        "file_path": "src/_pytest/_code/code.py",
+        "file_content": "def _getreprcrash(self):\n        exconly = self.exconly(tryshort=True)\n        entry = self.traceback.getcrashentry()\n        path, lineno = entry.frame.code.raw.co_filename, entry.lineno\n        return ReprFileLocation(path, lineno + 1, exconly)",
+        "start_line": 471,
+        "start_column": 14605,
+        "end_line": 4,
+        "end_column": 14851,
+        "start_byte": 14605,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.ExceptionInfo.getrepr",
+        "file_path": "src/_pytest/_code/code.py",
+        "file_content": "def getrepr(\n        self,\n        showlocals=False,\n        style=\"long\",\n        abspath=False,\n        tbfilter=True,\n        funcargs=False,\n        truncate_locals=True,\n        chain=True,\n    ):\n        \"\"\"\n        Return str()able representation of this exception info.\n\n        :param bool showlocals:\n            Show locals per traceback entry.\n            Ignored if ``style==\"native\"``.\n\n        :param str style: long|short|no|native traceback style\n\n        :param bool abspath:\n            If paths should be changed to absolute or left unchanged.\n\n        :param bool tbfilter:\n            Hide entries that contain a local variable ``__tracebackhide__==True``.\n            Ignored if ``style==\"native\"``.\n\n        :param bool funcargs:\n            Show fixtures (\"funcargs\" for legacy purposes) per traceback entry.\n\n        :param bool truncate_locals:\n            With ``showlocals==True``, make sure locals can be safely represented as strings.\n\n        :param bool chain: if chained exceptions in Python 3 should be shown.\n\n        .. versionchanged:: 3.9\n\n            Added the ``chain`` parameter.\n        \"\"\"\n        if style == \"native\":\n            return ReprExceptionInfo(\n                ReprTracebackNative(\n                    traceback.format_exception(\n                        self.type, self.value, self.traceback[0]._rawentry\n                    )\n                ),\n                self._getreprcrash(),\n            )\n\n        fmt = FormattedExcinfo(\n            showlocals=showlocals,\n            style=style,\n            abspath=abspath,\n            tbfilter=tbfilter,\n            funcargs=funcargs,\n            truncate_locals=truncate_locals,\n            chain=chain,\n        )\n        return fmt.repr_excinfo(self)",
+        "start_line": 477,
+        "start_column": 14857,
+        "end_line": 4,
+        "end_column": 16613,
+        "start_byte": 14857,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.ExceptionInfo.__str__",
+        "file_path": "src/_pytest/_code/code.py",
+        "file_content": "def __str__(self):\n        if self._excinfo is None:\n            return repr(self)\n        entry = self.traceback[-1]\n        loc = ReprFileLocation(entry.path, entry.lineno + 1, self.exconly())\n        return str(loc)",
+        "start_line": 536,
+        "start_column": 16619,
+        "end_line": 4,
+        "end_column": 16837,
+        "start_byte": 16619,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.ExceptionInfo.match",
+        "file_path": "src/_pytest/_code/code.py",
+        "file_content": "def match(self, regexp):\n        \"\"\"\n        Check whether the regular expression 'regexp' is found in the string\n        representation of the exception using ``re.search``. If it matches\n        then True is returned (so that it is possible to write\n        ``assert excinfo.match()``). If it doesn't match an AssertionError is\n        raised.\n        \"\"\"\n        __tracebackhide__ = True\n        if not re.search(regexp, str(self.value)):\n            assert 0, \"Pattern '{!s}' not found in '{!s}'\".format(regexp, self.value)\n        return True",
+        "start_line": 543,
+        "start_column": 16843,
+        "end_line": 4,
+        "end_column": 17390,
+        "start_byte": 16843,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.ReprExceptionInfo",
+        "file_path": "src/_pytest/_code/code.py",
+        "file_content": "class ReprExceptionInfo(ExceptionRepr):\n    def __init__(self, reprtraceback, reprcrash):\n        super().__init__()\n        self.reprtraceback = reprtraceback\n        self.reprcrash = reprcrash\n\n    def toterminal(self, tw):\n        self.reprtraceback.toterminal(tw)\n        super().toterminal(tw)",
+        "start_line": 850,
+        "start_column": 28209,
+        "end_line": 0,
+        "end_column": 28507,
+        "start_byte": 28209,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest._code.ReprExceptionInfo.__init__",
+        "file_path": "src/_pytest/_code/code.py",
+        "file_content": "def __init__(self, reprtraceback, reprcrash):\n        super().__init__()\n        self.reprtraceback = reprtraceback\n        self.reprcrash = reprcrash",
+        "start_line": 851,
+        "start_column": 28253,
+        "end_line": 4,
+        "end_column": 28403,
+        "start_byte": 28253,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest._code.ReprExceptionInfo.toterminal",
+        "file_path": "src/_pytest/_code/code.py",
+        "file_content": "def toterminal(self, tw):\n        self.reprtraceback.toterminal(tw)\n        super().toterminal(tw)",
+        "start_line": 856,
+        "start_column": 28409,
+        "end_line": 4,
+        "end_column": 28507,
+        "start_byte": 28409,
+        "end_byte": 4
+      }
+    ]
+  },
+  "response": {
+    "scratch_pad": "1. Analyzing the reported issue:\n1.1 The user describes an issue with the `str()` function on a `pytest.raises` context variable behaving differently than expected. The expectation is that calling `str()` on the exception from a context managed by `pytest.raises` should behave like a normal exception caught with `try...except`, but it does not. `str(e)` on a normal exception gives the full message, while `pytest.raises`'s variant gives a shorter message.\n1.2 This issue is caused because when using `pytest.raises`, the context variable `e` refers to an `ExceptionInfo` object, rather than the exception itself.\n1.3 The user suggests that `str(e)` should return the complete exception message to align with standard expectations in typical Python exception handling.\n1.4 If the user did not provide an expected result, the result should match Python's standard `str(exception)` behavior, which is to return the complete message of the exception.\n\n2. Evaluation of relevant code:\n2.1 `_pytest.python_api.RaisesContext`: Manages the context of the `raises` block and initializes an `ExceptionInfo` object but does not handle how `str()` is applied to this object.\n2.3 `_pytest._code.ExceptionInfo`: Wraps an exception and provides various properties such as `type`, `value`, and `__str__()`. This class directly impacts what `str()` returns when called on a `pytest.raises` context variable. This class's `__str__` method currently returns a summary instead of a detailed message like a standard exception.\n2.4 To resolve the issue, the `__str__` method of `_pytest._code.ExceptionInfo` needs to be changed to return `str(self.value)` to match standard exception behavior. \n2.5 It appears that tweaking the `__str__` method of the `ExceptionInfo` class to output `str(self.value)` or matching the output akin to a normal caught exception could rectify the described inconsistency.",
+    "symbols": [
+      {
+        "name": "_pytest._code.ExceptionInfo.__str__",
+        "file_path": "src/_pytest/_code/code.py",
+        "reason": "The `__str__` method of `ExceptionInfo` is responsible for the string representation when `str()` is called. To match standard exception handling, it should be adjusted to return a complete message like a normal exception."
+      }
+    ],
+    "more_info": [],
+    "is_done": true,
+    "symbols_scratch_pad": [
+      "The `RaisesContext` class is responsible for creating the context where exceptions are expected to be raised. It uses `ExceptionInfo` to manage exception information, but the string conversion (problematic for the user) occurs at the `ExceptionInfo` level.",
+      "The `__init__` method of `RaisesContext` initializes the context. No changes needed here for the described issue; it's only setting up the expected parameters.",
+      "The `__enter__` method of `RaisesContext` creates an `ExceptionInfo` object, which mediates the exception's information. The actual string representation issue lies within `ExceptionInfo`, not the context entry setup.",
+      "The `__exit__` method checks exceptions against expectations. The string representation problem doesn't occur here but upon accessing `ExceptionInfo` within the context manager.",
+      "This class (`ExceptionInfo`) is key to the issue. Its `__str__` method affects what `str()` outputs when used on a `pytest.raises` context variable.",
+      "This attribute is a constant and not directly related to the immediate problem of string conversion.",
+      "This attribute represents the exception itself but altering `_excinfo` directly isn't apt for resolving a string representation problem.",
+      "This attribute is likely involved in formatting exception output but is not part of the string conversion logic directly.",
+      "This deals with the traceback of exceptions, not directly with the string conversion issue.",
+      "This method's purpose is unclear from the default method alone regarding the issue; its purpose is more for class instantiation.",
+      "Generates an 'empty' ExceptionInfo object; not directly related to the string conversion oversight.",
+      "This property fetches the exception class; no direct bearing on the string conversion problem.",
+      "This property fetches the exception value; it will be useful for correcting the string conversion output.",
+      "This property fetches the traceback object; string conversion isn't impacted here.",
+      "Provides the exception type name, useful for representations but not inherently wrong in context.",
+      "Fetches an exception traceback; altering here doesn't resolve string outputs.",
+      "Sets the traceback; unrelated to direct string conversion issues.",
+      "Responsible for generic string output of ExceptionInfo, vital for fixing the user-reported inconsistency.",
+      "Return a string of the exception, might be tweaked to ensure `str()` reflects the full message, relevant to the issue.",
+      "Returns if the exception is an instance of a specific class, unrelated to string conversion output.",
+      "Gets detailed crash report info, unrelated to simple string conversion perspective.",
+      "Gets rich representation of exception information, more verbose than simple `str()` concerns.",
+      "Current source of the issue as it governs what `str()` yields when used on ExceptionInfo.",
+      "Regex matching functionality, not relevant for string conversion.",
+      "Deals with representation of exceptions, overlays standard conversion output but balanced elsewhere.",
+      "Constructor for the representation; doesn't influence basic string behavior.",
+      "Handles terminal outputting, irrelevant to simple `str()` utility.",
+      "Deals with error handling for type comparison errors, unrelated to basic string conversion issues.",
+      "The primary interface that users interact with for setting up exception expectations.",
+      ""
+    ]
+  },
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are an autonomous AI assistant tasked with finding relevant code in an existing \ncodebase based on a reported issue. \nYour task is base on the symbol code to identify how many symbols need to be change to resolve the issue. \n#Input Structure:\n\n* <issue>: Contains the reported issue.\n* <symbol>: the code might to be relevant to the issue.\n\n# Your Task:\n\n1. Analyze User Instructions:\nCarefully read the reported issue within the <issue> tag.\nthink step by step and write out your thoughts in the scratch_pad field.\n1.1 What issue is the user describing?\n1.2 How was this issue caused?\n1.3 If the user described the expected result, what should it be fixed to?\n1.4 If the user did not provide an expected result, what should the expectation be?\n1.5 How should the issue be fixed to meet the expectation?\n\n2. Make the evaluate:\n2.1. Thoroughly analyze each lines in the <symbol> and <symbol> tags.\n2.2. Match the symbol/code/pattern with the key elements, functions, variables, or patterns identified in the reported issue.\n2.3. Evaluate the relevance of each symbol based on how well it aligns with the reported issue and current file context.\n2.4. make the decision how many symbols need to be change to resolve the issue.\n2.5. if you need more file content or symbol information, you can ask the user for more information.\n2.6. relative symbol means, He might be the root cause of the problem, or he could be a part of the process that reproduces the issue.\n\nThink step by step and write out your thoughts in the scratch_pad field.  \n"
+    },
+    {
+      "role": "user",
+      "content": "<issue><description>:str() on the pytest.raises context variable doesn't behave same as normal exception catch\nPytest 4.6.2, macOS 10.14.5\r\n\r\n```Python\r\ntry:\r\n    raise LookupError(\r\n        f\"A\\n\"\r\n        f\"B\\n\"\r\n        f\"C\"\r\n    )\r\nexcept LookupError as e:\r\n    print(str(e))\r\n```\r\nprints\r\n\r\n> A\r\n> B\r\n> C\r\n\r\nBut\r\n\r\n```Python\r\nwith pytest.raises(LookupError) as e:\r\n    raise LookupError(\r\n        f\"A\\n\"\r\n        f\"B\\n\"\r\n        f\"C\"\r\n    )\r\n\r\nprint(str(e))\r\n```\r\n\r\nprints\r\n\r\n> <console>:3: LookupError: A\r\n\r\nIn order to get the full error message, one must do `str(e.value)`, which is documented, but this is a different interaction. Any chance the behavior could be changed to eliminate this gotcha?\r\n\r\n-----\r\n\r\nPip list gives\r\n\r\n```\r\nPackage            Version  Location\r\n------------------ -------- ------------------------------------------------------\r\napipkg             1.5\r\nasn1crypto         0.24.0\r\natomicwrites       1.3.0\r\nattrs              19.1.0\r\naws-xray-sdk       0.95\r\nboto               2.49.0\r\nboto3              1.9.51\r\nbotocore           1.12.144\r\ncertifi            2019.3.9\r\ncffi               1.12.3\r\nchardet            3.0.4\r\nClick              7.0\r\ncodacy-coverage    1.3.11\r\ncolorama           0.4.1\r\ncoverage           4.5.3\r\ncryptography       2.6.1\r\ndecorator          4.4.0\r\ndocker             3.7.2\r\ndocker-pycreds     0.4.0\r\ndocutils           0.14\r\necdsa              0.13.2\r\nexecnet            1.6.0\r\nfuture             0.17.1\r\nidna               2.8\r\nimportlib-metadata 0.17\r\nipaddress          1.0.22\r\nJinja2             2.10.1\r\njmespath           0.9.4\r\njsondiff           1.1.1\r\njsonpickle         1.1\r\njsonschema         2.6.0\r\nMarkupSafe         1.1.1\r\nmock               3.0.4\r\nmore-itertools     7.0.0\r\nmoto               1.3.7\r\nneobolt            1.7.10\r\nneotime            1.7.4\r\nnetworkx           2.1\r\nnumpy              1.15.0\r\npackaging          19.0\r\npandas             0.24.2\r\npip                19.1.1\r\npluggy             0.12.0\r\nprompt-toolkit     2.0.9\r\npy                 1.8.0\r\npy2neo             4.2.0\r\npyaml              19.4.1\r\npycodestyle        2.5.0\r\npycparser          2.19\r\npycryptodome       3.8.1\r\nPygments           2.3.1\r\npyOpenSSL          19.0.0\r\npyparsing          2.4.0\r\npytest             4.6.2\r\npytest-cache       1.0\r\npytest-codestyle   1.4.0\r\npytest-cov         2.6.1\r\npytest-forked      1.0.2\r\npython-dateutil    2.7.3\r\npython-jose        2.0.2\r\npytz               2018.5\r\nPyYAML             5.1\r\nrequests           2.21.0\r\nrequests-mock      1.5.2\r\nresponses          0.10.6\r\ns3transfer         0.1.13\r\nsetuptools         41.0.1\r\nsix                1.11.0\r\nsqlite3worker      1.1.7\r\ntabulate           0.8.3\r\nurllib3            1.24.3\r\nwcwidth            0.1.7\r\nwebsocket-client   0.56.0\r\nWerkzeug           0.15.2\r\nwheel              0.33.1\r\nwrapt              1.11.1\r\nxlrd               1.1.0\r\nxmltodict          0.12.0\r\nzipp               0.5.1\r\n```\n</description></issue>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python_api.RaisesContext</name><path>src/_pytest/python_api.py</path><content>class RaisesContext:\n    def __init__(self, expected_exception, message, match_expr):\n        self.expected_exception = expected_exception\n        self.message = message\n        self.match_expr = match_expr\n        self.excinfo = None\n\n    def __enter__(self):\n        self.excinfo = _pytest._code.ExceptionInfo.for_later()\n        return self.excinfo\n\n    def __exit__(self, *tp):\n        __tracebackhide__ = True\n        if tp[0] is None:\n            fail(self.message)\n        self.excinfo.__init__(tp)\n        suppress_exception = issubclass(self.excinfo.type, self.expected_exception)\n        if self.match_expr is not None and suppress_exception:\n            self.excinfo.match(self.match_expr)\n        return suppress_exception</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python_api.RaisesContext.__init__</name><path>src/_pytest/python_api.py</path><content>def __init__(self, expected_exception, message, match_expr):\n        self.expected_exception = expected_exception\n        self.message = message\n        self.match_expr = match_expr\n        self.excinfo = None</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python_api.RaisesContext.__enter__</name><path>src/_pytest/python_api.py</path><content>def __enter__(self):\n        self.excinfo = _pytest._code.ExceptionInfo.for_later()\n        return self.excinfo</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python_api.RaisesContext.__exit__</name><path>src/_pytest/python_api.py</path><content>def __exit__(self, *tp):\n        __tracebackhide__ = True\n        if tp[0] is None:\n            fail(self.message)\n        self.excinfo.__init__(tp)\n        suppress_exception = issubclass(self.excinfo.type, self.expected_exception)\n        if self.match_expr is not None and suppress_exception:\n            self.excinfo.match(self.match_expr)\n        return suppress_exception</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.ExceptionInfo</name><path>src/_pytest/_code/code.py</path><content>@attr.s(repr=False)\nclass ExceptionInfo:\n    \"\"\" wraps sys.exc_info() objects and offers\n        help for navigating the traceback.\n    \"\"\"\n\n    _assert_start_repr = \"AssertionError('assert \"\n\n    _excinfo = attr.ib()\n    _striptext = attr.ib(default=\"\")\n    _traceback = attr.ib(default=None)\n\n    @classmethod\n    def from_current(cls, exprinfo=None):\n        \"\"\"returns an ExceptionInfo matching the current traceback\n\n        .. warning::\n\n            Experimental API\n\n\n        :param exprinfo: a text string helping to determine if we should\n                         strip ``AssertionError`` from the output, defaults\n                         to the exception message/``__str__()``\n        \"\"\"\n        tup = sys.exc_info()\n        assert tup[0] is not None, \"no current exception\"\n        _striptext = \"\"\n        if exprinfo is None and isinstance(tup[1], AssertionError):\n            exprinfo = getattr(tup[1], \"msg\", None)\n            if exprinfo is None:\n                exprinfo = saferepr(tup[1])\n            if exprinfo and exprinfo.startswith(cls._assert_start_repr):\n                _striptext = \"AssertionError: \"\n\n        return cls(tup, _striptext)\n\n    @classmethod\n    def for_later(cls):\n        \"\"\"return an unfilled ExceptionInfo\n        \"\"\"\n        return cls(None)\n\n    @property\n    def type(self):\n        \"\"\"the exception class\"\"\"\n        return self._excinfo[0]\n\n    @property\n    def value(self):\n        \"\"\"the exception value\"\"\"\n        return self._excinfo[1]\n\n    @property\n    def tb(self):\n        \"\"\"the exception raw traceback\"\"\"\n        return self._excinfo[2]\n\n    @property\n    def typename(self):\n        \"\"\"the type name of the exception\"\"\"\n        return self.type.__name__\n\n    @property\n    def traceback(self):\n        \"\"\"the traceback\"\"\"\n        if self._traceback is None:\n            self._traceback = Traceback(self.tb, excinfo=ref(self))\n        return self._traceback\n\n    @traceback.setter\n    def traceback(self, value):\n        self._traceback = value\n\n    def __repr__(self):\n        if self._excinfo is None:\n            return \"<ExceptionInfo for raises contextmanager>\"\n        return \"<ExceptionInfo %s tblen=%d>\" % (self.typename, len(self.traceback))\n\n    def exconly(self, tryshort=False):\n        \"\"\" return the exception as a string\n\n            when 'tryshort' resolves to True, and the exception is a\n            _pytest._code._AssertionError, only the actual exception part of\n            the exception representation is returned (so 'AssertionError: ' is\n            removed from the beginning)\n        \"\"\"\n        lines = format_exception_only(self.type, self.value)\n        text = \"\".join(lines)\n        text = text.rstrip()\n        if tryshort:\n            if text.startswith(self._striptext):\n                text = text[len(self._striptext) :]\n        return text\n\n    def errisinstance(self, exc):\n        \"\"\" return True if the exception is an instance of exc \"\"\"\n        return isinstance(self.value, exc)\n\n    def _getreprcrash(self):\n        exconly = self.exconly(tryshort=True)\n        entry = self.traceback.getcrashentry()\n        path, lineno = entry.frame.code.raw.co_filename, entry.lineno\n        return ReprFileLocation(path, lineno + 1, exconly)\n\n    def getrepr(\n        self,\n        showlocals=False,\n        style=\"long\",\n        abspath=False,\n        tbfilter=True,\n        funcargs=False,\n        truncate_locals=True,\n        chain=True,\n    ):\n        \"\"\"\n        Return str()able representation of this exception info.\n\n        :param bool showlocals:\n            Show locals per traceback entry.\n            Ignored if ``style==\"native\"``.\n\n        :param str style: long|short|no|native traceback style\n\n        :param bool abspath:\n            If paths should be changed to absolute or left unchanged.\n\n        :param bool tbfilter:\n            Hide entries that contain a local variable ``__tracebackhide__==True``.\n            Ignored if ``style==\"native\"``.\n\n        :param bool funcargs:\n            Show fixtures (\"funcargs\" for legacy purposes) per traceback entry.\n\n        :param bool truncate_locals:\n            With ``showlocals==True``, make sure locals can be safely represented as strings.\n\n        :param bool chain: if chained exceptions in Python 3 should be shown.\n\n        .. versionchanged:: 3.9\n\n            Added the ``chain`` parameter.\n        \"\"\"\n        if style == \"native\":\n            return ReprExceptionInfo(\n                ReprTracebackNative(\n                    traceback.format_exception(\n                        self.type, self.value, self.traceback[0]._rawentry\n                    )\n                ),\n                self._getreprcrash(),\n            )\n\n        fmt = FormattedExcinfo(\n            showlocals=showlocals,\n            style=style,\n            abspath=abspath,\n            tbfilter=tbfilter,\n            funcargs=funcargs,\n            truncate_locals=truncate_locals,\n            chain=chain,\n        )\n        return fmt.repr_excinfo(self)\n\n    def __str__(self):\n        if self._excinfo is None:\n            return repr(self)\n        entry = self.traceback[-1]\n        loc = ReprFileLocation(entry.path, entry.lineno + 1, self.exconly())\n        return str(loc)\n\n    def match(self, regexp):\n        \"\"\"\n        Check whether the regular expression 'regexp' is found in the string\n        representation of the exception using ``re.search``. If it matches\n        then True is returned (so that it is possible to write\n        ``assert excinfo.match()``). If it doesn't match an AssertionError is\n        raised.\n        \"\"\"\n        __tracebackhide__ = True\n        if not re.search(regexp, str(self.value)):\n            assert 0, \"Pattern '{!s}' not found in '{!s}'\".format(regexp, self.value)\n        return True</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.ExceptionInfo._assert_start_repr</name><path>src/_pytest/_code/code.py</path><content>_assert_start_repr = \"AssertionError('assert \"</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.ExceptionInfo._excinfo</name><path>src/_pytest/_code/code.py</path><content>_excinfo = attr.ib()</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.ExceptionInfo._striptext</name><path>src/_pytest/_code/code.py</path><content>_striptext = attr.ib(default=\"\")</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.ExceptionInfo._traceback</name><path>src/_pytest/_code/code.py</path><content>_traceback = attr.ib(default=None)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.ExceptionInfo.from_current</name><path>src/_pytest/_code/code.py</path><content>@classmethod\n    def from_current(cls, exprinfo=None):\n        \"\"\"returns an ExceptionInfo matching the current traceback\n\n        .. warning::\n\n            Experimental API\n\n\n        :param exprinfo: a text string helping to determine if we should\n                         strip ``AssertionError`` from the output, defaults\n                         to the exception message/``__str__()``\n        \"\"\"\n        tup = sys.exc_info()\n        assert tup[0] is not None, \"no current exception\"\n        _striptext = \"\"\n        if exprinfo is None and isinstance(tup[1], AssertionError):\n            exprinfo = getattr(tup[1], \"msg\", None)\n            if exprinfo is None:\n                exprinfo = saferepr(tup[1])\n            if exprinfo and exprinfo.startswith(cls._assert_start_repr):\n                _striptext = \"AssertionError: \"\n\n        return cls(tup, _striptext)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.ExceptionInfo.for_later</name><path>src/_pytest/_code/code.py</path><content>@classmethod\n    def for_later(cls):\n        \"\"\"return an unfilled ExceptionInfo\n        \"\"\"\n        return cls(None)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.ExceptionInfo.type</name><path>src/_pytest/_code/code.py</path><content>@property\n    def type(self):\n        \"\"\"the exception class\"\"\"\n        return self._excinfo[0]</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.ExceptionInfo.value</name><path>src/_pytest/_code/code.py</path><content>@property\n    def value(self):\n        \"\"\"the exception value\"\"\"\n        return self._excinfo[1]</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.ExceptionInfo.tb</name><path>src/_pytest/_code/code.py</path><content>@property\n    def tb(self):\n        \"\"\"the exception raw traceback\"\"\"\n        return self._excinfo[2]</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.ExceptionInfo.typename</name><path>src/_pytest/_code/code.py</path><content>@property\n    def typename(self):\n        \"\"\"the type name of the exception\"\"\"\n        return self.type.__name__</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.ExceptionInfo.traceback</name><path>src/_pytest/_code/code.py</path><content>@property\n    def traceback(self):\n        \"\"\"the traceback\"\"\"\n        if self._traceback is None:\n            self._traceback = Traceback(self.tb, excinfo=ref(self))\n        return self._traceback</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.ExceptionInfo.traceback</name><path>src/_pytest/_code/code.py</path><content>@traceback.setter\n    def traceback(self, value):\n        self._traceback = value</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.ExceptionInfo.__repr__</name><path>src/_pytest/_code/code.py</path><content>def __repr__(self):\n        if self._excinfo is None:\n            return \"<ExceptionInfo for raises contextmanager>\"\n        return \"<ExceptionInfo %s tblen=%d>\" % (self.typename, len(self.traceback))</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.ExceptionInfo.exconly</name><path>src/_pytest/_code/code.py</path><content>def exconly(self, tryshort=False):\n        \"\"\" return the exception as a string\n\n            when 'tryshort' resolves to True, and the exception is a\n            _pytest._code._AssertionError, only the actual exception part of\n            the exception representation is returned (so 'AssertionError: ' is\n            removed from the beginning)\n        \"\"\"\n        lines = format_exception_only(self.type, self.value)\n        text = \"\".join(lines)\n        text = text.rstrip()\n        if tryshort:\n            if text.startswith(self._striptext):\n                text = text[len(self._striptext) :]\n        return text</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.ExceptionInfo.errisinstance</name><path>src/_pytest/_code/code.py</path><content>def errisinstance(self, exc):\n        \"\"\" return True if the exception is an instance of exc \"\"\"\n        return isinstance(self.value, exc)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.ExceptionInfo._getreprcrash</name><path>src/_pytest/_code/code.py</path><content>def _getreprcrash(self):\n        exconly = self.exconly(tryshort=True)\n        entry = self.traceback.getcrashentry()\n        path, lineno = entry.frame.code.raw.co_filename, entry.lineno\n        return ReprFileLocation(path, lineno + 1, exconly)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.ExceptionInfo.getrepr</name><path>src/_pytest/_code/code.py</path><content>def getrepr(\n        self,\n        showlocals=False,\n        style=\"long\",\n        abspath=False,\n        tbfilter=True,\n        funcargs=False,\n        truncate_locals=True,\n        chain=True,\n    ):\n        \"\"\"\n        Return str()able representation of this exception info.\n\n        :param bool showlocals:\n            Show locals per traceback entry.\n            Ignored if ``style==\"native\"``.\n\n        :param str style: long|short|no|native traceback style\n\n        :param bool abspath:\n            If paths should be changed to absolute or left unchanged.\n\n        :param bool tbfilter:\n            Hide entries that contain a local variable ``__tracebackhide__==True``.\n            Ignored if ``style==\"native\"``.\n\n        :param bool funcargs:\n            Show fixtures (\"funcargs\" for legacy purposes) per traceback entry.\n\n        :param bool truncate_locals:\n            With ``showlocals==True``, make sure locals can be safely represented as strings.\n\n        :param bool chain: if chained exceptions in Python 3 should be shown.\n\n        .. versionchanged:: 3.9\n\n            Added the ``chain`` parameter.\n        \"\"\"\n        if style == \"native\":\n            return ReprExceptionInfo(\n                ReprTracebackNative(\n                    traceback.format_exception(\n                        self.type, self.value, self.traceback[0]._rawentry\n                    )\n                ),\n                self._getreprcrash(),\n            )\n\n        fmt = FormattedExcinfo(\n            showlocals=showlocals,\n            style=style,\n            abspath=abspath,\n            tbfilter=tbfilter,\n            funcargs=funcargs,\n            truncate_locals=truncate_locals,\n            chain=chain,\n        )\n        return fmt.repr_excinfo(self)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.ExceptionInfo.__str__</name><path>src/_pytest/_code/code.py</path><content>def __str__(self):\n        if self._excinfo is None:\n            return repr(self)\n        entry = self.traceback[-1]\n        loc = ReprFileLocation(entry.path, entry.lineno + 1, self.exconly())\n        return str(loc)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.ExceptionInfo.match</name><path>src/_pytest/_code/code.py</path><content>def match(self, regexp):\n        \"\"\"\n        Check whether the regular expression 'regexp' is found in the string\n        representation of the exception using ``re.search``. If it matches\n        then True is returned (so that it is possible to write\n        ``assert excinfo.match()``). If it doesn't match an AssertionError is\n        raised.\n        \"\"\"\n        __tracebackhide__ = True\n        if not re.search(regexp, str(self.value)):\n            assert 0, \"Pattern '{!s}' not found in '{!s}'\".format(regexp, self.value)\n        return True</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.ReprExceptionInfo</name><path>src/_pytest/_code/code.py</path><content>class ReprExceptionInfo(ExceptionRepr):\n    def __init__(self, reprtraceback, reprcrash):\n        super().__init__()\n        self.reprtraceback = reprtraceback\n        self.reprcrash = reprcrash\n\n    def toterminal(self, tw):\n        self.reprtraceback.toterminal(tw)\n        super().toterminal(tw)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.ReprExceptionInfo.__init__</name><path>src/_pytest/_code/code.py</path><content>def __init__(self, reprtraceback, reprcrash):\n        super().__init__()\n        self.reprtraceback = reprtraceback\n        self.reprcrash = reprcrash</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest._code.ReprExceptionInfo.toterminal</name><path>src/_pytest/_code/code.py</path><content>def toterminal(self, tw):\n        self.reprtraceback.toterminal(tw)\n        super().toterminal(tw)</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python_api._cmp_raises_type_error</name><path>src/_pytest/python_api.py</path><content>def _cmp_raises_type_error(self, other):\n    \"\"\"__cmp__ implementation which raises TypeError. Used\n    by Approx base classes to implement only == and != and raise a\n    TypeError for other comparisons.\n\n    Needed in Python 2 only, Python 3 all it takes is not implementing the\n    other operators at all.\n    \"\"\"\n    __tracebackhide__ = True\n    raise TypeError(\n        \"Comparison operators other than == and != not supported by approx objects\"\n    )</content></symbol>"
+    },
+    {
+      "role": "user",
+      "content": "<symbol><name>_pytest.python_api.raises</name><path>src/_pytest/python_api.py</path><content>def raises(expected_exception, *args, **kwargs):\n    r\"\"\"\n    Assert that a code block/function call raises ``expected_exception``\n    or raise a failure exception otherwise.\n\n    :kwparam match: if specified, a string containing a regular expression,\n        or a regular expression object, that is tested against the string\n        representation of the exception using ``re.search``. To match a literal\n        string that may contain `special characters`__, the pattern can\n        first be escaped with ``re.escape``.\n\n    __ https://docs.python.org/3/library/re.html#regular-expression-syntax\n\n    :kwparam message: **(deprecated since 4.1)** if specified, provides a custom failure message\n        if the exception is not raised. See :ref:`the deprecation docs <raises message deprecated>` for a workaround.\n\n    .. currentmodule:: _pytest._code\n\n    Use ``pytest.raises`` as a context manager, which will capture the exception of the given\n    type::\n\n        >>> with raises(ZeroDivisionError):\n        ...    1/0\n\n    If the code block does not raise the expected exception (``ZeroDivisionError`` in the example\n    above), or no exception at all, the check will fail instead.\n\n    You can also use the keyword argument ``match`` to assert that the\n    exception matches a text or regex::\n\n        >>> with raises(ValueError, match='must be 0 or None'):\n        ...     raise ValueError(\"value must be 0 or None\")\n\n        >>> with raises(ValueError, match=r'must be \\d+$'):\n        ...     raise ValueError(\"value must be 42\")\n\n    The context manager produces an :class:`ExceptionInfo` object which can be used to inspect the\n    details of the captured exception::\n\n        >>> with raises(ValueError) as exc_info:\n        ...     raise ValueError(\"value must be 42\")\n        >>> assert exc_info.type is ValueError\n        >>> assert exc_info.value.args[0] == \"value must be 42\"\n\n    .. deprecated:: 4.1\n\n        In the context manager form you may use the keyword argument\n        ``message`` to specify a custom failure message that will be displayed\n        in case the ``pytest.raises`` check fails. This has been deprecated as it\n        is considered error prone as users often mean to use ``match`` instead.\n        See :ref:`the deprecation docs <raises message deprecated>` for a workaround.\n\n    .. note::\n\n       When using ``pytest.raises`` as a context manager, it's worthwhile to\n       note that normal context manager rules apply and that the exception\n       raised *must* be the final line in the scope of the context manager.\n       Lines of code after that, within the scope of the context manager will\n       not be executed. For example::\n\n           >>> value = 15\n           >>> with raises(ValueError) as exc_info:\n           ...     if value > 10:\n           ...         raise ValueError(\"value must be <= 10\")\n           ...     assert exc_info.type is ValueError  # this will not execute\n\n       Instead, the following approach must be taken (note the difference in\n       scope)::\n\n           >>> with raises(ValueError) as exc_info:\n           ...     if value > 10:\n           ...         raise ValueError(\"value must be <= 10\")\n           ...\n           >>> assert exc_info.type is ValueError\n\n    **Using with** ``pytest.mark.parametrize``\n\n    When using :ref:`pytest.mark.parametrize ref`\n    it is possible to parametrize tests such that\n    some runs raise an exception and others do not.\n\n    See :ref:`parametrizing_conditional_raising` for an example.\n\n    **Legacy form**\n\n    It is possible to specify a callable by passing a to-be-called lambda::\n\n        >>> raises(ZeroDivisionError, lambda: 1/0)\n        <ExceptionInfo ...>\n\n    or you can specify an arbitrary callable with arguments::\n\n        >>> def f(x): return 1/x\n        ...\n        >>> raises(ZeroDivisionError, f, 0)\n        <ExceptionInfo ...>\n        >>> raises(ZeroDivisionError, f, x=0)\n        <ExceptionInfo ...>\n\n    The form above is fully supported but discouraged for new code because the\n    context manager form is regarded as more readable and less error-prone.\n\n    .. note::\n        Similar to caught exception objects in Python, explicitly clearing\n        local references to returned ``ExceptionInfo`` objects can\n        help the Python interpreter speed up its garbage collection.\n\n        Clearing those references breaks a reference cycle\n        (``ExceptionInfo`` --> caught exception --> frame stack raising\n        the exception --> current frame stack --> local variables -->\n        ``ExceptionInfo``) which makes Python keep all objects referenced\n        from that cycle (including all local variables in the current\n        frame) alive until the next cyclic garbage collection run. See the\n        official Python ``try`` statement documentation for more detailed\n        information.\n\n    \"\"\"\n    __tracebackhide__ = True\n    for exc in filterfalse(isclass, always_iterable(expected_exception, BASE_TYPE)):\n        msg = (\n            \"exceptions must be old-style classes or\"\n            \" derived from BaseException, not %s\"\n        )\n        raise TypeError(msg % type(exc))\n\n    message = \"DID NOT RAISE {}\".format(expected_exception)\n    match_expr = None\n\n    if not args:\n        if \"message\" in kwargs:\n            message = kwargs.pop(\"message\")\n            warnings.warn(deprecated.RAISES_MESSAGE_PARAMETER, stacklevel=2)\n        if \"match\" in kwargs:\n            match_expr = kwargs.pop(\"match\")\n        if kwargs:\n            msg = \"Unexpected keyword arguments passed to pytest.raises: \"\n            msg += \", \".join(sorted(kwargs))\n            raise TypeError(msg)\n        return RaisesContext(expected_exception, message, match_expr)\n    elif isinstance(args[0], str):\n        warnings.warn(deprecated.RAISES_EXEC, stacklevel=2)\n        code, = args\n        assert isinstance(code, str)\n        frame = sys._getframe(1)\n        loc = frame.f_locals.copy()\n        loc.update(kwargs)\n        # print \"raises frame scope: %r\" % frame.f_locals\n        try:\n            code = _pytest._code.Source(code).compile(_genframe=frame)\n            exec(code, frame.f_globals, loc)\n            # XXX didn't mean f_globals == f_locals something special?\n            #     this is destroyed here ...\n        except expected_exception:\n            return _pytest._code.ExceptionInfo.from_current()\n    else:\n        func = args[0]\n        try:\n            func(*args[1:], **kwargs)\n        except expected_exception:\n            return _pytest._code.ExceptionInfo.from_current()\n    fail(message)</content></symbol>"
+    }
+  ],
+  "completion": {
+    "id": "chatcmpl-9y3Y8VtdHneT3YcjWlkRgRnQGvMWx",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\"scratch_pad\":\"1. Analyzing the reported issue:\\n1.1 The user describes an issue with the `str()` function on a `pytest.raises` context variable behaving differently than expected. The expectation is that calling `str()` on the exception from a context managed by `pytest.raises` should behave like a normal exception caught with `try...except`, but it does not. `str(e)` on a normal exception gives the full message, while `pytest.raises`'s variant gives a shorter message.\\n1.2 This issue is caused because when using `pytest.raises`, the context variable `e` refers to an `ExceptionInfo` object, rather than the exception itself.\\n1.3 The user suggests that `str(e)` should return the complete exception message to align with standard expectations in typical Python exception handling.\\n1.4 If the user did not provide an expected result, the result should match Python's standard `str(exception)` behavior, which is to return the complete message of the exception.\\n\\n2. Evaluation of relevant code:\\n2.1 `_pytest.python_api.RaisesContext`: Manages the context of the `raises` block and initializes an `ExceptionInfo` object but does not handle how `str()` is applied to this object.\\n2.3 `_pytest._code.ExceptionInfo`: Wraps an exception and provides various properties such as `type`, `value`, and `__str__()`. This class directly impacts what `str()` returns when called on a `pytest.raises` context variable. This class's `__str__` method currently returns a summary instead of a detailed message like a standard exception.\\n2.4 To resolve the issue, the `__str__` method of `_pytest._code.ExceptionInfo` needs to be changed to return `str(self.value)` to match standard exception behavior. \\n2.5 It appears that tweaking the `__str__` method of the `ExceptionInfo` class to output `str(self.value)` or matching the output akin to a normal caught exception could rectify the described inconsistency.\",\"symbols\":[{\"name\":\"_pytest._code.ExceptionInfo.__str__\",\"file_path\":\"src/_pytest/_code/code.py\",\"reason\":\"The `__str__` method of `ExceptionInfo` is responsible for the string representation when `str()` is called. To match standard exception handling, it should be adjusted to return a complete message like a normal exception.\"}],\"more_info\":[],\"is_done\":true,\"symbols_scratch_pad\":[\"The `RaisesContext` class is responsible for creating the context where exceptions are expected to be raised. It uses `ExceptionInfo` to manage exception information, but the string conversion (problematic for the user) occurs at the `ExceptionInfo` level.\",\"The `__init__` method of `RaisesContext` initializes the context. No changes needed here for the described issue; it's only setting up the expected parameters.\",\"The `__enter__` method of `RaisesContext` creates an `ExceptionInfo` object, which mediates the exception's information. The actual string representation issue lies within `ExceptionInfo`, not the context entry setup.\",\"The `__exit__` method checks exceptions against expectations. The string representation problem doesn't occur here but upon accessing `ExceptionInfo` within the context manager.\",\"This class (`ExceptionInfo`) is key to the issue. Its `__str__` method affects what `str()` outputs when used on a `pytest.raises` context variable.\",\"This attribute is a constant and not directly related to the immediate problem of string conversion.\",\"This attribute represents the exception itself but altering `_excinfo` directly isn't apt for resolving a string representation problem.\",\"This attribute is likely involved in formatting exception output but is not part of the string conversion logic directly.\",\"This deals with the traceback of exceptions, not directly with the string conversion issue.\",\"This method's purpose is unclear from the default method alone regarding the issue; its purpose is more for class instantiation.\",\"Generates an 'empty' ExceptionInfo object; not directly related to the string conversion oversight.\",\"This property fetches the exception class; no direct bearing on the string conversion problem.\",\"This property fetches the exception value; it will be useful for correcting the string conversion output.\",\"This property fetches the traceback object; string conversion isn't impacted here.\",\"Provides the exception type name, useful for representations but not inherently wrong in context.\",\"Fetches an exception traceback; altering here doesn't resolve string outputs.\",\"Sets the traceback; unrelated to direct string conversion issues.\",\"Responsible for generic string output of ExceptionInfo, vital for fixing the user-reported inconsistency.\",\"Return a string of the exception, might be tweaked to ensure `str()` reflects the full message, relevant to the issue.\",\"Returns if the exception is an instance of a specific class, unrelated to string conversion output.\",\"Gets detailed crash report info, unrelated to simple string conversion perspective.\",\"Gets rich representation of exception information, more verbose than simple `str()` concerns.\",\"Current source of the issue as it governs what `str()` yields when used on ExceptionInfo.\",\"Regex matching functionality, not relevant for string conversion.\",\"Deals with representation of exceptions, overlays standard conversion output but balanced elsewhere.\",\"Constructor for the representation; doesn't influence basic string behavior.\",\"Handles terminal outputting, irrelevant to simple `str()` utility.\",\"Deals with error handling for type comparison errors, unrelated to basic string conversion issues.\",\"The primary interface that users interact with for setting up exception expectations.\",\"\"]}",
+          "refusal": null,
+          "role": "assistant",
+          "function_call": null,
+          "tool_calls": [],
+          "parsed": {
+            "scratch_pad": "1. Analyzing the reported issue:\n1.1 The user describes an issue with the `str()` function on a `pytest.raises` context variable behaving differently than expected. The expectation is that calling `str()` on the exception from a context managed by `pytest.raises` should behave like a normal exception caught with `try...except`, but it does not. `str(e)` on a normal exception gives the full message, while `pytest.raises`'s variant gives a shorter message.\n1.2 This issue is caused because when using `pytest.raises`, the context variable `e` refers to an `ExceptionInfo` object, rather than the exception itself.\n1.3 The user suggests that `str(e)` should return the complete exception message to align with standard expectations in typical Python exception handling.\n1.4 If the user did not provide an expected result, the result should match Python's standard `str(exception)` behavior, which is to return the complete message of the exception.\n\n2. Evaluation of relevant code:\n2.1 `_pytest.python_api.RaisesContext`: Manages the context of the `raises` block and initializes an `ExceptionInfo` object but does not handle how `str()` is applied to this object.\n2.3 `_pytest._code.ExceptionInfo`: Wraps an exception and provides various properties such as `type`, `value`, and `__str__()`. This class directly impacts what `str()` returns when called on a `pytest.raises` context variable. This class's `__str__` method currently returns a summary instead of a detailed message like a standard exception.\n2.4 To resolve the issue, the `__str__` method of `_pytest._code.ExceptionInfo` needs to be changed to return `str(self.value)` to match standard exception behavior. \n2.5 It appears that tweaking the `__str__` method of the `ExceptionInfo` class to output `str(self.value)` or matching the output akin to a normal caught exception could rectify the described inconsistency.",
+            "symbols": [
+              {
+                "name": "_pytest._code.ExceptionInfo.__str__",
+                "file_path": "src/_pytest/_code/code.py",
+                "reason": "The `__str__` method of `ExceptionInfo` is responsible for the string representation when `str()` is called. To match standard exception handling, it should be adjusted to return a complete message like a normal exception."
+              }
+            ],
+            "more_info": [],
+            "is_done": true,
+            "symbols_scratch_pad": [
+              "The `RaisesContext` class is responsible for creating the context where exceptions are expected to be raised. It uses `ExceptionInfo` to manage exception information, but the string conversion (problematic for the user) occurs at the `ExceptionInfo` level.",
+              "The `__init__` method of `RaisesContext` initializes the context. No changes needed here for the described issue; it's only setting up the expected parameters.",
+              "The `__enter__` method of `RaisesContext` creates an `ExceptionInfo` object, which mediates the exception's information. The actual string representation issue lies within `ExceptionInfo`, not the context entry setup.",
+              "The `__exit__` method checks exceptions against expectations. The string representation problem doesn't occur here but upon accessing `ExceptionInfo` within the context manager.",
+              "This class (`ExceptionInfo`) is key to the issue. Its `__str__` method affects what `str()` outputs when used on a `pytest.raises` context variable.",
+              "This attribute is a constant and not directly related to the immediate problem of string conversion.",
+              "This attribute represents the exception itself but altering `_excinfo` directly isn't apt for resolving a string representation problem.",
+              "This attribute is likely involved in formatting exception output but is not part of the string conversion logic directly.",
+              "This deals with the traceback of exceptions, not directly with the string conversion issue.",
+              "This method's purpose is unclear from the default method alone regarding the issue; its purpose is more for class instantiation.",
+              "Generates an 'empty' ExceptionInfo object; not directly related to the string conversion oversight.",
+              "This property fetches the exception class; no direct bearing on the string conversion problem.",
+              "This property fetches the exception value; it will be useful for correcting the string conversion output.",
+              "This property fetches the traceback object; string conversion isn't impacted here.",
+              "Provides the exception type name, useful for representations but not inherently wrong in context.",
+              "Fetches an exception traceback; altering here doesn't resolve string outputs.",
+              "Sets the traceback; unrelated to direct string conversion issues.",
+              "Responsible for generic string output of ExceptionInfo, vital for fixing the user-reported inconsistency.",
+              "Return a string of the exception, might be tweaked to ensure `str()` reflects the full message, relevant to the issue.",
+              "Returns if the exception is an instance of a specific class, unrelated to string conversion output.",
+              "Gets detailed crash report info, unrelated to simple string conversion perspective.",
+              "Gets rich representation of exception information, more verbose than simple `str()` concerns.",
+              "Current source of the issue as it governs what `str()` yields when used on ExceptionInfo.",
+              "Regex matching functionality, not relevant for string conversion.",
+              "Deals with representation of exceptions, overlays standard conversion output but balanced elsewhere.",
+              "Constructor for the representation; doesn't influence basic string behavior.",
+              "Handles terminal outputting, irrelevant to simple `str()` utility.",
+              "Deals with error handling for type comparison errors, unrelated to basic string conversion issues.",
+              "The primary interface that users interact with for setting up exception expectations.",
+              ""
+            ]
+          }
+        }
+      }
+    ],
+    "created": 1724100352,
+    "model": "gpt-4o-2024-08-06",
+    "object": "chat.completion",
+    "service_tier": null,
+    "system_fingerprint": "fp_845eaabc1f",
+    "usage": {
+      "completion_tokens": 1109,
+      "prompt_tokens": 6953,
+      "total_tokens": 8062
+    }
+  }
+}

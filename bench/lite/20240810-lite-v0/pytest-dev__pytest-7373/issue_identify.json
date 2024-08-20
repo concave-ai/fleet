@@ -1,0 +1,275 @@
+{
+    "file_paths": [
+        "src/_pytest/mark/evaluate.py"
+    ],
+    "symbols": [
+        "_pytest.mark.cached_eval",
+        "_pytest.mark.MarkEvaluator._istrue"
+    ],
+    "code_spans": {
+        "_pytest.mark.MarkEvaluator._istrue": {
+            "name": "_pytest.mark.MarkEvaluator._istrue",
+            "file_path": "src/_pytest/skipping.py",
+            "file_content": "    \"If only specific exception(s) are expected, you can list them in \"\n        \"raises, and if the test fails in other ways, it will be reported as \"\n        \"a true failure. See https://docs.pytest.org/en/latest/skipping.html\",\n    )\n\n\n@hookimpl(tryfirst=True)\ndef pytest_runtest_setup(item: Item) -> None:\n    # Check if skip or skipif are specified as pytest marks\n    item._store[skipped_by_mark_key] = False\n    eval_skipif = MarkEvaluator(item, \"skipif\")\n    if eval_skipif.istrue():\n        item._store[skipped_by_mark_key] = True\n        skip(eval_skipif.getexplanation())\n\n    for skip_info in item.iter_markers(name=\"skip\"):\n        item._store[skipped_by_mark_key] = True\n        if \"reason\" in skip_info.kwargs:\n            skip(skip_info.kwargs[\"reason\"])\n        elif skip_info.args:\n            skip(skip_info.args[0])\n        else:\n            skip(\"unconditional skip\")\n\n    item._store[evalxfail_key] = MarkEvaluator(item, \"xfail\")\n    check_xfail_no_run(item)\n\n\n@hookimpl(hookwrapper=True)\ndef pytest_pyfunc_call(pyfuncitem: Function):\n    check_xfail_no_run(pyfuncitem)\n    outcome = yield\n    passed = outcome.excinfo is None\n    if passed:\n        check_strict_xfail(pyfuncitem)\n\n\ndef check_xfail_no_run(item: Item) -> None:\n    \"\"\"check xfail(run=False)\"\"\"\n    if not item.config.option.runxfail:\n        evalxfail = item._store[evalxfail_key]\n        if evalxfail.istrue():\n            if not evalxfail.get(\"run\", True):\n                xfail(\"[NOTRUN] \" + evalxfail.getexplanation())\n\n\ndef check_strict_xfail(pyfuncitem: Function) -> None:\n    \"\"\"check ",
+            "start_line": 81,
+            "start_column": 2564,
+            "end_line": 4,
+            "end_column": 4143,
+            "start_byte": 2564,
+            "end_byte": 4
+        },
+        "_pytest.capture.CaptureManager.pytest_runtest_setup": {
+            "name": "_pytest.capture.CaptureManager.pytest_runtest_setup",
+            "file_path": "src/_pytest/skipping.py",
+            "file_content": "",
+            "start_line": 735,
+            "start_column": 23643,
+            "end_line": 4,
+            "end_column": 23821,
+            "start_byte": 23643,
+            "end_byte": 4
+        },
+        "_pytest.hookspec.pytest_runtest_setup": {
+            "name": "_pytest.hookspec.pytest_runtest_setup",
+            "file_path": "src/_pytest/skipping.py",
+            "file_content": "",
+            "start_line": 420,
+            "start_column": 14531,
+            "end_line": 0,
+            "end_column": 14635,
+            "start_byte": 14531,
+            "end_byte": 0
+        },
+        "_pytest.hookspec.pytest_runtest_makereport": {
+            "name": "_pytest.hookspec.pytest_runtest_makereport",
+            "file_path": "src/_pytest/skipping.py",
+            "file_content": "",
+            "start_line": 438,
+            "start_column": 15172,
+            "end_line": 0,
+            "end_column": 15521,
+            "start_byte": 15172,
+            "end_byte": 0
+        },
+        "_pytest.logging.LoggingPlugin.pytest_runtest_setup": {
+            "name": "_pytest.logging.LoggingPlugin.pytest_runtest_setup",
+            "file_path": "src/_pytest/skipping.py",
+            "file_content": "",
+            "start_line": 675,
+            "start_column": 24746,
+            "end_line": 4,
+            "end_column": 25079,
+            "start_byte": 24746,
+            "end_byte": 4
+        },
+        "_pytest.mark.MarkEvaluator": {
+            "name": "_pytest.mark.MarkEvaluator",
+            "file_path": "src/_pytest/skipping.py",
+            "file_content": "unxfail\",\n        action=\"store_true\",\n        dest=\"runxfail\",\n        default=False,\n        help=\"report the results of xfail tests as if they were not marked\",\n    )\n\n    parser.addini(\n        \"xfail_strict\",\n        \"default for the strict parameter of xfail \"\n        \"markers when not given explicitly (default: False)\",\n        default=False,\n        type=\"bool\",\n    )\n\n\ndef pytest_configure(config: Config) -> None:\n    if config.option.runxfail:\n        # yay a hack\n        import pytest\n\n        old = pytest.xfail\n        config._cleanup.append(lambda: setattr(pytest, \"xfail\", old))\n\n        def nop(*args, **kwargs):\n            pass\n\n        nop.Exception = xfail.Exception  # type: ignore[attr-defined] # noqa: F821\n        setattr(pytest, \"xfail\", nop)\n\n    config.addinivalue_line(\n        \"markers\",\n        \"skip(reason=None): skip the given test function with an optional reason. \"\n        'Example: skip(reason=\"no way of currently testing this\") skips the '\n        \"test.\",\n    )\n    config.addinivalue_line(\n        \"markers\",\n        \"skipif(condition): skip the given test function if eval(condition) \"\n        \"results in a True value.  Evaluation happens within the \"\n        \"module global context. Example: skipif('sys.platform == \\\"win32\\\"') \"\n        \"skips the test if we are on the win32 platform. see \"\n        \"https://docs.pytest.org/en/latest/skipping.html\",\n    )\n    config.addinivalue_line(\n        \"markers\",\n        \"xfail(condition, reason=None, run=True, raises=None, strict=False): \"\n        \"mark the test function as an expected failure if eval(condition) \"\n        \"has a True value. Optionally specify a reason for better reporting \"\n        \"and run=False if you don't even want to execute the test function. \"\n        \"If only specific exception(s) are expected, you can list them in \"\n        \"raises, and if the test fails in other ways, it will be reported as \"\n        \"a true failure. See https://docs.pytest.org/en/latest/skipping.html\",\n    )\n\n\n@hookimpl(tryfirst=True)\ndef pytest_runtest_setup(item: Item) -> None:\n    # Check if skip or skipif are specified as pytest marks\n    item._store[skipped_by_mark_key] = False\n    eval_skipif = MarkEvaluator(item, \"skipif\")\n    if eval_skipif.istrue():\n        item._store[skipped_by_mark_key] = True\n        skip(eval_skipif.getexplanation())\n\n    for skip_info in item.iter_markers(name=\"skip\"):\n        item._store[skipped_by_mark_key] = True\n        if \"reason\" in skip_info.kwargs:\n            skip(skip_info.kwargs[\"reason\"])\n        elif skip_info.args:\n            skip(skip_info.args[0])\n        else:\n            skip(\"unconditional skip\")\n\n    item._store[evalxfail_key] = MarkEvaluator(item, \"xfail\")\n    check_xfail_no_run(item)\n\n\n@hookimpl(hookwrapper=True)\ndef pytest_pyfunc_call(pyfuncitem: Function):\n    check_xfail_no_run(pyfuncitem)\n    outcome = yield\n    passed = outcome.excinfo is None\n    if passed:\n        check_strict_xfail(pyfuncitem)\n\n\ndef check_xfail_no_run(item: Item) -> None:\n    \"\"\"check xfail(run=False)\"\"\"\n    if not item.config.option.runxfail:\n        evalxfail = item._store[evalxfail_key]\n        if evalxfail.istrue():\n            if not evalxfail.get(\"run\", True):\n                xfail(\"[NOTRUN] \" + evalxfail.getexplanation())\n\n\ndef check_strict_xfail(pyfuncitem: Function) -> None:\n    \"\"\"check xfail(strict=True) for the given PASSING test\"\"\"\n    evalxfail = pyfuncitem._store[evalxfail_key]\n    if evalxfail.istrue():\n        strict_default = pyfuncitem.config.getini(\"xfail_strict\")\n        is_strict_xfail = evalxfail.get(\"strict\", strict_default)\n        if is_strict_xfail:\n            del pyfuncitem._store[evalxfail_key]\n            explanation = evalxfail.getexplanation()\n            fail(\"[XPASS(strict)] \" + explanatio",
+            "start_line": 33,
+            "start_column": 794,
+            "end_line": 0,
+            "end_column": 4578,
+            "start_byte": 794,
+            "end_byte": 0
+        },
+        "_pytest.mark.MarkEvaluator.__init__": {
+            "name": "_pytest.mark.MarkEvaluator.__init__",
+            "file_path": "src/_pytest/skipping.py",
+            "file_content": "\"store_true\",\n        dest=\"runxfail\",\n        default=False,\n        help=\"report the results of xfail tests as if they were not marked\",\n    )\n\n    parser.addini(\n        \"xfail_strict\",\n        \"default for the",
+            "start_line": 34,
+            "start_column": 819,
+            "end_line": 4,
+            "end_column": 1032,
+            "start_byte": 819,
+            "end_byte": 4
+        },
+        "_pytest.mark.MarkEvaluator.__bool__": {
+            "name": "_pytest.mark.MarkEvaluator.__bool__",
+            "file_path": "src/_pytest/skipping.py",
+            "file_content": "t parameter of xfail \"\n        \"markers when not given explicitly (default: False)\",\n        default=False,\n      ",
+            "start_line": 40,
+            "start_column": 1038,
+            "end_line": 4,
+            "end_column": 1152,
+            "start_byte": 1038,
+            "end_byte": 4
+        },
+        "_pytest.mark.MarkEvaluator.wasvalid": {
+            "name": "_pytest.mark.MarkEvaluator.wasvalid",
+            "file_path": "src/_pytest/skipping.py",
+            "file_content": "=\"bool\",\n    )\n\n\ndef pytest_configure(config: Config) -> None:\n    ",
+            "start_line": 44,
+            "start_column": 1158,
+            "end_line": 4,
+            "end_column": 1225,
+            "start_byte": 1158,
+            "end_byte": 4
+        },
+        "_pytest.mark.MarkEvaluator._get_marks": {
+            "name": "_pytest.mark.MarkEvaluator._get_marks",
+            "file_path": "src/_pytest/skipping.py",
+            "file_content": "fig.option.runxfail:\n        # yay a hack\n        import pytest\n\n        old = pytest.xfail\n        c",
+            "start_line": 47,
+            "start_column": 1231,
+            "end_line": 4,
+            "end_column": 1332,
+            "start_byte": 1231,
+            "end_byte": 4
+        },
+        "_pytest.mark.MarkEvaluator.invalidraise": {
+            "name": "_pytest.mark.MarkEvaluator.invalidraise",
+            "file_path": "src/_pytest/skipping.py",
+            "file_content": "_cleanup.append(lambda: setattr(pytest, \"xfail\", old))\n\n        def nop(*args, **kwargs):\n            pass\n\n        nop.Exception = xfail.Exception  # type: ignore[attr-def",
+            "start_line": 50,
+            "start_column": 1338,
+            "end_line": 4,
+            "end_column": 1510,
+            "start_byte": 1338,
+            "end_byte": 4
+        },
+        "_pytest.mark.MarkEvaluator.istrue": {
+            "name": "_pytest.mark.MarkEvaluator.istrue",
+            "file_path": "src/_pytest/skipping.py",
+            "file_content": "# noqa: F821\n        setattr(pytest, \"xfail\", nop)\n\n    config.addinivalue_line(\n        \"markers\",\n        \"skip(reason=None): skip the given test function with an optional reason. \"\n        'Example: skip(reason=\"no way of currently testing this\") skips the '\n        \"test.\",\n    )\n    config.addinivalue_line(\n        \"markers\",\n        \"skipif(condition): skip the given test function if eval(condition) \"\n        \"results in a True value.  Evaluation happens within the \"\n        \"module global context. Example: skipif('sys.platform == \\\"win32\\\"') \"\n        \"skips the test if we are on the win32 platform. see \"\n        \"https://docs.pytest.org/en/latest/skipping.html\",\n    )\n    config.addinivalue_line(\n        \"markers\",\n        \"xfail(condition, rea",
+            "start_line": 56,
+            "start_column": 1516,
+            "end_line": 4,
+            "end_column": 2278,
+            "start_byte": 1516,
+            "end_byte": 4
+        },
+        "_pytest.mark.MarkEvaluator._getglobals": {
+            "name": "_pytest.mark.MarkEvaluator._getglobals",
+            "file_path": "src/_pytest/skipping.py",
+            "file_content": "ne, run=True, raises=None, strict=False): \"\n        \"mark the test function as an expected failure if eval(condition) \"\n        \"has a True value. Optionally specify a reason for better reporting \"\n        \"and run=False if you don't even want to execute the test function. ",
+            "start_line": 75,
+            "start_column": 2284,
+            "end_line": 4,
+            "end_column": 2558,
+            "start_byte": 2284,
+            "end_byte": 4
+        },
+        "_pytest.mark.MarkEvaluator.get": {
+            "name": "_pytest.mark.MarkEvaluator.get",
+            "file_path": "src/_pytest/skipping.py",
+            "file_content": "strict=True) for the given PASSING test\"\"\"\n    evalxfail = pyfuncitem._store[evalxfail_key]\n    if evalxfail.istrue():\n        strict_default = ",
+            "start_line": 122,
+            "start_column": 4149,
+            "end_line": 4,
+            "end_column": 4293,
+            "start_byte": 4149,
+            "end_byte": 4
+        },
+        "_pytest.mark.MarkEvaluator.getexplanation": {
+            "name": "_pytest.mark.MarkEvaluator.getexplanation",
+            "file_path": "src/_pytest/skipping.py",
+            "file_content": "item.config.getini(\"xfail_strict\")\n        is_strict_xfail = evalxfail.get(\"strict\", strict_default)\n        if is_strict_xfail:\n            del pyfuncitem._store[evalxfail_key]\n            explanation = evalxfail.getexplanation()\n            fail(\"[XPASS(strict)] \" + explanatio",
+            "start_line": 127,
+            "start_column": 4299,
+            "end_line": 4,
+            "end_column": 4578,
+            "start_byte": 4299,
+            "end_byte": 4
+        },
+        "_pytest.runner.pytest_runtest_setup": {
+            "name": "_pytest.runner.pytest_runtest_setup",
+            "file_path": "src/_pytest/skipping.py",
+            "file_content": "fail.get(\"strict\", strict_default)\n        if is_strict_xfail:\n            del pyfuncitem._store[evalxfail_key]\n            explanat",
+            "start_line": 137,
+            "start_column": 4365,
+            "end_line": 0,
+            "end_column": 4497,
+            "start_byte": 4365,
+            "end_byte": 0
+        },
+        "_pytest.runner.pytest_runtest_makereport": {
+            "name": "_pytest.runner.pytest_runtest_makereport",
+            "file_path": "src/_pytest/skipping.py",
+            "file_content": "",
+            "start_line": 310,
+            "start_column": 10281,
+            "end_line": 0,
+            "end_column": 10412,
+            "start_byte": 10281,
+            "end_byte": 0
+        },
+        "_pytest.skipping.pytest_runtest_setup": {
+            "name": "_pytest.skipping.pytest_runtest_setup",
+            "file_path": "src/_pytest/skipping.py",
+            "file_content": "@hookimpl(tryfirst=True)\ndef pytest_runtest_setup(item: Item) -> None:\n    # Check if skip or skipif are specified as pytest marks\n    item._store[skipped_by_mark_key] = False\n    eval_skipif = MarkEvaluator(item, \"skipif\")\n    if eval_skipif.istrue():\n        item._store[skipped_by_mark_key] = True\n        skip(eval_skipif.getexplanation())\n\n    for skip_info in item.iter_markers(name=\"skip\"):\n        item._store[skipped_by_mark_key] = True\n        if \"reason\" in skip_info.kwargs:\n            skip(skip_info.kwargs[\"reason\"])\n        elif skip_info.args:\n            skip(skip_info.args[0])\n        else:\n            skip(\"unconditional skip\")\n\n    item._store[evalxfail_key] = MarkEvaluator(item, \"xfail\")\n    check_xfail_no_run(item)",
+            "start_line": 82,
+            "start_column": 2802,
+            "end_line": 0,
+            "end_column": 3543,
+            "start_byte": 2802,
+            "end_byte": 0
+        },
+        "_pytest.skipping.check_xfail_no_run": {
+            "name": "_pytest.skipping.check_xfail_no_run",
+            "file_path": "src/_pytest/skipping.py",
+            "file_content": "def check_xfail_no_run(item: Item) -> None:\n    \"\"\"check xfail(run=False)\"\"\"\n    if not item.config.option.runxfail:\n        evalxfail = item._store[evalxfail_key]\n        if evalxfail.istrue():\n            if not evalxfail.get(\"run\", True):\n                xfail(\"[NOTRUN] \" + evalxfail.getexplanation())",
+            "start_line": 113,
+            "start_column": 3768,
+            "end_line": 0,
+            "end_column": 4073,
+            "start_byte": 3768,
+            "end_byte": 0
+        },
+        "_pytest.skipping.check_strict_xfail": {
+            "name": "_pytest.skipping.check_strict_xfail",
+            "file_path": "src/_pytest/skipping.py",
+            "file_content": "def check_strict_xfail(pyfuncitem: Function) -> None:\n    \"\"\"check xfail(strict=True) for the given PASSING test\"\"\"\n    evalxfail = pyfuncitem._store[evalxfail_key]\n    if evalxfail.istrue():\n        strict_default = pyfuncitem.config.getini(\"xfail_strict\")\n        is_strict_xfail = evalxfail.get(\"strict\", strict_default)\n        if is_strict_xfail:\n            del pyfuncitem._store[evalxfail_key]\n            explanation = evalxfail.getexplanation()\n            fail(\"[XPASS(strict)] \" + explanation, pytrace=False)",
+            "start_line": 122,
+            "start_column": 4076,
+            "end_line": 0,
+            "end_column": 4595,
+            "start_byte": 4076,
+            "end_byte": 0
+        },
+        "_pytest.skipping.pytest_runtest_makereport": {
+            "name": "_pytest.skipping.pytest_runtest_makereport",
+            "file_path": "src/_pytest/skipping.py",
+            "file_content": "@hookimpl(hookwrapper=True)\ndef pytest_runtest_makereport(item: Item, call: CallInfo[None]):\n    outcome = yield\n    rep = outcome.get_result()\n    evalxfail = item._store.get(evalxfail_key, None)\n    # unittest special case, see setting of unexpectedsuccess_key\n    if unexpectedsuccess_key in item._store and rep.when == \"call\":\n        reason = item._store[unexpectedsuccess_key]\n        if reason:\n            rep.longrepr = \"Unexpected success: {}\".format(reason)\n        else:\n            rep.longrepr = \"Unexpected success\"\n        rep.outcome = \"failed\"\n\n    elif item.config.option.runxfail:\n        pass  # don't interfere\n    elif call.excinfo and isinstance(call.excinfo.value, xfail.Exception):\n        assert call.excinfo.value.msg is not None\n        rep.wasxfail = \"reason: \" + call.excinfo.value.msg\n        rep.outcome = \"skipped\"\n    elif evalxfail and not rep.skipped and evalxfail.wasvalid() and evalxfail.istrue():\n        if call.excinfo:\n            if evalxfail.invalidraise(call.excinfo.value):\n                rep.outcome = \"failed\"\n            else:\n                rep.outcome = \"skipped\"\n                rep.wasxfail = evalxfail.getexplanation()\n        elif call.when == \"call\":\n            strict_default = item.config.getini(\"xfail_strict\")\n            is_strict_xfail = evalxfail.get(\"strict\", strict_default)\n            explanation = evalxfail.getexplanation()\n            if is_strict_xfail:\n                rep.outcome = \"failed\"\n                rep.longrepr = \"[XPASS(strict)] {}\".format(explanation)\n            else:\n                rep.outcome = \"passed\"\n                rep.wasxfail = explanation\n    elif (\n        item._store.get(skipped_by_mark_key, True)\n        and rep.skipped\n        and type(rep.longrepr) is tuple\n    ):\n        # skipped by mark.skipif; change the location of the failure\n        # to point to the item definition, otherwise it will display\n        # the location of where the skip exception was raised within pytest\n        _, _, reason = rep.longrepr\n        filename, line = item.reportinfo()[:2]\n        assert line is not None\n        rep.longrepr = str(filename), line + 1, reason",
+            "start_line": 134,
+            "start_column": 4598,
+            "end_line": 0,
+            "end_column": 6754,
+            "start_byte": 4598,
+            "end_byte": 0
+        },
+        "_pytest.unittest.pytest_runtest_makereport": {
+            "name": "_pytest.unittest.pytest_runtest_makereport",
+            "file_path": "src/_pytest/skipping.py",
+            "file_content": "",
+            "start_line": 290,
+            "start_column": 10753,
+            "end_line": 0,
+            "end_column": 11542,
+            "start_byte": 10753,
+            "end_byte": 0
+        },
+        "_pytest.nose.pytest_runtest_setup": {
+            "name": "_pytest.nose.pytest_runtest_setup",
+            "file_path": "src/_pytest/skipping.py",
+            "file_content": "t hookimpl\nfrom _pytest.config.argparsing import Parser\nfrom _pytest.mark.evaluate import MarkEvaluator\nfrom _pytest.nodes import Item\nfrom _pytest.outcomes import fail\nfrom _pytest.outcomes import skip\nfrom _pytest.outcomes import xfail\nfrom _pytest.python import Function\nfrom _pytest.reports import BaseReport\nfrom _pytest.runner import CallInfo\nfrom _pytest.store import StoreKey\n\n\nskipped_by_mark_key = Stor",
+            "start_line": 7,
+            "start_column": 167,
+            "end_line": 0,
+            "end_column": 579,
+            "start_byte": 167,
+            "end_byte": 0
+        },
+        "_pytest.mark.cached_eval": {
+            "name": "_pytest.mark.cached_eval",
+            "file_path": "src/_pytest/mark/evaluate.py",
+            "file_content": "def cached_eval(config: Config, expr: str, d: Dict[str, object]) -> Any:\n    default = {}  # type: Dict[str, object]\n    evalcache = config._store.setdefault(evalcache_key, default)\n    try:\n        return evalcache[expr]\n    except KeyError:\n        import _pytest._code\n\n        exprcode = _pytest._code.compile(expr, mode=\"eval\")\n        evalcache[expr] = x = eval(exprcode, d)\n        return x",
+            "start_line": 20,
+            "start_column": 394,
+            "end_line": 0,
+            "end_column": 791,
+            "start_byte": 394,
+            "end_byte": 0
+        }
+    }
+}

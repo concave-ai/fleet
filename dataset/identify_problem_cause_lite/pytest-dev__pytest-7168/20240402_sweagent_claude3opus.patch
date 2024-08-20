@@ -1,0 +1,45 @@
+
+diff --git a/reproduce.py b/reproduce.py
+new file mode 100644
+index 000000000..a0ac7e9a4
+--- /dev/null
++++ b/reproduce.py
+@@ -0,0 +1,10 @@
++import pytest
++
++class SomeClass:
++    def __getattribute__(self, attr):
++        raise
++    def __repr__(self):
++        raise
++
++def test_internal_error():
++    SomeClass().attr
+diff --git a/src/_pytest/_io/saferepr.py b/src/_pytest/_io/saferepr.py
+index 23af4d0bb..eae408307 100644
+--- a/src/_pytest/_io/saferepr.py
++++ b/src/_pytest/_io/saferepr.py
+@@ -48,7 +48,13 @@ class SafeRepr(reprlib.Repr):
+         except (KeyboardInterrupt, SystemExit):
+             raise
+         except BaseException as exc:
+-            s = _format_repr_exception(exc, x)
++            try:
++                s = _format_repr_exception(exc, x)
++            except RuntimeError as re:
++                if "No active exception to reraise" in str(re):
++                    s = "<[exception raised in repr()] {} object at 0x{:x}>".format(x.__class__.__name__, id(x))
++                else:
++                    raise
+         return _ellipsize(s, self.maxsize)
+ 
+     def repr_instance(self, x: Any, level: int) -> str:
+@@ -57,7 +63,7 @@ class SafeRepr(reprlib.Repr):
+         except (KeyboardInterrupt, SystemExit):
+             raise
+         except BaseException as exc:
+-            s = _format_repr_exception(exc, x)
++            return _format_repr_exception(exc, x)
+         return _ellipsize(s, self.maxsize)
+ 
+ 

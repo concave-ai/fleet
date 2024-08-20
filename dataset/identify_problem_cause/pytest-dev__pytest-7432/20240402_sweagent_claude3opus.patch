@@ -1,0 +1,43 @@
+
+diff --git a/src/_pytest/skipping.py b/src/_pytest/skipping.py
+index 7bd975e5a..bb5b0c742 100644
+--- a/src/_pytest/skipping.py
++++ b/src/_pytest/skipping.py
+@@ -235,6 +235,7 @@ def pytest_runtest_setup(item: Item) -> None:
+ 
+     skipped = evaluate_skip_marks(item)
+     if skipped:
++        item._store[skipped_by_mark_key] = True
+         item._store[skipped_by_mark_key] = True
+         skip(skipped.reason)
+ 
+@@ -296,15 +297,14 @@ def pytest_runtest_makereport(item: Item, call: CallInfo[None]):
+         and rep.skipped
+         and type(rep.longrepr) is tuple
+     ):
++        print(f"skipped_by_mark_key: {item._store.get(skipped_by_mark_key, True)}")
++        print(f"rep.skipped: {rep.skipped}")
++        print(f"type(rep.longrepr): {type(rep.longrepr)}")
+         # skipped by mark.skipif; change the location of the failure
+-        # to point to the item definition, otherwise it will display
+-        # the location of where the skip exception was raised within pytest
+-        _, _, reason = rep.longrepr
+         filename, line = item.reportinfo()[:2]
+         assert line is not None
+         rep.longrepr = str(filename), line + 1, reason
+ 
+-
+ def pytest_report_teststatus(report: BaseReport) -> Optional[Tuple[str, str, str]]:
+     if hasattr(report, "wasxfail"):
+         if report.skipped:
+diff --git a/test_skip_location.py b/test_skip_location.py
+new file mode 100644
+index 000000000..0e5ca0671
+--- /dev/null
++++ b/test_skip_location.py
+@@ -0,0 +1,5 @@
++import pytest
++
++@pytest.mark.skip
++def test_skip_location() -> None:
++    assert 0

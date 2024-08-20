@@ -1,0 +1,103 @@
+{
+  "name": "FileSymbolSearch",
+  "model": "gpt-4o-2024-08-06",
+  "metadata": {},
+  "issue": "<description>:Rewrite fails when first expression of file is a number and mistaken as docstring \n<!--\r\nThanks for submitting an issue!\r\n\r\nQuick check-list while reporting bugs:\r\n-->\r\n\r\n- [x] a detailed description of the bug or problem you are having\r\n- [x] output of `pip list` from the virtual environment you are using\r\n- [x] pytest and operating system versions\r\n- [x] minimal example if possible\r\n```\r\nInstalling collected packages: zipp, six, PyYAML, python-dateutil, MarkupSafe, importlib-metadata, watchdog, tomli, soupsieve, pyyaml-env-tag, pycparser, pluggy, packaging, mergedeep, Markdown, jinja2, iniconfig, ghp-import, exceptiongroup, click, websockets, urllib3, tqdm, smmap, pytest, pyee, mkdocs, lxml, importlib-resources, idna, cssselect, charset-normalizer, cffi, certifi, beautifulsoup4, attrs, appdirs, w3lib, typing-extensions, texttable, requests, pyzstd, pytest-metadata, pyquery, pyppmd, pyppeteer, pynacl, pymdown-extensions, pycryptodomex, pybcj, pyasn1, py, psutil, parse, multivolumefile, mkdocs-autorefs, inflate64, gitdb, fake-useragent, cryptography, comtypes, bs4, brotli, bcrypt, allure-python-commons, xlwt, xlrd, rsa, requests-html, pywinauto, python-i18n, python-dotenv, pytest-rerunfailures, pytest-html, pytest-check, PySocks, py7zr, paramiko, mkdocstrings, loguru, GitPython, ftputil, crcmod, chardet, brotlicffi, allure-pytest\r\nSuccessfully installed GitPython-3.1.31 Markdown-3.3.7 MarkupSafe-2.1.3 PySocks-1.7.1 PyYAML-6.0 allure-pytest-2.13.2 allure-python-commons-2.13.2 appdirs-1.4.4 attrs-23.1.0 bcrypt-4.0.1 beautifulsoup4-4.12.2 brotli-1.0.9 brotlicffi-1.0.9.2 bs4-0.0.1 certifi-2023.5.7 cffi-1.15.1 chardet-5.1.0 charset-normalizer-3.1.0 click-8.1.3 comtypes-1.2.0 crcmod-1.7 cryptography-41.0.1 cssselect-1.2.0 exceptiongroup-1.1.1 fake-useragent-1.1.3 ftputil-5.0.4 ghp-import-2.1.0 gitdb-4.0.10 idna-3.4 importlib-metadata-6.7.0 importlib-resources-5.12.0 inflate64-0.3.1 iniconfig-2.0.0 jinja2-3.1.2 loguru-0.7.0 lxml-4.9.2 mergedeep-1.3.4 mkdocs-1.4.3 mkdocs-autorefs-0.4.1 mkdocstrings-0.22.0 multivolumefile-0.2.3 packaging-23.1 paramiko-3.2.0 parse-1.19.1 pluggy-1.2.0 psutil-5.9.5 py-1.11.0 py7zr-0.20.5 pyasn1-0.5.0 pybcj-1.0.1 pycparser-2.21 pycryptodomex-3.18.0 pyee-8.2.2 pymdown-extensions-10.0.1 pynacl-1.5.0 pyppeteer-1.0.2 pyppmd-1.0.0 pyquery-2.0.0 pytest-7.4.0 pytest-check-2.1.5 pytest-html-3.2.0 pytest-metadata-3.0.0 pytest-rerunfailures-11.1.2 python-dateutil-2.8.2 python-dotenv-1.0.0 python-i18n-0.3.9 pywinauto-0.6.6 pyyaml-env-tag-0.1 pyzstd-0.15.9 requests-2.31.0 requests-html-0.10.0 rsa-4.9 six-1.16.0 smmap-5.0.0 soupsieve-2.4.1 texttable-1.6.7 tomli-2.0.1 tqdm-4.65.0 typing-extensions-4.6.3 urllib3-1.26.16 w3lib-2.1.1 watchdog-3.0.0 websockets-10.4 xlrd-2.0.1 xlwt-1.3.0 zipp-3.15.0\r\n```\r\nuse `pytest -k xxx`\uff0c report an error\uff1a`TypeError: argument of type 'int' is not iterable`\r\n\r\nit seems a error in collecting testcase\r\n```\r\n==================================== ERRORS ====================================\r\n_ ERROR collecting testcases/\u57fa\u7ebf/\u4ee3\u7406\u7b56\u7565/SOCKS\u4e8c\u7ea7\u4ee3\u7406\u8fed\u4ee3\u4e8c/\u5728\u7ebf\u7528\u6237/\u5728\u7ebf\u7528\u6237\u66f4\u65b0/\u4e0a\u7ebf\u7528\u6237/test_socks_user_011.py _\r\n/usr/local/lib/python3.8/site-packages/_pytest/runner.py:341: in from_call\r\n    result: Optional[TResult] = func()\r\n/usr/local/lib/python3.8/site-packages/_pytest/runner.py:372: in <lambda>\r\n    call = CallInfo.from_call(lambda: list(collector.collect()), \"collect\")\r\n/usr/local/lib/python3.8/site-packages/_pytest/python.py:531: in collect\r\n    self._inject_setup_module_fixture()\r\n/usr/local/lib/python3.8/site-packages/_pytest/python.py:545: in _inject_setup_module_fixture\r\n    self.obj, (\"setUpModule\", \"setup_module\")\r\n/usr/local/lib/python3.8/site-packages/_pytest/python.py:310: in obj\r\n    self._obj = obj = self._getobj()\r\n/usr/local/lib/python3.8/site-packages/_pytest/python.py:528: in _getobj\r\n    return self._importtestmodule()\r\n/usr/local/lib/python3.8/site-packages/_pytest/python.py:617: in _importtestmodule\r\n    mod = import_path(self.path, mode=importmode, root=self.config.rootpath)\r\n/usr/local/lib/python3.8/site-packages/_pytest/pathlib.py:565: in import_path\r\n    importlib.import_module(module_name)\r\n/usr/local/lib/python3.8/importlib/__init__.py:127: in import_module\r\n    return _bootstrap._gcd_import(name[level:], package, level)\r\n<frozen importlib._bootstrap>:1014: in _gcd_import\r\n    ???\r\n<frozen importlib._bootstrap>:991: in _find_and_load\r\n    ???\r\n<frozen importlib._bootstrap>:975: in _find_and_load_unlocked\r\n    ???\r\n<frozen importlib._bootstrap>:671: in _load_unlocked\r\n    ???\r\n/usr/local/lib/python3.8/site-packages/_pytest/assertion/rewrite.py:169: in exec_module\r\n    source_stat, co = _rewrite_test(fn, self.config)\r\n/usr/local/lib/python3.8/site-packages/_pytest/assertion/rewrite.py:352: in _rewrite_test\r\n    rewrite_asserts(tree, source, strfn, config)\r\n/usr/local/lib/python3.8/site-packages/_pytest/assertion/rewrite.py:413: in rewrite_asserts\r\n    AssertionRewriter(module_path, config, source).run(mod)\r\n/usr/local/lib/python3.8/site-packages/_pytest/assertion/rewrite.py:695: in run\r\n    if self.is_rewrite_disabled(doc):\r\n/usr/local/lib/python3.8/site-packages/_pytest/assertion/rewrite.py:760: in is_rewrite_disabled\r\n    return \"PYTEST_DONT_REWRITE\" in docstring\r\nE   TypeError: argument of type 'int' is not iterable\r\n```\n</description>",
+  "request": {
+    "files": [
+      {
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "relevant_symbol_keys": [
+          "AssertionRewriter.run",
+          "AssertionRewriter.is_rewrite_disabled",
+          "rewrite_asserts"
+        ],
+        "root_cause_symbol_keys": [
+          "AssertionRewriter.run",
+          "AssertionRewriter.is_rewrite_disabled",
+          "rewrite_asserts"
+        ]
+      },
+      {
+        "file_path": "src/_pytest/python.py",
+        "relevant_symbol_keys": [
+          "Module._importtestmodule",
+          "import_path"
+        ],
+        "root_cause_symbol_keys": []
+      },
+      {
+        "file_path": "src/_pytest/runner.py",
+        "relevant_symbol_keys": [],
+        "root_cause_symbol_keys": []
+      },
+      {
+        "file_path": "src/_pytest/pathlib.py",
+        "relevant_symbol_keys": [],
+        "root_cause_symbol_keys": []
+      }
+    ],
+    "with_content": true
+  },
+  "response": {
+    "related_symbols": [
+      {
+        "name": "_pytest.pathlib.import_path",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "or_glob_option(self, option_name: str, name: str) -> bool:\n        \"\"\"Check if the given name matches the prefix or glob-pattern defined\n        in ini configuration.\"\"\"\n        for option in self.config.getini(option_name):\n            if name.startswith(option):\n                return True\n            # Check that name looks like a glob-string before calling fnmatch\n            # because this is called for every name in each collected module,\n            # and fnmatch is somewhat expensive to call.\n            elif (\"*\" in option or \"?\" in option or \"[\" in option) and fnmatch.fnmatch(\n                name, option\n            ):\n                return True\n        return False\n\n    def collect(self) -> Iterable[Union[nodes.Item, nodes.Collector]]:\n        if not getattr(self.obj, \"__test__\", True):\n            return []\n\n        # Avoid random getattrs and peek in the __dict__ instead.\n        dicts = [getattr(self.obj, \"__dict__\", {})]\n        if isinstance(self.obj, type):\n            for basecls in self.obj.__mro__:\n                dicts.append(basecls.__dict__)\n\n        # In each class, nodes should be definition ordered.\n        # __dict__ is definition ordered.\n        seen: Set[str] = set()\n        dict_values: List[List[Union[nodes.Item, nodes.Collector]]] = []\n        ihook = self.ihook\n        for dic in dicts:\n            values: List[Union[nodes.Item, nodes.Collector]] = []\n            # Note: seems like the dict can change during iteration -\n            # be careful not to remove the list() without consideration.\n            for name, obj in list(dic.items()):\n                if name in IGNORED_ATTRIBUTES:\n                    continue\n                if name in seen:\n                    continue\n                seen.add(name)\n                res = ihook.pytest_pycollect_makeitem(\n                    collector=self, name=name, obj=obj\n                )\n                if res is None:\n                    continue\n                elif isinstance(res, list):\n                    values.extend(res)\n                else:\n                    values.append(res)\n            dict_values.append(values)\n\n        # Between classes in the class hierarchy, reverse-MRO order -- nodes\n        # inherited from base classes should come before subclasses.\n        result = []\n        for values in reversed(dict_values):\n            result.extend(values)\n        return result\n\n    def _genfunctions(self, name: str, funcobj) -> Iterator[\"Function\"]:\n        modulecol = self.getparent(Module)\n        assert modulecol is not None\n        module = modulecol.obj\n        clscol = self.getparent(Class)\n        cls = clscol and clscol.obj or None\n\n        definition = FunctionDefinition.from_parent(self, name=name, callobj=funcobj)\n        fixtureinfo = definition._fixtureinfo\n\n        # pytest_generate_tests impls call metafunc.parametrize() which fills\n        # metafunc._calls, the outcome of the hook.\n        metafunc = Metafunc(\n            definition=definition,\n            fixtureinfo=fixtureinfo,\n            config=self.config,\n            cls=cls,\n            module=module,\n            _ispytest=True,\n        )\n        methods = []\n        if hasattr(module, \"pytest_generate_tests\"):\n            methods.append(module.pytest_generate_tests)\n        if cls is not None and hasattr(cls, \"pytest_generate_tests\"):\n            methods.append(cls().pytest_generate_tests)\n        self.ihook.pytest_generate_tests.call_extra(methods, dict(metafunc=metafunc))\n\n        if not metafunc._calls:\n            yield Function.from_parent(self, name=name, fixtureinfo=fixtureinfo)\n        else:\n            # Add funcargs() as fixturedefs to fixtureinfo.arg2fixturedefs.\n            fm = self.session._fixturemanager\n            fixtures.add_funcarg_pseudo_fixture_def(self, metafunc, fm)\n\n            # Add_funcarg_pseudo_fixture_def may have shadowed some fixtures\n            # with direct parametrization, so make sure we update what the\n            # function reall",
+        "start_line": 485,
+        "start_column": 15363,
+        "end_line": 0,
+        "end_column": 19370,
+        "start_byte": 15363,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.python.Module._importtestmodule",
+        "file_path": "src/_pytest/python.py",
+        "file_content": "def _importtestmodule(self):\n        # We assume we are only called once per module.\n        importmode = self.config.getoption(\"--import-mode\")\n        try:\n            mod = import_path(self.path, mode=importmode, root=self.config.rootpath)\n        except SyntaxError as e:\n            raise self.CollectError(\n                ExceptionInfo.from_current().getrepr(style=\"short\")\n            ) from e\n        except ImportPathMismatchError as e:\n            raise self.CollectError(\n                \"import file mismatch:\\n\"\n                \"imported module %r has this __file__ attribute:\\n\"\n                \"  %s\\n\"\n                \"which is not the same as the test file we want to collect:\\n\"\n                \"  %s\\n\"\n                \"HINT: remove __pycache__ / .pyc files and/or use a \"\n                \"unique basename for your test file modules\" % e.args\n            ) from e\n        except ImportError as e:\n            exc_info = ExceptionInfo.from_current()\n            if self.config.getoption(\"verbose\") < 2:\n                exc_info.traceback = exc_info.traceback.filter(filter_traceback)\n            exc_repr = (\n                exc_info.getrepr(style=\"short\")\n                if exc_info.traceback\n                else exc_info.exconly()\n            )\n            formatted_tb = str(exc_repr)\n            raise self.CollectError(\n                \"ImportError while importing test module '{path}'.\\n\"\n                \"Hint: make sure your test modules/packages have valid Python names.\\n\"\n                \"Traceback:\\n\"\n                \"{traceback}\".format(path=self.path, traceback=formatted_tb)\n            ) from e\n        except skip.Exception as e:\n            if e.allow_module_level:\n                raise\n            raise self.CollectError(\n                \"Using pytest.skip outside of a test will skip the entire module. \"\n                \"If that's your intention, pass `allow_module_level=True`. \"\n                \"If you want to skip a specific test or an entire class, \"\n                \"use the @pytest.mark.skip or @pytest.mark.skipif decorators.\"\n            ) from e\n        self.config.pluginmanager.consider_module(mod)\n        return mod",
+        "start_line": 612,
+        "start_column": 23679,
+        "end_line": 4,
+        "end_column": 25853,
+        "start_byte": 23679,
+        "end_byte": 4
+      }
+    ],
+    "root_caused_symbols": [
+      {
+        "name": "_pytest.assertion.rewrite_asserts",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def rewrite_asserts(\n    mod: ast.Module,\n    source: bytes,\n    module_path: Optional[str] = None,\n    config: Optional[Config] = None,\n) -> None:\n    \"\"\"Rewrite the assert statements in mod.\"\"\"\n    AssertionRewriter(module_path, config, source).run(mod)",
+        "start_line": 394,
+        "start_column": 14700,
+        "end_line": 0,
+        "end_column": 14955,
+        "start_byte": 14700,
+        "end_byte": 0
+      },
+      {
+        "name": "_pytest.assertion.AssertionRewriter.run",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "def run(self, mod: ast.Module) -> None:\n        \"\"\"Find all assert statements in *mod* and rewrite them.\"\"\"\n        if not mod.body:\n            # Nothing to do.\n            return\n\n        # We'll insert some special imports at the top of the module, but after any\n        # docstrings and __future__ imports, so first figure out where that is.\n        doc = getattr(mod, \"docstring\", None)\n        expect_docstring = doc is None\n        if doc is not None and self.is_rewrite_disabled(doc):\n            return\n        pos = 0\n        item = None\n        for item in mod.body:\n            if (\n                expect_docstring\n                and isinstance(item, ast.Expr)\n                and isinstance(item.value, ast.Constant)\n            ):\n                doc = item.value.value\n                if self.is_rewrite_disabled(doc):\n                    return\n                expect_docstring = False\n            elif (\n                isinstance(item, ast.ImportFrom)\n                and item.level == 0\n                and item.module == \"__future__\"\n            ):\n                pass\n            else:\n                break\n            pos += 1\n        # Special case: for a decorated function, set the lineno to that of the\n        # first decorator, not the `def`. Issue #4984.\n        if isinstance(item, ast.FunctionDef) and item.decorator_list:\n            lineno = item.decorator_list[0].lineno\n        else:\n            lineno = item.lineno\n        # Now actually insert the special imports.\n        if sys.version_info >= (3, 10):\n            aliases = [\n                ast.alias(\"builtins\", \"@py_builtins\", lineno=lineno, col_offset=0),\n                ast.alias(\n                    \"_pytest.assertion.rewrite\",\n                    \"@pytest_ar\",\n                    lineno=lineno,\n                    col_offset=0,\n                ),\n            ]\n        else:\n            aliases = [\n                ast.alias(\"builtins\", \"@py_builtins\"),\n                ast.alias(\"_pytest.assertion.rewrite\", \"@pytest_ar\"),\n            ]\n        imports = [\n            ast.Import([alias], lineno=lineno, col_offset=0) for alias in aliases\n        ]\n        mod.body[pos:pos] = imports\n\n        # Collect asserts.\n        nodes: List[ast.AST] = [mod]\n        while nodes:\n            node = nodes.pop()\n            for name, field in ast.iter_fields(node):\n                if isinstance(field, list):\n                    new: List[ast.AST] = []\n                    for i, child in enumerate(field):\n                        if isinstance(child, ast.Assert):\n                            # Transform assert.\n                            new.extend(self.visit(child))\n                        else:\n                            new.append(child)\n                            if isinstance(child, ast.AST):\n                                nodes.append(child)\n                    setattr(node, name, new)\n                elif (\n                    isinstance(field, ast.AST)\n                    # Don't recurse into expressions as they can't contain\n                    # asserts.\n                    and not isinstance(field, ast.expr)\n                ):\n                    nodes.append(field)",
+        "start_line": 659,
+        "start_column": 24250,
+        "end_line": 4,
+        "end_column": 27441,
+        "start_byte": 24250,
+        "end_byte": 4
+      },
+      {
+        "name": "_pytest.assertion.AssertionRewriter.is_rewrite_disabled",
+        "file_path": "src/_pytest/assertion/rewrite.py",
+        "file_content": "@staticmethod\n    def is_rewrite_disabled(docstring: str) -> bool:\n        return \"PYTEST_DONT_REWRITE\" in docstring",
+        "start_line": 743,
+        "start_column": 27447,
+        "end_line": 4,
+        "end_column": 27563,
+        "start_byte": 27447,
+        "end_byte": 4
+      }
+    ]
+  }
+}

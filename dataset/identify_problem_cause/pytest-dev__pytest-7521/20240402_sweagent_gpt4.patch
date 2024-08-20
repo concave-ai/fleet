@@ -1,0 +1,13 @@
+
+diff --git a/test_carriage_return.py b/test_carriage_return.py
+new file mode 100644
+index 000000000..61e179f07
+--- /dev/null
++++ b/test_carriage_return.py
+@@ -0,0 +1,6 @@
++def test_cafd_includes_carriage_return(capfd):
++    print('Greetings from DOS', end='\r')
++    out, err = capfd.readouterr()
++    assert out.endswith('\r')
++
++print("Script completed successfully, no errors.")
