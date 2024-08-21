@@ -3,6 +3,9 @@
 ## Concave Fleet 是 Concave project 中的实验验证性项目
 
 Fleet 使用 Concave 提供的工具集，只在一个星期内完成了 SWE-Bench Verify 测试集的测试。
+    - concave workspace
+    - concave hybrid search
+
 我们通过 Concave，创新性的自顶向下逐层搜索，通过多个层次的推理，逐步锁定问题的位置。
 
 尽管最终结果还在进行最后的验证中。但是我们当前已验证的数据结果表明
