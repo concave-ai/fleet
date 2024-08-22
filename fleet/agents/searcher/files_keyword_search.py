@@ -31,7 +31,7 @@ class FilesKeywordSearch(Agent):
 
     def get_cmd(self):
         args = [f"-e '{t}'" for t in self.request.tokens]
-        return f"rg --json -n -w {' '.join(args)} --glob '*.py' src/"
+        return f"rg --json -n -w {' '.join(args)} --glob '*.py' ./"
 
     def run_from_jsonl(self, path):
         with open(path) as f:

@@ -1,0 +1,81 @@
+{
+  "name": "FilesKeywordSearch",
+  "model": "gpt-4o-2024-08-06",
+  "metadata": {},
+  "issue": "<description>:\n\n    \nException ignored in: <function TiDBVectorClient.__del__ at 0x1693e63e0>\nTraceback (most recent call last):\n  File \"/Users/justwph/Library/Caches/pypoetry/virtualenvs/concave-KQBUMHDg-py3.11/lib/python3.11/site-packages/tidb_vector/integrations/vector_client.py\", line 177, in __del__\nAttributeError: 'NoneType' object has no attribute 'Connection'\n\n\nisinstance(self._bind, sqlalchemy.engine.base.Connection)\nself._bind is None is false, works fine\nsqlalchemy.engine is None very strange, it should be a sqlalchemy.engine.base.Connection object, but it is None.\n__del__ in high version python have some changes?\n\n\n\n</description>",
+  "request": {
+    "tokens": [
+      "TiDBVectorClient",
+      "__del__",
+      "integrations",
+      "vector_client",
+      "sqlalchemy",
+      "__init__",
+      "Connection",
+      "execute"
+    ]
+  },
+  "response": {
+    "results": {
+      "execute": [
+        "./examples/graphrag-demo/graphrag-demo.py",
+        "./tests/integrations/test_vector_client.py",
+        "./examples/gemini-ai-embeddings-demo/example.py",
+        "./examples/dspy-demo/example.py",
+        "./tidb_vector/integrations/utils.py",
+        "./examples/openai_embedding/example.py",
+        "./examples/langchain-agent-demo/knowledge_base.py",
+        "./tidb_vector/integrations/vector_client.py"
+      ],
+      "integrations": [
+        "./tests/integrations/test_vector_client.py",
+        "./tidb_vector/integrations/__init__.py",
+        "./tests/integrations/test_utils.py",
+        "./examples/dspy-demo/example.py",
+        "./examples/python-client-quickstart/example.py",
+        "./examples/langchain-agent-demo/knowledge_base.py",
+        "./examples/dspy-demo/utils.py",
+        "./tidb_vector/integrations/vector_client.py"
+      ],
+      "sqlalchemy": [
+        "./examples/graphrag-demo/graphrag-demo.py",
+        "./tests/integrations/test_vector_client.py",
+        "./tidb_vector/sqlalchemy/__init__.py",
+        "./examples/jina-ai-embeddings-demo/jina-ai-embeddings-demo.py",
+        "./examples/semantic-cache/cache.py",
+        "./examples/llamaindex-tidb-vector-with-ui/app.py",
+        "./examples/llamaindex-tidb-vector/chat_with_url.py",
+        "./tidb_vector/integrations/utils.py",
+        "./tests/sqlalchemy/test_sqlalchemy.py",
+        "./examples/orm-sqlalchemy-quickstart/sqlalchemy-quickstart.py",
+        "./tidb_vector/integrations/vector_client.py"
+      ],
+      "TiDBVectorClient": [
+        "./tests/integrations/test_vector_client.py",
+        "./tidb_vector/integrations/__init__.py",
+        "./examples/dspy-demo/example.py",
+        "./examples/python-client-quickstart/example.py",
+        "./examples/langchain-agent-demo/knowledge_base.py",
+        "./examples/dspy-demo/utils.py",
+        "./tidb_vector/integrations/vector_client.py"
+      ],
+      "Connection": [
+        "./examples/graphrag-demo/graphrag-demo.py",
+        "./tidb_vector/integrations/vector_client.py"
+      ],
+      "__init__": [
+        "./tidb_vector/sqlalchemy/__init__.py",
+        "./tidb_vector/peewee/__init__.py",
+        "./tidb_vector/integrations/utils.py",
+        "./examples/dspy-demo/utils.py",
+        "./tidb_vector/integrations/vector_client.py"
+      ],
+      "vector_client": [
+        "./tidb_vector/integrations/__init__.py"
+      ],
+      "__del__": [
+        "./tidb_vector/integrations/vector_client.py"
+      ]
+    }
+  }
+}
